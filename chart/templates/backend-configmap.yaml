@@ -1,0 +1,16 @@
+apiVersion: v1
+data:
+  "chartpress.yaml": |
+    umbrellaChartName: saas-platform
+    subcharts:
+      - name: api
+        workload: deployment
+      - name: job-runner
+        workload: deployment
+      - name: database
+        workload: statefulset
+
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: chartpress-config

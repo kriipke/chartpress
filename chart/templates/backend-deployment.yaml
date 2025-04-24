@@ -20,6 +20,9 @@ spec:
           ports:
             - containerPort: 8080
           volumeMounts:
+            - name: chartpress-config
+              mountPath: /app/chartpress.yaml
+              subPath: chartpress.yaml
             - name: templates-volume
               mountPath: /app/templates
             - name: output-volume
@@ -29,3 +32,6 @@ spec:
           emptyDir: {}
         - name: output-volume
           emptyDir: {}
+        - name: chartpress-config
+          configMap:
+            name: chartpress-config
