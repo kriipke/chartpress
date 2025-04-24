@@ -7,7 +7,9 @@ on:
     paths:
       - 'Dockerfile'
       - 'api.go'
-      - '.github/workflows/build-api.yml'
+      - '.github/workflows/build-api.yaml'
+      - './.github/workflows/docker-build-publish.yaml'
+
   workflow_dispatch:
 
 permissions:
