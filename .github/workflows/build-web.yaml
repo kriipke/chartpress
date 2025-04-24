@@ -1,0 +1,19 @@
+name: Build and Publish Web Docker Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'web/Dockerfile'
+      - 'web/**'
+      - '.github/workflows/build-web.yml'
+  workflow_dispatch:
+
+jobs:
+  build-web:
+    uses: ./.github/workflows/docker-build-publish.yml
+    with:
+      context: ./web
+      dockerfile: ./web/Dockerfile
+      image-name: web

@@ -1,0 +1,19 @@
+name: Build and Publish API Docker Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Dockerfile'
+      - 'api.go'
+      - '.github/workflows/build-api.yml'
+  workflow_dispatch:
+
+jobs:
+  build-api:
+    uses: ./.github/workflows/docker-build-publish.yml
+    with:
+      context: .
+      dockerfile: ./Dockerfile
+      image-name: api
