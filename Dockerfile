@@ -19,7 +19,7 @@ RUN go build -o chartpress .
 
 # Use a minimal base image for the final container
 FROM debian:bullseye-slim AS setup
-RUN apt update --no-cache -y &&  apt install -y libc6
+
 # Set the working directory inside the container
 WORKDIR /app
 
@@ -41,7 +41,6 @@ RUN apt update --no-cache -y &&  apt install -y libc6
 # Set the working directory inside the container
 
 # Copy the built binary from the builder stage
-COPY --from=setup /app /
 RUN apt-get update && apt-get install -y libc6 \
  && rm -rf /var/lib/apt/lists/*```
  
