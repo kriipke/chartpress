@@ -18,8 +18,8 @@ COPY . .
 RUN go build -o chartpress .
 
 # Use a minimal base image for the final container
-FROM debian:bullseye-slim
-
+FROM debian:bullseye-slim AS setup
+RUN apt update --no-cache -y &&  apt install -y libc6
 # Set the working directory inside the container
 WORKDIR /app
 
@@ -32,5 +32,19 @@ COPY ./templates ./templates
 # Expose the port the service will run on
 EXPOSE 8080
 
+# Command to run the application
+CMD ["./chartpress"]
+
+
+FROM setup
+RUN apt update --no-cache -y &&  apt install -y libc6
+# Set the working directory inside the container
+
+# Copy the built binary from the builder stage
+COPY --from=setup /app /
+
+# Expose the port the service will run on
+EXPOSE 8080
+WORKDIR /app
 # Command to run the application
 CMD ["./chartpress"]
