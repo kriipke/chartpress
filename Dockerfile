@@ -18,7 +18,7 @@ COPY . .
 RUN go build -o chartpress .
 
 # Use a minimal base image for the final container
-FROM go:1.23-bullseye AS setup
+FROM golang:1.23-bullseye AS setup
 
 # Set the working directory inside the container
 WORKDIR /app
