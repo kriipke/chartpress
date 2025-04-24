@@ -1,15 +1,16 @@
 package main
 
 import (
+	"archive/zip"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
-
 )
 
 type Config struct {
@@ -66,10 +67,15 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	if _, err := w.Write([]byte(fmt.Sprintf("✅ Generated chart at: %s\n", outputDir))); err != nil {
-		log.Printf("Error writing response: %v", err)
+	zipFilePath := fmt.Sprintf("%s.zip", outputDir)
+	if err := zipDirectory(outputDir, zipFilePath); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create zip file: %v", err), http.StatusInternalServerError)
+		return
 	}
+
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.zip\"", cfg.UmbrellaChartName))
+	http.ServeFile(w, r, zipFilePath)
 }
 
 func generateChart(cfg Config) (string, error) {
@@ -150,4 +156,44 @@ func pruneTemplates(chartPath, workload string) error {
 	}
 
 	return nil
+}
+
+func zipDirectory(source, target string) error {
+	zipFile, err := os.Create(target)
+	if err != nil {
+		return err
+	}
+	defer zipFile.Close()
+
+	zipWriter := zip.NewWriter(zipFile)
+	defer zipWriter.Close()
+
+	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(source, path)
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		writer, err := zipWriter.Create(relPath)
+		if err != nil {
+			return err
+		}
+
+		_, err = io.Copy(writer, file)
+		return err
+	})
 }
