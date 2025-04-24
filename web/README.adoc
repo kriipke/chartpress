@@ -1,0 +1,202 @@
+= ChartPress Wizard Frontend
+
+The ChartPress Wizard frontend is a React-based web application designed to simplify the process of generating Helm charts for Kubernetes deployments. It provides a user-friendly interface for configuring umbrella charts and subcharts.
+
+== Features
+
+- Interactive UI for configuring umbrella charts and subcharts.
+- Generates configuration files for Helm charts.
+- Integrates seamlessly with the backend API to process and generate charts.
+
+== Prerequisites
+
+- Node.js (version 18 or later).
+- npm (Node Package Manager).
+
+== Installation
+
+1. Navigate to the `web` directory:
+   ```
+   cd ./web
+   ```
+
+2. Install the required dependencies:
+   ```
+   npm install
+   ```
+
+== Usage
+
+1. Start the development server:
+   ```
+   npm start
+   ```
+
+2. Open your browser and navigate to `http://localhost:3000`.
+
+3. Use the interface to configure your umbrella chart and subcharts.
+
+4. Submit the configuration to generate the Helm chart files.
+
+== Building for Production
+
+To build the application for production:
+
+1. Run the build command:
+   ```
+   npm run build
+   ```
+
+2. The production-ready files will be available in the `build` directory.
+
+== Docker Deployment
+
+The application can be deployed using Docker:
+
+1. Build the Docker image:
+   ```
+   docker build -t chartpress-frontend .
+   ```
+
+2. Run the Docker container:
+   ```
+   docker run -p 80:80 chartpress-frontend
+   ```
+
+3. Access the application at `http://localhost`.
+
+== Troubleshooting
+
+- If you encounter issues with OpenSSL, ensure you are using the `--openssl-legacy-provider` flag as configured in the `package.json` scripts.
+- Ensure all dependencies are installed by running `npm install`.
+
+= ChartPress Wizard Frontend
+
+The ChartPress Wizard frontend is a React-based web application designed to simplify the process of generating Helm charts for Kubernetes deployments. It provides a user-friendly interface for configuring umbrella charts and subcharts.
+
+== Features
+
+- Interactive UI for configuring umbrella charts and subcharts.
+- Generates configuration files for Helm charts.
+- Integrates seamlessly with the backend API to process and generate charts.
+
+== Prerequisites
+
+- Node.js (version 18 or later).
+- npm (Node Package Manager).
+
+== Installation
+
+1. Navigate to the `web` directory:
+   ```
+   cd ./web
+   ```
+
+2. Install the required dependencies:
+   ```
+   npm install
+   ```
+
+== Usage
+
+1. Start the development server:
+   ```
+   npm start
+   ```
+
+2. Open your browser and navigate to `http://localhost:3000`.
+
+3. Use the interface to configure your umbrella chart and subcharts.
+
+4. Submit the configuration to generate the Helm chart files.
+
+== Building for Production
+
+To build the application for production:
+
+1. Run the build command:
+   ```
+   npm run build
+   ```
+
+2. The production-ready files will be available in the `build` directory.
+
+== Docker Deployment
+
+The application can be deployed using Docker:
+
+1. Build the Docker image:
+   ```
+   docker build -t chartpress-frontend .
+   ```
+
+2. Run the Docker container:
+   ```
+   docker run -p 80:80 chartpress-frontend
+   ```
+
+3. Access the application at `http://localhost`.
+
+== Troubleshooting
+
+- If you encounter issues with OpenSSL, ensure you are using the `--openssl-legacy-provider` flag as configured in the `package.json` scripts.
+- Ensure all dependencies are installed by running `npm install`.
+
+== Roadmap
+
+Suggested Features for the Web App Dynamic Form for Chart Configuration
+
+Allow users to dynamically add or remove subcharts.::
+Provide dropdowns for selecting workloads (e.g., Deployment, StatefulSet, DaemonSet).
+
+Real-Time Validation::
+Validate user inputs (e.g., chart names, workload types) in real-time. Display error messages for invalid configurations.
+
+Preview Configuration::
+Show a preview of the generated chartpress.yaml file before submission.
+
+Download Generated Charts::
+Provide a button to download the generated Helm chart files as a ZIP archive.
+
+Integration with Backend API::
+Submit configurations to the backend /generate endpoint. Display success or error messages based on the API response.
+
+Theming Support::
+Add light and dark mode options for better user experience.
+
+Multi-Language Support::
+Allow users to switch between different languages for the UI.
+
+Help and Documentation Section::
+Include a help section with instructions on how to use the app.
+Link to external documentation for advanced usage.
+
+Persistent State::
+Save user inputs locally (e.g., using localStorage) so they are not lost on page refresh.
+
+Responsive Design::
+Ensure the app works seamlessly on both desktop and mobile devices.
+
+Progress Indicator::
+Show a loading spinner or progress bar while the backend processes the request.
+
+Error Reporting::
+Provide detailed error messages if the backend fails to generate charts.
+
+Version Information::
+Display the current version of the app and backend API.
+
+Custom Templates::
+Allow users to upload custom templates for umbrella charts or subcharts.
+
+Analytics Dashboard::
+Provide insights into the most commonly used configurations or workloads.
+
+== License
+
+This project is licensed under the MIT License.
+
+== License
+
+This project is licensed under the MIT License.
+
