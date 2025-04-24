@@ -18,7 +18,7 @@ COPY . .
 RUN go build -o chartpress .
 
 
-FROM debian:bookworm-slim
+FROM debian:bookworm-slim as setup
 # Install required dependencies, including glibc
 RUN apt-get update && apt-get install -y libc6 && apt-get clea
 # Set the working directory inside the container
