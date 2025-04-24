@@ -1,3 +1,5 @@
+import "github.com/kriipke/chartpress/internal/generator"
+import "github.com/kriipke/chartpress/internal/generator"
 package cmd
 
 import (
@@ -11,7 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
-        "github.com/kriipke/chartpress"
+        "github.com/kriipke/chartpress/cmd"
 )
 )
 
@@ -38,7 +40,7 @@ func loadConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	var cfg Config
+	var cfg generator.Config
 	// Unmarshal YAML content
 	if err := yaml.Unmarshal(content, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
@@ -69,7 +71,7 @@ func runCreate(chartName string) {
 		log.Fatalf("Failed to read config file: %v", err)
 	}
 
-	var cfg Config
+	var cfg generator.Config
 	if err := yaml.Unmarshal(configData, &cfg); err != nil {
 		log.Fatalf("Failed to unmarshal config: %v", err)
 	}
@@ -208,7 +210,7 @@ var rootCmd = &cobra.Command{
 			return fmt.Errorf("failed to read config file: %w", err)
 		}
 
-		var cfg Config
+		var cfg generator.Config
 		if err := yaml.Unmarshal(configData, &cfg); err != nil {
 			return fmt.Errorf("failed to unmarshal config: %w", err)
 		}

@@ -1,3 +1,5 @@
+import "github.com/kriipke/chartpress/internal/generator"
+import "github.com/kriipke/chartpress/internal/generator"
 package server
 
 import (
@@ -33,7 +35,27 @@ func Start() {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-		handleGenerate(w, r)
+    var cfg generator.Confign
+    if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {n
+        http.Error(w, fmt.Sprintf("Failed to parse JSON: %v", err), http.StatusBadRequest)n
+        returnn
+    }n
+n
+    outputDir, err := generator.SaveAndGenerateChart(cfg)n
+    if err != nil {n
+        http.Error(w, fmt.Sprintf("Chart generation failed: %v", err), http.StatusInternalServerError)n
+        returnn
+    var cfg generator.Confign
+    if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {n
+        http.Error(w, fmt.Sprintf("Failed to parse JSON: %v", err), http.StatusBadRequest)n
+        returnn
+    }n
+n
+    outputDir, err := generator.SaveAndGenerateChart(cfg)n
+    if err != nil {n
+        http.Error(w, fmt.Sprintf("Chart generation failed: %v", err), http.StatusInternalServerError)n
+        returnn
+    }    }		handleGenerate(w, r)
 	})
 
 	port := getPort()
@@ -59,35 +81,6 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var cfg Config
-	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
-		log.Printf("Failed to parse JSON: %v", err)
-		http.Error(w, fmt.Sprintf("Failed to parse JSON: %v", err), http.StatusBadRequest)
-		return
-	}
-	log.Printf("Loaded config: %+v", cfg)
-
-	if err := validateConfig(cfg); err != nil {
-		log.Printf("Invalid config: %v", err)
-		http.Error(w, fmt.Sprintf("Invalid config: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	configFilePath := "./chartpress.yaml"
-	log.Printf("Saving configuration to %s", configFilePath)
-	configFile, err := os.Create(configFilePath)
-	if err != nil {
-		log.Printf("Failed to create config file: %v", err)
-		http.Error(w, fmt.Sprintf("Failed to create config file: %v", err), http.StatusInternalServerError)
-		return
-	}
-	defer func() {
-		if err := configFile.Close(); err != nil {
-			log.Printf("Error closing config file: %v", err)
-		}
-	}()
-
-	if err := json.NewEncoder(configFile).Encode(cfg); err != nil {
 		log.Printf("Failed to write config file: %v", err)
 		http.Error(w, fmt.Sprintf("Failed to write config file: %v", err), http.StatusInternalServerError)
 		return
