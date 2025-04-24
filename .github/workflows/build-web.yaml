@@ -21,4 +21,4 @@ jobs:
     with:
       context: ./web
       dockerfile: ./web/Dockerfile
-      image-name: web
+      image-name: chartpress-web
