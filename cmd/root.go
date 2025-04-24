@@ -11,6 +11,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
+        "github.com/kriipke/chartpress"
+)
 )
 
 type Config struct {
@@ -178,6 +180,15 @@ func runServer() {
 	fmt.Printf("Starting server on port %s...\n", port)
 	log.Printf("Server is starting on port %s", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+
+func getPort() string {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+		log.Println("Environment variable PORT not set, defaulting to 8080")
+	}
+	return port
 }
 
 var rootCmd = &cobra.Command{
