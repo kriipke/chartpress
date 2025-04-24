@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"archive/zip"
@@ -23,7 +23,7 @@ type Subchart struct {
 	Workload string `json:"workload"` // deployment, statefulset, or daemonset
 }
 
-func main() {
+func Start() {
 	http.HandleFunc("/generate", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Handlingg /generate..%s\n", "")
 		w.Header().Set("Access-Control-Allow-Origin", "*") // Allow all origins
