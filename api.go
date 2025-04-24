@@ -24,7 +24,16 @@ type Subchart struct {
 }
 
 func main() {
-	http.HandleFunc("/generate", handleGenerate)
+	http.HandleFunc("/generate", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*") // Allow all origins
+		if r.Method == http.MethodOptions {
+			w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		handleGenerate(w, r)
+	})
 
 	port := "8080"
 	fmt.Printf("Starting server on port %s...\n", port)
