@@ -1,15 +1,15 @@
 backend:
   image:
-    repository: umbrella-api
-    tag: latest
+    repository: ghcr.io/kriipke/chartpress/api
+    tag: main
   service:
     type: ClusterIP
     port: 8080
 
 frontend:
   image:
-    repository: chartpress-frontend
-    tag: latest
+    repository: ghcr.io/kriipke/chartpress/web
+    tag: main
   service:
     type: ClusterIP
     port: 80
