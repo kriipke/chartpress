@@ -7,8 +7,13 @@ on:
     paths:
       - 'Dockerfile'
       - 'api.go'
-      - '.github/workflows/build-api.yaml'
+      - '.github/workflows/build-api.yml'
   workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
 
 jobs:
   build-api:
