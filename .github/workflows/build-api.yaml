@@ -1,4 +1,4 @@
-name: Build and Publish API Docker Image
+name: Container Build - API
 
 on:
   push:
