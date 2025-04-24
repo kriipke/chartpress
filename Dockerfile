@@ -39,8 +39,8 @@ CMD ["./chartpress"]
 FROM setup
 
 # Copy the built binary from the builder stage
-RUN apt-get update && apt-get install -y libc6 \
- && rm -rf /var/lib/apt/lists/*```
+RUN apt-get update -y && apt-get install -y libc6 \
+ && rm -rf /var/lib/apt/lists/*
  
 # Expose the port the service will run on
 EXPOSE 8080
