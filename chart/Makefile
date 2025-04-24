@@ -1,6 +1,6 @@
 # Variables
 HELM_RELEASE := chartpress
-HELM_CHART_DIR := ./chartpress-helm
+HELM_CHART_DIR := .
 NAMESPACE := chartpress-test
 KUBECONFIG := ~/.kube/config
 
