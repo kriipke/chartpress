@@ -1,10 +1,14 @@
-import React from "react";
-import ReactDOM from "react-dom";
-import App from "./App";
+import React from 'react'
+import ReactDOM from 'react-dom/client' // Ensure correct import for React 18
+import App from './App'
+import ErrorBoundary from './ErrorBoundary'
 
-ReactDOM.render(
+const root = ReactDOM.createRoot(document.getElementById('root')) // Use createRoot
+root.render(
   <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById("root")
-);
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  </React.StrictMode>
+)
+
