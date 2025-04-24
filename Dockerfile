@@ -42,7 +42,9 @@ RUN apt update --no-cache -y &&  apt install -y libc6
 
 # Copy the built binary from the builder stage
 COPY --from=setup /app /
-
+RUN apt-get update && apt-get install -y libc6 \
+ && rm -rf /var/lib/apt/lists/*```
+ 
 # Expose the port the service will run on
 EXPOSE 8080
 WORKDIR /app
