@@ -7,7 +7,8 @@ on:
     paths:
       - 'web/Dockerfile'
       - 'web/**'
-      - '.github/workflows/build-web.yml'
+      - '.github/workflows/build-web.yaml'
+      - './.github/workflows/docker-build-publish.yaml'
   workflow_dispatch:
 
 permissions:
