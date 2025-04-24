@@ -16,12 +16,14 @@ COPY . .
 
 # Build the application
 RUN go build -o chartpress ./cmd/chartpress
+RUN go build -o chartpress-server ./cmd/server
+
  
 FROM golang:1.23-bookworm
 # Set the working directory inside the container
 WORKDIR /app
 # Copy the built binary from the builder stage
-COPY --from=builder /app/chartpress .
+COPY --from=builder /app/chartpress /app/chartpress-server .
 # Copy the templates directory
 COPY ./templates ./templates
 # Expose the port the service will run on
