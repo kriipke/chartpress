@@ -7,12 +7,12 @@ on:
     paths:
       - 'web/Dockerfile'
       - 'web/**'
-      - '.github/workflows/build-web.yml'
+      - '.github/workflows/build-web.yaml'
   workflow_dispatch:
 
 jobs:
   build-web:
-    uses: ./.github/workflows/docker-build-publish.yml
+    uses: ./.github/workflows/docker-build-publish.yaml
     with:
       context: ./web
       dockerfile: ./web/Dockerfile
