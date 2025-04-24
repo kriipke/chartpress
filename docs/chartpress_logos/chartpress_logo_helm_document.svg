@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="128" cy="80" r="40" stroke="white" stroke-width="8" fill="none" />
+  <line x1="168.0" y1="80.0" x2="188.0" y2="80.0" stroke="white" stroke-width="4" />
+  <line x1="156.2842712474619" y1="108.2842712474619" x2="170.42640687119285" y2="122.42640687119285" stroke="white" stroke-width="4" />
+  <line x1="128.0" y1="120.0" x2="128.0" y2="140.0" stroke="white" stroke-width="4" />
+  <line x1="99.7157287525381" y1="108.2842712474619" x2="85.57359312880715" y2="122.42640687119285" stroke="white" stroke-width="4" />
+  <line x1="88.0" y1="80.0" x2="68.0" y2="80.00000000000001" stroke="white" stroke-width="4" />
+  <line x1="99.7157287525381" y1="51.7157287525381" x2="85.57359312880715" y2="37.573593128807154" stroke="white" stroke-width="4" />
+  <line x1="127.99999999999999" y1="40.0" x2="127.99999999999999" y2="20.0" stroke="white" stroke-width="4" />
+  <line x1="156.2842712474619" y1="51.71572875253809" x2="170.42640687119285" y2="37.57359312880714" stroke="white" stroke-width="4" />
+  <rect x="88" y="120" width="80" height="100" fill="white" />
+  <polygon points="168,120 168,140 148,120" fill="gray" />
+</svg>

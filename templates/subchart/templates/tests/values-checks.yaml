@@ -1,0 +1,3 @@
+{{- if not (has .Values.podCount.type (list "static" "dynamic")) }}
+{{- fail "Valid values for .Values.podCount.type include: static, dynamic" }}
+{{- end }}

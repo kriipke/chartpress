@@ -1,0 +1,95 @@
+
+image:
+  registry: ""           # Optional override, defaults to .Values.global.registry (of parent chart)
+  name: custom-service   # Optional override, defaults to .Chart.Name
+  tag: "v1.2.3"          # Optional override, defaults to .Chart.AppVersion
+
+troubleshootingContainer: false
+
+environment:
+  - name: proxy-variables
+    configMap: proxy-variables
+  - name: app-secrets
+    secret: app-secret
+
+service:
+  port: 8080
+
+ingress:
+  type: aws
+  host: some.host.com
+  path: /api
+  aws:
+    scheme: internet-facing
+    subnets:
+      - subnet-xxxxxxxx
+      - subnet-yyyyyyyy
+    securityGroups:
+      - sg-xxxxxxxx
+    sslCertificateArn: arn:aws:acm:region:account-id:certificate/certificate-id
+
+resources:
+  # If you specify a limit but no request, Kubernetes copies the limit
+  # you specified and uses it as the requested value for the resource.
+  limits:
+    cpu: "1"
+    memory: "1G"
+  requests:
+    cpu: "0.5"
+    memory: "500Mi"
+
+podCount:
+  # one of either "static" or "dynamic" will be ignored, depending on the value of "type"
+  type: ""
+  static: 5
+  dynamic:
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 75
+    behavior: {}
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /ready
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 1
+  successThreshold: 1
+  failureThreshold: 3
+
+startupProbe:
+  httpGet:
+    path: /startup
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 5
+
+pdb:
+  enabled: true
+  minimumAvailabe: 1
+  
+networkPolicy:
+  enabled: true
+  ingressFrom:
+    - podSelector:
+        matchLabels:
+          app: ingress-gateway
+
+volumes:
+  - name: app-config
+    mountPath: /etc/app/config
+    configMap: app-configmap
+  - name: app-secrets
+    mountPath: /etc/app/creds
+    secret: app-secret
+

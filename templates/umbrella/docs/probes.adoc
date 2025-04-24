@@ -1,0 +1,367 @@
+= Best Practices for Kubernetes Probes
+:toc:
+
+toc::[]
+
+
+Kubernetes probes (`livenessProbe`, `readinessProbe`, and `startupProbe`) are essential for ensuring the health and availability of your application. Below are some best practices for using these probes effectively:
+
+
+== Helm Template for Kubernetes Probes
+
+Below is a Helm template for configuring Kubernetes probes in a versatile way:
+
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        ports:
+        - containerPort: {{ .Values.service.port }}
+        livenessProbe:
+{{- if .Values.livenessProbe.httpGet }}
+          httpGet:
+            path: {{ .Values.livenessProbe.httpGet.path }}
+            port: {{ .Values.livenessProbe.httpGet.port | default .Values.service.port }}
+{{- end }}
+{{- if .Values.livenessProbe.tcpSocket }}
+          tcpSocket:
+            port: {{ .Values.livenessProbe.tcpSocket.port | default .Values.service.port }}
+{{- end }}
+{{- if .Values.livenessProbe.exec }}
+          exec:
+            command: {{ toJson .Values.livenessProbe.exec.command }}
+{{- end }}
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+        readinessProbe:
+{{- if .Values.readinessProbe.httpGet }}
+          httpGet:
+            path: {{ .Values.readinessProbe.httpGet.path }}
+            port: {{ .Values.readinessProbe.httpGet.port | default .Values.service.port }}
+{{- end }}
+{{- if .Values.readinessProbe.tcpSocket }}
+          tcpSocket:
+            port: {{ .Values.readinessProbe.tcpSocket.port | default .Values.service.port }}
+{{- end }}
+{{- if .Values.readinessProbe.exec }}
+          exec:
+            command: {{ toJson .Values.readinessProbe.exec.command }}
+{{- end }}
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+        startupProbe:
+{{- if .Values.startupProbe.httpGet }}
+          httpGet:
+            path: {{ .Values.startupProbe.httpGet.path }}
+            port: {{ .Values.startupProbe.httpGet.port | default .Values.service.port }}
+{{- end }}
+{{- if .Values.startupProbe.tcpSocket }}
+          tcpSocket:
+            port: {{ .Values.startupProbe.tcpSocket.port | default .Values.service.port }}
+{{- end }}
+{{- if .Values.startupProbe.exec }}
+          exec:
+            command: {{ toJson .Values.startupProbe.exec.command }}
+{{- end }}
+          initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+----
+
+== Values File for Helm Template
+
+[source,yaml]
+----
+replicaCount: 2
+
+image:
+  repository: example-app
+  tag: latest
+
+service:
+  port: 8080
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /ready
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 1
+  successThreshold: 1
+  failureThreshold: 3
+
+startupProbe:
+  httpGet:
+    path: /startup
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 5
+----
+
+
+=== Common Parameters
+
+1. `initialDelaySeconds`:
+   - Specifies the number of seconds to wait after the container starts before performing the first probe.
+   - Use this to give your application enough time to initialize before health checks begin.
+   - Example: If your application takes 15 seconds to start, set `initialDelaySeconds: 15`.
+
+2. `periodSeconds`:
+   - Defines the interval (in seconds) between consecutive probes.
+   - A smaller value increases the frequency of checks but may add overhead to the application.
+   - Example: Setting `periodSeconds: 5` means the probe will run every 5 seconds.
+
+3. `timeoutSeconds`:
+   - Specifies the maximum duration (in seconds) for the probe to complete.
+   - If the probe does not respond within this time, it is considered a failure.
+   - Example: Use `timeoutSeconds: 2` for quick health checks.
+
+4. `failureThreshold`:
+   - Indicates the number of consecutive failures required before the container is considered unhealthy.
+   - Example: Setting `failureThreshold: 3` means the container will be restarted after three failed probes.
+
+5. `successThreshold`:
+   - Specifies the number of consecutive successes required to mark the container as healthy.
+   - This is primarily used with `readinessProbe`.
+   - Example: Use `successThreshold: 1` to mark the container as ready after one successful probe.
+
+== Example Configuration
+
+Below is an example of a Kubernetes deployment with `livenessProbe`, `readinessProbe`, and `startupProbe`:
+
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: example-app
+  template:
+    metadata:
+      labels:
+        app: example-app
+    spec:
+      containers:
+      - name: example-container
+        image: example-app:latest
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 2
+          successThreshold: 1
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 5
+----
+
+== Sequence of Events for Each Configuration
+
+=== Example Configuration
+
+1. *Startup Probe*:
+   - Waits for `15 seconds` (`initialDelaySeconds`) before starting.
+   - Probes every `10 seconds` (`periodSeconds`) to check `/startup` endpoint.
+   - If the probe fails `5 times` (`failureThreshold`), the container is marked as failed.
+
+2. *Liveness Probe*:
+   - Starts `10 seconds` after the container starts (`initialDelaySeconds`).
+   - Probes `/healthz` every `5 seconds` (`periodSeconds`).
+   - If the probe fails `3 times` (`failureThreshold`), the container is restarted.
+
+3. *Readiness Probe*:
+   - Starts `5 seconds` after the container starts (`initialDelaySeconds`).
+   - Probes `/ready` every `5 seconds` (`periodSeconds`).
+   - If the probe succeeds `1 time` (`successThreshold`), the container is marked as ready.
+   - If the probe fails `3 times` (`failureThreshold`), the container is marked as not ready.
+
+== Advanced Configuration Example
+
+Below is an example showcasing all advanced configuration options available for Kubernetes probes:
+
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: advanced-config-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: advanced-config-app
+  template:
+    metadata:
+      labels:
+        app: advanced-config-app
+    spec:
+      containers:
+      - name: advanced-container
+        image: advanced-app:latest
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - cat
+            - /tmp/ready
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 2
+          failureThreshold: 3
+        startupProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 6
+----
+
+=== Advanced Configuration Example
+
+1. *Startup Probe*:
+   - Waits for `30 seconds` (`initialDelaySeconds`) before starting.
+   - Probes the TCP socket on port `8080` every `15 seconds` (`periodSeconds`).
+   - If the probe fails `6 times` (`failureThreshold`), the container is marked as failed.
+
+2. *Liveness Probe*:
+   - Starts `20 seconds` after the container starts (`initialDelaySeconds`).
+   - Probes `/healthz` every `10 seconds` (`periodSeconds`).
+   - If the probe fails `3 times` (`failureThreshold`), the container is restarted.
+
+3. *Readiness Probe*:
+   - Starts `10 seconds` after the container starts (`initialDelaySeconds`).
+   - Executes the command `cat /tmp/ready` every `5 seconds` (`periodSeconds`).
+   - If the command succeeds `2 times` (`successThreshold`), the container is marked as ready.
+   - If the command fails `3 times` (`failureThreshold`), the container is marked as not ready.
+
+== Sane-Default Configuration Example
+
+Below is an example with typical "sane-default" settings for a Kubernetes deployment:
+
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sane-default-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sane-default-app
+  template:
+    metadata:
+      labels:
+        app: sane-default-app
+    spec:
+      containers:
+      - name: default-container
+        image: default-app:latest
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 5
+----
+
+=== Sane-Default Configuration Example
+
+1. *Startup Probe*:
+   - Waits for `15 seconds` (`initialDelaySeconds`) before starting.
+   - Probes `/startup` every `10 seconds` (`periodSeconds`).
+   - If the probe fails `5 times` (`failureThreshold`), the container is marked as failed.
+
+2. *Liveness Probe*:
+   - Starts `10 seconds` after the container starts (`initialDelaySeconds`).
+   - Probes `/healthz` every `10 seconds` (`periodSeconds`).
+   - If the probe fails `3 times` (`failureThreshold`), the container is restarted.
+
+3. *Readiness Probe*:
+   - Starts `5 seconds` after the container starts (`initialDelaySeconds`).
+   - Probes `/ready` every `10 seconds` (`periodSeconds`).
+   - If the probe succeeds `1 time` (`successThreshold`), the container is marked as ready.
+   - If the probe fails `3 times` (`failureThreshold`), the container is marked as not ready.

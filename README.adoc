@@ -1,0 +1,31 @@
+= chartpress
+:doctype: article
+:description: A README template written in AsciiDoc markup
+:toc: macro
+:toclevels: 3
+:toc: preamble
+:imagesdir: docs/images
+ifdef::env-github[]
+:tip-caption: :rocket:
+:!showtitle:
+:icons: font
+
+++++
+<p align="center">
+  <img width="275" height="275" src="docs/logo3.png">
+</p>
+<p align="center">
+    <!-- REPLACE THE FOLLOWING WITH YOUR REPOSITORY/PROJECT'S SHORT DESCRIPTION -->
+    <h3 align="center">a Helm chart templater</h3>
+        <p align="center">
+      <img height=20 src="https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white">
+  <img height=20 src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black">
+  <img height=20 src="https://img.shields.io/badge/shell_script-%23121011.svg?style=for-the-badge&logo=gnu-bash&logoColor=white">
+
+</p>
+<br/>
+++++
+
+`chartpress` is a command-line tool designed to streamline the creation and management of Helm umbrella charts. It automates the process of generating umbrella charts with multiple subcharts based on a configuration file, facilitating consistent and efficient Helm chart development.
+
+toc::[]

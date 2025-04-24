@@ -1,0 +1,15 @@
+backend:
+  image:
+    repository: umbrella-api
+    tag: latest
+  service:
+    type: ClusterIP
+    port: 8080
+
+frontend:
+  image:
+    repository: chartpress-frontend
+    tag: latest
+  service:
+    type: ClusterIP
+    port: 80

@@ -1,0 +1,1 @@
+// React frontend logic here (already provided in the example)

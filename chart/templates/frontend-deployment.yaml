@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chartpress-frontend
+  labels:
+    app: chartpress-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chartpress-frontend
+  template:
+    metadata:
+      labels:
+        app: chartpress-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          ports:
+            - containerPort: 80

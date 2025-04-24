@@ -1,0 +1,69 @@
+= Image Specification in Workload Manifests
+:toc:
+
+toc::[]
+
+== `values.yaml`
+
+The example below is for the `wallet` service to illustrate:
+
+[source,yaml]
+----
+global:
+  registry: "svc-devqa-harbor.lotteryplus.com/upam/shared-services/"
+  ...
+
+wallet:
+  image:
+    registry: ""
+    tag: 26.6.0-patch-02-gh-nr
+    name: wallet
+----
+
+Make sure your golang templating https://helm.sh/docs/howto/charts_tips_and_tricks/#:~:text=This%20is%20typically%20set%20with%20template.Options(%22missingkey%3Doption%22[engine has `missingKey="error"` set].
+
+== `_helpers.tpl`
+
+[source]
+----
+{{- define "chart-name.registry" -}}
+{{ required ".Values.global.registry must be set, however .Values.image.registry will take precedence!" (.Values.image.registry | default .Values.global.registry) }}/:
+{{- end }}
+
+{{- define "chart-name.imageName" -}}
+{{ .Values.image.name | default ".Chart.Name" }}
+{{- end }}
+
+{{- define "chart-name.version" -}}
+{{ .Values.image.tag | default ".Chart.appVersion" }}
+{{- end }}
+
+{{- define "chart-name.image" -}}
+{{ template "chart-name.registry" . }}/{{ template "chart-name.imageName" . }}:{{ template "chart-name.version" . }}
+{{- end }}
+----
+
+example output:
+
+[source,yaml]
+----
+image: "svc-devqa-harbor.lotteryplus.com/upam/shared-services/wallet:26.6.0-patch-02-gh-nr"
+----
+
+image registry:: this should be defined in the umbrella chart at `.Values.global.registry`, however a subchart over-ride can be made at `.Values.image.registry` in subcharts `values.yaml`
+image name:: will be expected at `.Values.image.name`, however in it's absence `.Chart.Name` will be used to attempt to pull down the image with the same name as the chart.
+image tag:: will be expected at `.Values.image.tag`, however in it's absence `.Chart.appVerion` will be used to attempt to pull down the image with the same tag identified in the `Chart.yaml` file.
+
+== `deployment.yaml`
+
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  ...
+spec:
+      ...
+      containers:
+        - image: {{- include "chart-name.image . | quote -}}
+----

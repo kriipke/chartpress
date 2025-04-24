@@ -1,0 +1,74 @@
+global:
+  repository: myregistry.io/app
+
+api:
+  podCount:
+    type: dynamic
+    dynamic:
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+  image:
+    name: web-service
+    tag: "v1.0.0"
+  service:
+    port: 8080
+  ingress:
+    type: aws
+    host: web.example.com
+    path: /
+    aws:
+      scheme: internet-facing
+      subnets:
+        - subnet-aabbccdd
+        - subnet-eeffgghh
+      securityGroups:
+        - sg-11223344
+      sslCertificateArn: arn:aws:acm:region:account-id:certificate/cert-id
+  environment:
+    - name: env-config
+      configMap: web-config
+  volumes:
+    - name: web-assets
+      mountPath: /usr/share/web
+      configMap: web-assets
+
+job-runner:
+  podCount:
+    type: static
+    static: 1
+  image:
+    name: redis
+    tag: "6.2"
+  service:
+    port: 6379
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClassName: fast-ssd
+    mountPath: /data
+  volumes:
+    - name: redis-data
+      mountPath: /data
+      pvc:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: fast-ssd
+        resources:
+          requests:
+            storage: 1Gi
+database:
+  image:
+    name: postgres
+    tag: "14"
+  podCount:
+    type: static
+    static: 1
+  volumes:
+    - name: pg-data
+      mountPath: /var/lib/postgresql/data
+      pvc:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 10Gi

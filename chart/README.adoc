@@ -1,0 +1,82 @@
+= ChartPress API Documentation
+
+== Overview
+
+The ChartPress API is a Go-based HTTP server that allows users to generate Helm charts dynamically based on user-provided configurations. It includes endpoints for handling chart generation and supports JSON-based configuration input.
+
+== API Endpoints
+
+=== POST `/generate`
+
+This endpoint accepts a JSON payload containing the configuration for the umbrella chart and its subcharts. It generates the Helm chart based on the provided configuration.
+
+==== Request
+
+- **Method**: POST
+- **Content-Type**: application/json
+- **Body**:
+  ```json
+  {
+    "umbrellaChartName": "my-umbrella",
+    "subcharts": [
+      {
+        "name": "subchart1",
+        "workload": "deployment"
+      },
+      {
+        "name": "subchart2",
+        "workload": "statefulset"
+      }
+    ]
+  }
+
+== Code Overview
+
+=== main.go
+
+The main.go file contains the entry point for the application and defines the HTTP server.
+
+include::main.go[]
+
+=== handleGenerate
+
+The handleGenerate function processes the /generate endpoint. It decodes the JSON payload, saves the configuration, and generates the chart.
+
+
+[source, go]
+----
+func handleGenerate(w http.ResponseWriter, r *http.Request) { 
+    if r.Method != http.MethodPost {
+        http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+        return
+}
+
+var cfg Config
+if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
+    http.Error(w, fmt.Sprintf("Failed to parse JSON: %v", err), http.StatusBadRequest)
+    return
+}
+
+// Save the configuration as chartpress.yaml
+configFilePath := "./chartpress.yaml"
+configFile, err := os.Create(configFilePath)
+if err != nil {
+    http.Error(w, fmt.Sprintf("Failed to create config file: %v", err), http.StatusInternalServerError)
+    return
+}
+defer configFile.Close()
+
+if err := json.NewEncoder(configFile).Encode(cfg); err != nil {
+    http.Error(w, fmt.Sprintf("Failed to write config file: %v", err), http.StatusInternalServerError)
+    return
+}
+
+outputDir, err := generateChart(cfg)
+if err != nil {
+    http.Error(w, fmt.Sprintf("Failed to generate chart: %v", err), http.StatusInternalServerError)
+    return
+}
+
+w.WriteHeader(http.StatusOK)
+w.Write([]byte(fmt.Sprintf("✅ Generated chart at: %s\n", outputDir)))
+----
