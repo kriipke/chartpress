@@ -37,8 +37,6 @@ CMD ["./chartpress"]
 
 
 FROM setup
-RUN apt update --no-cache -y &&  apt install -y libc6
-# Set the working directory inside the container
 
 # Copy the built binary from the builder stage
 RUN apt-get update && apt-get install -y libc6 \
