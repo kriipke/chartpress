@@ -22,4 +22,4 @@ jobs:
     with:
       context: .
       dockerfile: ./Dockerfile
-      image-name: api
+      image-name: chartpress-api
