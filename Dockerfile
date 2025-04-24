@@ -11,7 +11,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy the application source code
-COPY api.go cmd/root.go chartpress.yaml .
+#COPY api.go cmd/* chartpress.yaml .
+COPY . .
 
 # Build the application
 RUN go build -o chartpress .
