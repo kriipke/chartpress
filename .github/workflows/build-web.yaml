@@ -7,8 +7,13 @@ on:
     paths:
       - 'web/Dockerfile'
       - 'web/**'
-      - '.github/workflows/build-web.yaml'
+      - '.github/workflows/build-web.yml'
   workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
 
 jobs:
   build-web:
