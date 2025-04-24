@@ -17,18 +17,16 @@ COPY . .
 # Build the application
 RUN go build -o chartpress .
 
-# Use a minimal base image for the final container
-FROM golang:1.23-bullseye AS setup
 
+FROM debian:bookworm-slim
+# Install required dependencies, including glibc
+RUN apt-get update && apt-get install -y libc6 && apt-get clea
 # Set the working directory inside the container
 WORKDIR /app
-
 # Copy the built binary from the builder stage
 COPY --from=builder /app/chartpress .
-
 # Copy the templates directory
 COPY ./templates ./templates
-
 # Expose the port the service will run on
 EXPOSE 8080
 
