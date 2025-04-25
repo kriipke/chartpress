@@ -59,25 +59,19 @@ subcharts:
 
 Start the server:
 
-```
-./chartpress server
-```
+	./chartpress server
 
 Send a POST request to generate a chart:
 
-```
-curl -X POST http://localhost:8080/generate \
-  -H "Content-Type: application/json" \
-  --data-binary @chartpress.json
-```
+	curl -X POST http://localhost:8080/generate \
+	  -H "Content-Type: application/json" \
+	  --data-binary @chartpress.json
 
 ==== Using the CLI
 
 Generate a chart from a configuration file:
 
-```
-./chartpress generate --config chartpress.yaml
-```
+	./chartpress generate --config chartpress.yaml
 
 == Project Structure
 
