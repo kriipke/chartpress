@@ -11,7 +11,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
-        "github.com/kriipke/chartpress"
 )
 )
 
