@@ -127,3 +127,4 @@ This project is licensed under the MIT License. See the LICENSE file for details
 == Acknowledgments
 
 Thanks to all contributors and the open-source community for making this project possible.
+docker run -v "$(pwd)/config.yaml:/app/chartpress.yaml"   ghcr.io/kriipke/chartpress/api:latest

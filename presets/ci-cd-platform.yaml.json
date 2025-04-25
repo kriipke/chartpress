@@ -1,0 +1,17 @@
+{
+  "subcharts": [
+    {
+      "name": "runner",
+      "workload": "daemonset"
+    },
+    {
+      "name": "scheduler",
+      "workload": "deployment"
+    },
+    {
+      "name": "artifact-store",
+      "workload": "statefulset"
+    }
+  ],
+  "umbrellaChartName": "ci-cd-platform"
+}

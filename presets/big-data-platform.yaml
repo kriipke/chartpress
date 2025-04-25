@@ -1,0 +1,8 @@
+subcharts:
+- name: data-ingestion
+  workload: daemonset
+- name: data-processing
+  workload: deployment
+- name: data-storage
+  workload: statefulset
+umbrellaChartName: big-data-platform

@@ -1,0 +1,8 @@
+subcharts:
+- name: event-producer
+  workload: deployment
+- name: event-broker
+  workload: statefulset
+- name: event-consumer
+  workload: deployment
+umbrellaChartName: event-driven-platform

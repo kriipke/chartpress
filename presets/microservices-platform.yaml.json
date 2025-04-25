@@ -1,0 +1,25 @@
+{
+  "subcharts": [
+    {
+      "name": "api-gateway",
+      "workload": "deployment"
+    },
+    {
+      "name": "auth-service",
+      "workload": "deployment"
+    },
+    {
+      "name": "user-service",
+      "workload": "deployment"
+    },
+    {
+      "name": "order-service",
+      "workload": "deployment"
+    },
+    {
+      "name": "database",
+      "workload": "statefulset"
+    }
+  ],
+  "umbrellaChartName": "microservices-platform"
+}

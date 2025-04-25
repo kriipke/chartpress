@@ -1,0 +1,10 @@
+subcharts:
+- name: device-manager
+  workload: deployment
+- name: data-collector
+  workload: daemonset
+- name: analytics-engine
+  workload: deployment
+- name: time-series-db
+  workload: statefulset
+umbrellaChartName: iot-platform
