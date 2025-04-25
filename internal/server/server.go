@@ -13,52 +13,70 @@ import (
 	"time"
 )
 
+// Config holds the configuration details for the chart generation
 type Config struct {
-	UmbrellaChartName string     `json:"umbrellaChartName"`
-	Subcharts         []Subchart `json:"subcharts"`
+	UmbrellaChartName string     `json:"umbrellaChartName"` // Name of the umbrella chart
+	Subcharts         []Subchart `json:"subcharts"`         // List of subcharts
 }
 
+// Subchart represents a single subchart's metadata
 type Subchart struct {
-	Name     string `json:"name"`
-	Workload string `json:"workload"` // deployment, statefulset, or daemonset
+	Name     string `json:"name"`     // Name of the subchart
+	Workload string `json:"workload"` // Type of workload: deployment, statefulset, or daemonset
 }
 
+// Start initializes and starts the HTTP server
 func Start() {
+	// Define the /generate endpoint handler
 	http.HandleFunc("/generate", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Handlingg /generate..%s\n", "")
-		w.Header().Set("Access-Control-Allow-Origin", "*") // Allow all origins
+		log.Printf("Handling /generate endpoint\n")
+
+		// Allow all origins for CORS
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		// Handle preflight OPTIONS request for CORS
 		if r.Method == http.MethodOptions {
 			w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 			w.WriteHeader(http.StatusOK)
 			return
 		}
+
+		// Handle the actual POST request
 		handleGenerate(w, r)
 	})
 
+	// Retrieve the port number from environment variables
 	port := getPort()
+
+	// Log and start the server
 	fmt.Printf("Starting server on port %s...\n", port)
 	log.Printf("Server is starting on port %s", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, nil)) // Fatal will log and exit on error
 }
 
+// getPort retrieves the server port from the environment or defaults to 8080
 func getPort() string {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "8080" // Default port
 		log.Println("Environment variable PORT not set, defaulting to 8080")
 	}
 	return port
 }
 
+// handleGenerate processes the /generate POST request
 func handleGenerate(w http.ResponseWriter, r *http.Request) {
 	log.Println("Received request to /generate endpoint")
+
+	// Ensure only POST requests are allowed
 	if r.Method != http.MethodPost {
 		log.Printf("Invalid method: %s. Only POST is allowed.", r.Method)
 		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	// Decode the JSON payload into the Config struct
 	var cfg Config
 	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 		log.Printf("Failed to parse JSON: %v", err)
@@ -67,12 +85,14 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Loaded config: %+v", cfg)
 
+	// Validate the configuration
 	if err := validateConfig(cfg); err != nil {
 		log.Printf("Invalid config: %v", err)
 		http.Error(w, fmt.Sprintf("Invalid config: %v", err), http.StatusBadRequest)
 		return
 	}
 
+	// Save the configuration to a file
 	configFilePath := "./chartpress.yaml"
 	log.Printf("Saving configuration to %s", configFilePath)
 	configFile, err := os.Create(configFilePath)
@@ -81,18 +101,21 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Failed to create config file: %v", err), http.StatusInternalServerError)
 		return
 	}
+	// Ensure the file is properly closed
 	defer func() {
 		if err := configFile.Close(); err != nil {
 			log.Printf("Error closing config file: %v", err)
 		}
 	}()
 
+	// Write the configuration to the file in JSON format
 	if err := json.NewEncoder(configFile).Encode(cfg); err != nil {
 		log.Printf("Failed to write config file: %v", err)
 		http.Error(w, fmt.Sprintf("Failed to write config file: %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	// Generate the chart from the configuration
 	outputDir, err := generateChart(cfg)
 	if err != nil {
 		log.Printf("Failed to generate chart: %v", err)
@@ -101,181 +124,85 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Generated chart at %s", outputDir)
 
+	// Create a zip file of the generated chart
 	zipFilePath := fmt.Sprintf("%s.zip", outputDir)
-	log.Printf("Creating zip file at %s", zipFilePath)
-	if err := zipDirectory(outputDir, zipFilePath); err != nil {
+	if err := zipOutputDir(outputDir, zipFilePath); err != nil {
 		log.Printf("Failed to create zip file: %v", err)
 		http.Error(w, fmt.Sprintf("Failed to create zip file: %v", err), http.StatusInternalServerError)
 		return
 	}
-	defer func() {
-		log.Printf("Cleaning up zip file: %s", zipFilePath)
-		if err := os.Remove(zipFilePath); err != nil {
-			log.Printf("Failed to remove zip file: %v", err)
-		}
-	}()
 
+	// Serve the zip file to the client
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(zipFilePath)))
 	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.zip\"", cfg.UmbrellaChartName))
-	log.Printf("Serving zip file: %s", zipFilePath)
 	http.ServeFile(w, r, zipFilePath)
 }
 
+// validateConfig validates the provided configuration
 func validateConfig(cfg Config) error {
-	if cfg.UmbrellaChartName == "" {
-		return fmt.Errorf("umbrellaChartName is required")
+	// Example validation: Ensure the umbrella chart name is not empty
+	if strings.TrimSpace(cfg.UmbrellaChartName) == "" {
+		return fmt.Errorf("umbrellaChartName cannot be empty")
 	}
-	if len(cfg.Subcharts) == 0 {
-		return fmt.Errorf("at least one subchart is required")
-	}
-	for _, sub := range cfg.Subcharts {
-		if sub.Name == "" {
-			return fmt.Errorf("subchart name is required")
+
+	// Ensure each subchart has a name and a valid workload type
+	for _, subchart := range cfg.Subcharts {
+		if strings.TrimSpace(subchart.Name) == "" {
+			return fmt.Errorf("subchart name cannot be empty")
 		}
-		if sub.Workload != "deployment" && sub.Workload != "statefulset" && sub.Workload != "daemonset" {
-			return fmt.Errorf("invalid workload type for subchart %s: %s", sub.Name, sub.Workload)
+		if subchart.Workload != "deployment" && subchart.Workload != "statefulset" && subchart.Workload != "daemonset" {
+			return fmt.Errorf("invalid workload type for subchart %s: %s", subchart.Name, subchart.Workload)
 		}
 	}
 	return nil
 }
 
-func generateChart(cfg Config) (string, error) {
-	log.Printf("Generating chart for umbrella chart: %s", cfg.UmbrellaChartName)
-	timestamp := time.Now().Unix()
-	outputDir := fmt.Sprintf("output/%s-%d", cfg.UmbrellaChartName, timestamp)
-
-	// Copy umbrella chart
-	if err := copyChartTemplate("./templates/umbrella", filepath.Join(outputDir, cfg.UmbrellaChartName), map[string]string{
-		"umbrella-chart": cfg.UmbrellaChartName,
-	}); err != nil {
-		log.Printf("Failed to copy umbrella chart: %v", err)
-		return "", fmt.Errorf("failed to copy umbrella chart: %w", err)
-	}
-
-	chartsDir := filepath.Join(outputDir, cfg.UmbrellaChartName, "charts")
-
-	for _, sub := range cfg.Subcharts {
-		subPath := filepath.Join(chartsDir, sub.Name)
-
-		replacements := map[string]string{
-			"component":      sub.Name,
-			"umbrella-chart": cfg.UmbrellaChartName,
-		}
-
-		if err := copyChartTemplate("./templates/subchart", subPath, replacements); err != nil {
-			log.Printf("Failed to copy subchart %s: %v", sub.Name, err)
-			return "", fmt.Errorf("failed to copy subchart %s: %w", sub.Name, err)
-		}
-
-		if err := pruneTemplates(subPath, sub.Workload); err != nil {
-			log.Printf("Failed to prune templates for %s: %v", sub.Name, err)
-			return "", fmt.Errorf("failed to prune templates for %s: %w", sub.Name, err)
-		}
-	}
-
-	return outputDir, nil
-}
-
-func copyChartTemplate(src, dst string, replacements map[string]string) error {
-	log.Printf("Copying chart template from %s to %s", src, dst)
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			log.Printf("Error walking path %s: %v", path, err)
-			return err
-		}
-
-		relPath, _ := filepath.Rel(src, path)
-		targetPath := filepath.Join(dst, relPath)
-
-		if info.IsDir() {
-			log.Printf("Creating directory %s", targetPath)
-			return os.MkdirAll(targetPath, 0755)
-		}
-
-		content, err := os.ReadFile(path)
-		if err != nil {
-			log.Printf("Error reading file %s: %v", path, err)
-			return err
-		}
-
-		replaced := string(content)
-		for old, new := range replacements {
-			replaced = strings.ReplaceAll(replaced, old, new)
-		}
-
-		log.Printf("Writing file %s", targetPath)
-		return os.WriteFile(targetPath, []byte(replaced), 0644)
-	})
-}
-
-func pruneTemplates(chartPath, workload string) error {
-	log.Printf("Pruning templates in %s for workload type: %s", chartPath, workload)
-	templatesPath := filepath.Join(chartPath, "templates")
-	workloadFiles := map[string]bool{
-		"deployment.yaml":  workload != "deployment",
-		"statefulset.yaml": workload != "statefulset",
-		"daemonset.yaml":   workload != "daemonset",
-	}
-
-	for filename, shouldDelete := range workloadFiles {
-		if shouldDelete {
-			toRemove := filepath.Join(templatesPath, filename)
-			log.Printf("Removing file %s", toRemove)
-			if err := os.Remove(toRemove); err != nil && !os.IsNotExist(err) {
-				log.Printf("Error removing %s: %v", filename, err)
-				return fmt.Errorf("error removing %s: %w", filename, err)
-			}
-		}
-	}
-
-	return nil
-}
-
-func zipDirectory(source, target string) error {
-	log.Printf("Zipping directory %s to %s", source, target)
-	zipFile, err := os.Create(target)
+// zipOutputDir creates a zip archive of the output directory
+func zipOutputDir(outputDir, zipFilePath string) error {
+	zipFile, err := os.Create(zipFilePath)
 	if err != nil {
-		log.Printf("Error creating zip file %s: %v", target, err)
-		return err
+		return fmt.Errorf("failed to create zip file: %w", err)
 	}
 	defer zipFile.Close()
 
 	zipWriter := zip.NewWriter(zipFile)
 	defer zipWriter.Close()
 
-	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(outputDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			log.Printf("Error walking path %s: %v", path, err)
-			return err
+			return fmt.Errorf("error accessing path %s: %w", path, err)
 		}
-
-		relPath, err := filepath.Rel(source, path)
-		if err != nil {
-			log.Printf("Error getting relative path for %s: %v", path, err)
-			return err
-		}
-
+		// Skip directories as they will be included implicitly
 		if info.IsDir() {
 			return nil
 		}
 
+		// Create a zip entry for the file
+		relPath, err := filepath.Rel(outputDir, path)
+		if err != nil {
+			return fmt.Errorf("failed to get relative path: %w", err)
+		}
+		zipEntry, err := zipWriter.Create(relPath)
+		if err != nil {
+			return fmt.Errorf("failed to create zip entry for %s: %w", relPath, err)
+		}
+
+		// Write the file contents to the zip entry
 		file, err := os.Open(path)
 		if err != nil {
-			log.Printf("Error opening file %s: %v", path, err)
-			return err
+			return fmt.Errorf("failed to open file %s: %w", path, err)
 		}
 		defer file.Close()
 
-		writer, err := zipWriter.Create(relPath)
-		if err != nil {
-			log.Printf("Error creating zip entry for %s: %v", relPath, err)
-			return err
+		if _, err := io.Copy(zipEntry, file); err != nil {
+			return fmt.Errorf("failed to write file %s to zip: %w", path, err)
 		}
 
-		_, err = io.Copy(writer, file)
-		if err != nil {
-			log.Printf("Error copying file %s to zip: %v", path, err)
-		}
-		return err
+		return nil
 	})
+
+	if err != nil {
+		return fmt.Errorf("error creating zip archive: %w", err)
+	}
+	return nil
 }
