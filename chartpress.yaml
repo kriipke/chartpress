@@ -14,5 +14,7 @@ rules:
   resource_names_match_chart_name: true
   shared_secrets_config: true
   shared_newrelic_config: true
-  
-  
+  generate_umbrella_readme: true
+  generate_subchart_readme: true
+  include_docs: true
+
