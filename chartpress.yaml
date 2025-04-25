@@ -12,5 +12,7 @@ rules:
   common_annotations: true
   linked_templates: true
   resource_names_match_chart_name: true
+  shared_secrets_config: true
+  shared_newrelic_config: true
   
   
