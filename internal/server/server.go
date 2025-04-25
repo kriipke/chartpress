@@ -10,7 +10,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
+        "gopkg.in/yaml.v2"
+
+	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chart/loader"
+        "helm.sh/helm/v3/pkg/chartutil"
 )
 
 // Config holds the configuration details for the chart generation
@@ -138,6 +142,49 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, zipFilePath)
 }
 
+
+// generateChart generates the Helm chart based on the configuration
+func generateChart(cfg Config) (string, error) {
+	
+    umbrellaChartPath := "templates/umbrella"
+    subchartChartPath := "templates/subchart"
+
+    subcharts := cfg.Subcharts
+
+    // Load the umbrella chart
+    ch, err := loadChart(umbrellaChartPath)
+    if err != nil {
+        fmt.Println("Error loading umbrella chart:", err)
+        return "error", err
+    }
+
+    // Rename the umbrella chart
+    chartName := cfg.UmbrellaChartName
+    chNew, err := renameChart(ch, chartName )
+    if err != nil {
+        fmt.Println("Error renaming umbrella chart:", err)
+        return "error", err
+    }
+
+    // Add each subchart from config
+    for _, sc := range subcharts {
+        chNew, err = newSubchart(chNew, subchartChartPath, sc.Name)
+        if err != nil {
+            fmt.Printf("Error adding subchart '%s': %v\n", sc.Name, err)
+            return sc.Name, err
+        }
+    }
+
+    // Define the output directory
+    outputDir := filepath.Join("output", chartName)
+
+    // Save the chart to the output directory
+    if err := chartutil.SaveDir(chNew, outputDir); err != nil {
+        return "", fmt.Errorf("error saving chart to directory: %w", err)
+    }
+
+    return outputDir, nil
+}
 // validateConfig validates the provided configuration
 func validateConfig(cfg Config) error {
 	// Example validation: Ensure the umbrella chart name is not empty
@@ -155,6 +202,98 @@ func validateConfig(cfg Config) error {
 		}
 	}
 	return nil
+}
+
+
+func loadChart(chartPath string) (*chart.Chart, error) {
+    ch, err := loader.Load(chartPath)
+    if err != nil {
+        return nil, fmt.Errorf("failed to load chart from %s: %w", chartPath, err)
+    }
+    return ch, nil
+}
+
+func renameChart(ch *chart.Chart, newName string) (*chart.Chart, error) {
+    originalName := ch.Metadata.Name
+    ch.Metadata.Name = newName
+
+    // Update references in templates
+    for _, tmpl := range ch.Templates {
+        tmpl.Data = []byte(strings.ReplaceAll(string(tmpl.Data), originalName, newName))
+    }
+
+    // Update references in values.yaml
+    if ch.Values != nil {
+        valuesYAML, err := yaml.Marshal(ch.Values)
+        if err != nil {
+            return nil, fmt.Errorf("failed to marshal values.yaml: %w", err)
+        }
+        updatedValues := strings.ReplaceAll(string(valuesYAML), originalName, newName)
+        var newValues map[string]interface{}
+        if err := yaml.Unmarshal([]byte(updatedValues), &newValues); err != nil {
+            return nil, fmt.Errorf("failed to unmarshal updated values.yaml: %w", err)
+        }
+        ch.Values = newValues
+    }
+
+    // Update references in additional files
+    for _, file := range ch.Files {
+        file.Data = []byte(strings.ReplaceAll(string(file.Data), originalName, newName))
+    }
+
+    return ch, nil
+}
+
+
+
+// with the parent chart's name in templates and files, and adds it as a dependency.
+func newSubchart(parentChart *chart.Chart, subchartPath, subchartName string) (*chart.Chart, error) {
+    // Load the subchart
+    subchart, err := loader.Load(subchartPath)
+    if err != nil {
+        return nil, fmt.Errorf("failed to load subchart: %w", err)
+    }
+
+    // Rename the subchart
+    subchart.Metadata.Name = subchartName
+
+    // Define placeholders and their replacements
+    replacements := map[string]string{
+        "umbrella-chart": parentChart.Metadata.Name,
+        "component":      subchartName,
+    }
+
+    // Replace placeholders in templates
+    for _, tmpl := range subchart.Templates {
+        content := string(tmpl.Data)
+        for old, new := range replacements {
+            content = strings.ReplaceAll(content, old, new)
+        }
+        tmpl.Data = []byte(content)
+    }
+
+    // Replace placeholders in additional files
+    for _, file := range subchart.Files {
+        content := string(file.Data)
+        for old, new := range replacements {
+            content = strings.ReplaceAll(content, old, new)
+        }
+        file.Data = []byte(content)
+    }
+
+
+    // Add the subchart to the parent chart's dependencies
+    parentChart.AddDependency(subchart)
+
+    // Update the parent chart's metadata dependencies
+    // Assuming parentChart.Metadata.Dependencies is of type []*chart.Dependency
+    newDependency := &chart.Dependency{
+        Name:       subchartName,
+        Version:    subchart.Metadata.Version,
+        Repository: fmt.Sprintf("file://charts/%s", subchartName),
+    }
+    parentChart.Metadata.Dependencies = append(parentChart.Metadata.Dependencies, newDependency)
+    return parentChart, nil
 }
 
 // zipOutputDir creates a zip archive of the output directory

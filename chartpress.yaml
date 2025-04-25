@@ -6,4 +6,3 @@ subcharts:
     workload: deployment
   - name: database
     workload: statefulset
-
