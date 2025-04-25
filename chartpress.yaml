@@ -1,1 +1,16 @@
-{"umbrellaChartName":"saas-platform","subcharts":[{"name":"api","workload":"deployment"},{"name":"job-runner","workload":"deployment"},{"name":"database","workload":"statefulset"}]}
+umbrellaChartName: saas-platform
+subcharts:
+  - name: api
+    workload: deployment
+  - name: job-runner
+    workload: deployment
+  - name: database
+    workload: statefulset
+rules:
+  possible_ingresses:
+    - alb
+  common_annotations: true
+  linked_templates: true
+  resource_names_match_chart_name: true
+  
+  
