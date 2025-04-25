@@ -9,23 +9,25 @@ ifdef::env-github[]
 :tip-caption: :rocket:
 :!showtitle:
 :icons: font
+
+
+
 ++++
 <p align="center">
   <img width="275" height="275" src="docs/logo3.png">
 </p>
 <p align="center">
-    <h3 align="center">a Helm chart templater</h3>
         <p align="center">
   <img height=20 src="https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white">
   <img height=20 src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black">
   <img height=20 src="https://img.shields.io/badge/shell_script-%23121011.svg?style=for-the-badge&logo=gnu-bash&logoColor=white">
 </p>
-<br/>
 ++++
 
-`chartpress` is a command-line tool designed to streamline the creation and management of Helm umbrella charts. It automates the process of generating umbrella charts with multiple subcharts based on user-defined configurations.
-
 toc::[]
+
+
+
 
 == Features
 
@@ -34,32 +36,24 @@ toc::[]
 - **Lightweight and Fast**: Written in Go for efficiency and speed.
 - **Extensible**: Easily customizable to your specific needs.
 
-== Installation
-
-1. Clone the repository:
-
-   ```
-   git clone https://github.com/kriipke/chartpress.git
-   ```
-
-2. Build the binary:
-
-   ```
-   cd chartpress
-   go build -o chartpress
-   ```
-
-3. (Optional) Move the binary to your PATH:
-
-   ```
-   sudo mv chartpress /usr/local/bin/
-   ```
-
 == Usage
 
 === Generating Charts
 
 You can generate Helm charts using the HTTP server or directly via the command-line tool.
+
+
+[source,yaml]
+----
+umbrellaChartName: saas-platform
+subcharts:
+  - name: api
+    workload: deployment
+  - name: job-runner
+    workload: deployment
+  - name: database
+    workload: statefulset
+----
 
 ==== Using the HTTP Server
 
@@ -102,21 +96,23 @@ Generate a chart from a configuration file:
   - **Method**: POST
   - **Content-Type**: application/json
   - **Body**:
-    ```json
++
+[source,json]
+----
+{
+  "umbrellaChartName": "my-umbrella",
+  "subcharts": [
     {
-      "umbrellaChartName": "my-umbrella",
-      "subcharts": [
-        {
-          "name": "subchart1",
-          "workload": "deployment"
-        },
-        {
-          "name": "subchart2",
-          "workload": "statefulset"
-        }
-      ]
+      "name": "subchart1",
+      "workload": "deployment"
+    },
+    {
+      "name": "subchart2",
+      "workload": "statefulset"
     }
-    ```
+  ]
+}
+----
 
 - **Response**:
   - `200 OK`: Returns the location of the generated chart.
