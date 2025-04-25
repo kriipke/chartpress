@@ -40,10 +40,12 @@ chart:
 	@$(MAKE) -C $(CHART_DIR)
 	@echo "Makefile in $(CHART_DIR) executed successfully."
 
+chart-reinstall:
+	@helm uninstall -n chartpress-test chartpress
+	@helm install -n chartpress-test chartpress  -f chart/values.yaml chart &&  sleep 3
+	@kubectl port-forward -n chartpress-test svc/chartpress-frontend 8080:80
+
 tests:
 	@echo "Running Makefile in $(TESTS_DIR)..."
 	@$(MAKE) -C $(TESTS_DIR)
 	@echo "Makefile in $(TESTS_DIR) executed successfully."
-	@curl -X POST http://localhost:9090/generate \
-  		-H "Content-Type: application/json" \
-  		--data-binary ./tests/@chartpress.json

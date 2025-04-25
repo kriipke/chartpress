@@ -1,7 +1,7 @@
 backend:
   image:
     repository: ghcr.io/kriipke/chartpress/api
-    tag: 0.1.4
+    tag: main
   service:
     type: ClusterIP
     port: 8080
