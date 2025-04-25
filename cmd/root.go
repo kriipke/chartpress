@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-        "chartpress"
+	"../.."
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
