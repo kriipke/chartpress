@@ -4,7 +4,7 @@
 :toc: macro
 :toclevels: 3
 :toc: preamble
-:imagesdir: docs/images
+:imagesdir: docs/
 ifdef::env-github[]
 :tip-caption: :rocket:
 :!showtitle:
@@ -34,4 +34,5 @@ toc::[]
 	  -H "Content-Type: application/json" \
 	  --data-binary @chartpress.json
 
-image:docs/chartpress-server.png[]
+
+image:chartpress-server.png[]
