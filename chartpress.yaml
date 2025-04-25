@@ -2,7 +2,7 @@ umbrellaChartName: saas-platform
 subcharts:
   - name: api
     workload: deployment
-  - name: job-runner
+  - name: cache
     workload: deployment
   - name: database
     workload: statefulset
