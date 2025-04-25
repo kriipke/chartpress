@@ -1,6 +1,6 @@
 = chartpress
 :doctype: article
-:description: A README template written in AsciiDoc markup
+:description: A powerful Helm chart templater tool
 :toc: macro
 :toclevels: 3
 :toc: preamble
@@ -9,30 +9,131 @@ ifdef::env-github[]
 :tip-caption: :rocket:
 :!showtitle:
 :icons: font
-
 ++++
 <p align="center">
   <img width="275" height="275" src="docs/logo3.png">
 </p>
 <p align="center">
-    <!-- REPLACE THE FOLLOWING WITH YOUR REPOSITORY/PROJECT'S SHORT DESCRIPTION -->
     <h3 align="center">a Helm chart templater</h3>
         <p align="center">
-      <img height=20 src="https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white">
+  <img height=20 src="https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white">
   <img height=20 src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black">
   <img height=20 src="https://img.shields.io/badge/shell_script-%23121011.svg?style=for-the-badge&logo=gnu-bash&logoColor=white">
-
 </p>
 <br/>
 ++++
 
-`chartpress` is a command-line tool designed to streamline the creation and management of Helm umbrella charts. It automates the process of generating umbrella charts with multiple subcharts based on a configuration file, facilitating consistent and efficient Helm chart development.
+`chartpress` is a command-line tool designed to streamline the creation and management of Helm umbrella charts. It automates the process of generating umbrella charts with multiple subcharts based on user-defined configurations.
 
 toc::[]
 
-	curl -X POST http://localhost:8080/generate \
-	  -H "Content-Type: application/json" \
-	  --data-binary @chartpress.json
+== Features
 
+- **Automated Chart Generation**: Simplifies the creation of Helm umbrella charts and subcharts.
+- **Dynamic Configuration**: Generate charts based on JSON or YAML configurations.
+- **Lightweight and Fast**: Written in Go for efficiency and speed.
+- **Extensible**: Easily customizable to your specific needs.
 
-image:chartpress-server.png[]
+== Installation
+
+1. Clone the repository:
+
+   ```
+   git clone https://github.com/kriipke/chartpress.git
+   ```
+
+2. Build the binary:
+
+   ```
+   cd chartpress
+   go build -o chartpress
+   ```
+
+3. (Optional) Move the binary to your PATH:
+
+   ```
+   sudo mv chartpress /usr/local/bin/
+   ```
+
+== Usage
+
+=== Generating Charts
+
+You can generate Helm charts using the HTTP server or directly via the command-line tool.
+
+==== Using the HTTP Server
+
+Start the server:
+
+```
+./chartpress server
+```
+
+Send a POST request to generate a chart:
+
+```
+curl -X POST http://localhost:8080/generate \
+  -H "Content-Type: application/json" \
+  --data-binary @chartpress.json
+```
+
+==== Using the CLI
+
+Generate a chart from a configuration file:
+
+```
+./chartpress generate --config chartpress.yaml
+```
+
+== Project Structure
+
+- `main.go`: Entry point for the application and HTTP server.
+- `cmd/`: Contains CLI commands.
+- `templates/`: Contains Helm chart templates.
+  - `templates/subchart/`: Templates for subcharts.
+- `chart/`: Documentation and example configurations.
+- `docs/`: Project documentation and assets.
+
+== API Endpoints
+
+=== POST `/generate`
+
+- **Request**:
+  - **Method**: POST
+  - **Content-Type**: application/json
+  - **Body**:
+    ```json
+    {
+      "umbrellaChartName": "my-umbrella",
+      "subcharts": [
+        {
+          "name": "subchart1",
+          "workload": "deployment"
+        },
+        {
+          "name": "subchart2",
+          "workload": "statefulset"
+        }
+      ]
+    }
+    ```
+
+- **Response**:
+  - `200 OK`: Returns the location of the generated chart.
+  - `4XX`: Returns an error message.
+
+== Contributing
+
+1. Fork the repository.
+2. Create a new branch: `git checkout -b my-feature`.
+3. Make your changes.
+4. Test your changes.
+5. Submit a pull request.
+
+== License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
+
+== Acknowledgments
+
+Thanks to all contributors and the open-source community for making this project possible.
