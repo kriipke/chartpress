@@ -29,3 +29,7 @@ ifdef::env-github[]
 `chartpress` is a command-line tool designed to streamline the creation and management of Helm umbrella charts. It automates the process of generating umbrella charts with multiple subcharts based on a configuration file, facilitating consistent and efficient Helm chart development.
 
 toc::[]
+
+	curl -X POST http://localhost:8080/generate \
+	  -H "Content-Type: application/json" \
+	  --data-binary @chartpress.json

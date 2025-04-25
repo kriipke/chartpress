@@ -8,8 +8,8 @@ DOCKER_IMAGE := chartpress-server:0.1
 # Default target
 all: clean build-api
 
-# Variables
 CHART_DIR := ./chart
+TESTS_DIR := ./tests
 
 
 # Clean target: removes output directories and npm artifacts
@@ -40,3 +40,10 @@ chart:
 	@$(MAKE) -C $(CHART_DIR)
 	@echo "Makefile in $(CHART_DIR) executed successfully."
 
+tests:
+	@echo "Running Makefile in $(TESTS_DIR)..."
+	@$(MAKE) -C $(TESTS_DIR)
+	@echo "Makefile in $(TESTS_DIR) executed successfully."
+	@curl -X POST http://localhost:9090/generate \
+  		-H "Content-Type: application/json" \
+  		--data-binary ./tests/@chartpress.json
