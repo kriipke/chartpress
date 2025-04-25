@@ -33,3 +33,5 @@ toc::[]
 	curl -X POST http://localhost:8080/generate \
 	  -H "Content-Type: application/json" \
 	  --data-binary @chartpress.json
+
+image:docs/chartpress-server.png[]
