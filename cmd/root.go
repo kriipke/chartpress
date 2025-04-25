@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -153,41 +152,6 @@ func pruneTemplates(chartPath, workload string) error {
 	return nil
 }
 
-var serverCmd = &cobra.Command{
-	Use:   "server",
-	Short: "Runs the chartpress server",
-	Run: func(cmd *cobra.Command, args []string) {
-		runServer()
-	},
-}
-
-func runServer() {
-	http.HandleFunc("/generate", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Handling /generate...")
-		w.Header().Set("Access-Control-Allow-Origin", "*") // Allow all origins
-		if r.Method == http.MethodOptions {
-			w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		handleGenerate(w, r)
-	})
-
-	port := getPort()
-	fmt.Printf("Starting server on port %s...\n", port)
-	log.Printf("Server is starting on port %s", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
-}
-
-func getPort() string {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-		log.Println("Environment variable PORT not set, defaulting to 8080")
-	}
-	return port
-}
 
 var rootCmd = &cobra.Command{
 	Use:   "chartpress [name]",
@@ -228,7 +192,6 @@ func Execute() {
 func init() {
 	rootCmd.Flags().StringVarP(&configPath, "config", "c", "", "Path to the configuration YAML file (default: ./chartpress.yaml)")
 
-	rootCmd.AddCommand(serverCmd)
 	rootCmd.AddCommand(createCmd)
 
 	createCmd.Flags().StringVar(&umbrellaTemplate, "umbrella-template", "./templates/umbrella", "Path to umbrella chart template")
