@@ -13,3 +13,32 @@ frontend:
   service:
     type: ClusterIP
     port: 80
+
+ingress:
+  class: nginx
+  rewriteTarget: /
+  host: kubedash.io
+  secretName: kubedash.io
+  path: /chartpress/
+  backend:
+    service: chartpress-frontend
+    port: 80
+
+certificate:
+  name: kubedash.io
+  secretName: cert-wcard
+  issuerName: letsencrypt-wcard
+  commonName: kubedash.io
+  dnsNames:
+    - "*.kubedash.io"
+    - "kubedash.io"
+
+issuer:
+  name: letsencrypt-wcard
+  acme:
+    email: kriipke@protonmail.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef: letsencrypt-wcard
+    solverSecret:
+      name: digitalocean-dns
+      key: access-token
