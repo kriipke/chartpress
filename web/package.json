@@ -1,6 +1,7 @@
 {
   "name": "chartpress-frontend",
   "version": "1.0.0",
+  "homepage": "/chartpress/",
   "private": true,
   "dependencies": {
     "react": "^19.1.0",
