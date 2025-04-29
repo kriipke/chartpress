@@ -4,11 +4,12 @@ data:
     server {
         listen       80;
         listen  [::]:80;
-        server_name  localhost;
+        server_name  kubedash.io;
 
         location / {
             root   /usr/share/nginx/html;
             index  index.html index.htm;
+            try_files $uri /index.html;
         }
 
         location /generate {
