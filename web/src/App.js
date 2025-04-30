@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import './App.css'; // Add custom styles here
+import './dark-mode.css';
 import Home from './Home'; // Import the Home component
 import Documentation from './Documentation';
 
@@ -13,6 +14,19 @@ function App() {
   const [subcharts, setSubcharts] = useState([{ name: '', workload: 'deployment' }]);
   const [currentStep, setCurrentStep] = useState(0);
   const [downloadUrl, setDownloadUrl] = useState('');
+
+  // DARKMODE
+  const [darkMode, setDarkMode] = useState(false);
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    // Apply or remove the `dark-mode` class to the body
+    if (!darkMode) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  };
+
 
   const handleAddSubchart = () => {
     setSubcharts([...subcharts, { name: '', workload: 'deployment' }]);
@@ -139,6 +153,10 @@ function App() {
           <Link to="/chartpress/generate">Generate</Link>
           <Link to="/chartpress/documentation">Documentation</Link>
           <a href="https://github.com/kriipke/chartpress" target="_blank" rel="noopener noreferrer">GitHub</a>
+	  {/* Dark Mode Toggle */}
+	  <button onClick={toggleDarkMode} className="dark-mode-toggle">
+	    {darkMode ? 'Light Mode' : 'Dark Mode'}
+	  </button>
         </div>
       </nav>
     

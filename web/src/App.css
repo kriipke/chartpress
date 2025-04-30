@@ -133,3 +133,23 @@ body {
   border-radius: 4px;
   font-family: monospace;
 }
+
+
+.dark-mode-toggle {
+  margin-left: 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.dark-mode-toggle:hover {
+  background-color: #0056b3;
+}
+
+body.dark-mode {
+  /* Global dark mode styles can go here if necessary */
+}

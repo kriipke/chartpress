@@ -1,0 +1,45 @@
+body {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+.top-nav {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+.top-nav .nav-right a {
+  color: #ffffff;
+}
+
+.top-nav .nav-right a:hover {
+  color: #ffd700;
+}
+
+.main-content {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+.wizard-container {
+  background-color: #2a2a2a;
+  color: #ffffff;
+}
+
+.tree-view {
+  background-color: #2a2a2a;
+  color: #ffffff;
+}
+
+.documentation-container,
+.home-container {
+  background-color: #2a2a2a;
+  color: #ffffff;
+  border: 1px solid #444;
+}
+
+.documentation-container code,
+.home-container code {
+  background-color: #333;
+  color: #ffffff;
+}
