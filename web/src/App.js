@@ -171,7 +171,7 @@ function App() {
         <TreeView tree={generateTreeStructure()} />
       </div>
       </div>
-    <Router>
+    </Router>
   );
 }
 
