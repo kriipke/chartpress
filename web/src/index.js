@@ -1,14 +1,11 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client' // Ensure correct import for React 18
-import App from './App'
-import ErrorBoundary from './ErrorBoundary'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import Wizard from './App';
+import './App.css'; // Include the custom CSS
 
-const root = ReactDOM.createRoot(document.getElementById('root')) // Use createRoot
+const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
+    <Wizard />
   </React.StrictMode>
-)
-
+);
