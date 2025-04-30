@@ -18,6 +18,7 @@ RUN npm run build
 # Use nginx to serve the built app
 FROM nginx:alpine
 COPY --from=builder /app/build /usr/share/nginx/html
+COPY chartpress.yaml /usr/share/nginx/html/
 
 # Expose port 80
 EXPOSE 80
