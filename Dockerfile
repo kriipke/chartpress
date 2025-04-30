@@ -25,7 +25,7 @@ WORKDIR /app
 # Copy the built binary from the builder stage
 COPY --from=builder /app/chartpress /app/chartpress-server .
 # Copy the templates directory
-COPY ./templates ./templates
+COPY ./templates ./templates/
 # Expose the port the service will run on
 EXPOSE 8080
 
