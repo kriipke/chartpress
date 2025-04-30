@@ -87,7 +87,7 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	configFilePath := "./chartpress.yaml"
+	configFilePath := fmt.Sprintf("./output/%s.yaml", cfg.UmbrellaChartName)
 	log.Printf("[INFO] Saving configuration to %s", configFilePath)
 	configFile, err := os.Create(configFilePath)
 	if err != nil {
