@@ -4,7 +4,7 @@ import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import './App.css'; // Add custom styles here
 
-function Wizard() {
+function App() {
   const [umbrellaChartName, setUmbrellaChartName] = useState('');
   const [subcharts, setSubcharts] = useState([{ name: '', workload: 'deployment' }]);
   const [currentStep, setCurrentStep] = useState(0);
@@ -120,25 +120,40 @@ function Wizard() {
   };
 
   return (
-    <div className="wizard-container">
-      <h1>ChartPress Wizard</h1>
-      <Slider {...settings}>
-        {steps.map((step, index) => (
-          <div key={index} className="wizard-step">
-            <h2>{step.title}</h2>
-            {step.content}
-          </div>
-        ))}
-      </Slider>
-      {downloadUrl && (
-        <div className="download-section">
-          <a href={downloadUrl} download={`${umbrellaChartName}.zip`}>
-            <button>Download Chart</button>
-          </a>
+    <div>
+      {/* Top Navigation Bar */}
+      <nav className="top-nav">
+        <div className="nav-left">
+          <h1>ChartPress</h1>
         </div>
-      )}
+        <div className="nav-right">
+          <a href="#home">Home</a>
+          <a href="#generate">Generate</a>
+          <a href="#documentation">Documentation</a>
+          <a href="https://github.com/kriipke/chartpress" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
+      </nav>
+
+      {/* Wizard Section */}
+      <div className="wizard-container">
+        <Slider {...settings}>
+          {steps.map((step, index) => (
+            <div key={index} className="wizard-step">
+              <h2>{step.title}</h2>
+              {step.content}
+            </div>
+          ))}
+        </Slider>
+        {downloadUrl && (
+          <div className="download-section">
+            <a href={downloadUrl} download={`${umbrellaChartName}.zip`}>
+              <button>Download Chart</button>
+            </a>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-export default Wizard;
+export default App;

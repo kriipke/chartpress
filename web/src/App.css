@@ -5,9 +5,35 @@ body {
   background-color: #f4f4f9;
 }
 
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #007bff;
+  color: white;
+}
+
+.top-nav .nav-left h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.top-nav .nav-right a {
+  color: white;
+  text-decoration: none;
+  margin-left: 1rem;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+.top-nav .nav-right a:hover {
+  color: #ffd700;
+}
+
 .wizard-container {
   max-width: 800px;
-  margin: 0 auto;
+  margin: 2rem auto;
   padding: 2rem;
   background: #fff;
   border-radius: 8px;
