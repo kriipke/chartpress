@@ -49,21 +49,14 @@ function App() {
       const response = await fetch('/chartpress/generate', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json', // Specify JSON format
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload), // Attach JSON payload
-      });
-  
-      // Handle the response
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Chart generation successful:', data);
-        alert('Chart generation successful! Check the console for details.');
-      } else {
-        const errorText = await response.text();
-        console.error('Error generating chart:', errorText);
-        alert(`Error generating chart: ${errorText}`);
-      }
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(data => console.log('Success:', data))
+      .catch(error => console.error('Error:', error));
+
     } catch (error) {
       console.error('Error:', error);
       alert('An unexpected error occurred. Please try again.');
