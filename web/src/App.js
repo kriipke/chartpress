@@ -51,10 +51,10 @@ function App() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(payload)
       })
       .then(response => response.json())
-      .then(data => console.log('Success:', data))
+      .then(payload => console.log('Success:', payload))
       .catch(error => console.error('Error:', error));
 
     } catch (error) {
