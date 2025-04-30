@@ -142,7 +142,6 @@ function App() {
 
       {/* Define Routes */}
       <Routes>
-	<Route path="/" element={<Wizard />} />
 	<Route path="/documentation" element={<Documentation />} />
       </Routes>
 
