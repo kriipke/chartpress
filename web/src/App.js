@@ -35,8 +35,39 @@ function App() {
   };
 
   const handleSubmit = async () => {
-    // Logic to submit the formData
-    console.log('Submitting configuration:', formData);
+    try {
+      // Convert formData to the required chartpress.yaml format (if necessary)
+      const payload = {
+        umbrellaChartName: formData.umbrellaChartName,
+        subcharts: formData.subcharts,
+        rules: formData.settings, // Assuming settings are directly mapped from checkboxes
+      };
+  
+      console.log('Submitting configuration:', payload);
+  
+      // Send the POST request to the /chartpress/generate endpoint
+      const response = await fetch('/chartpress/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json', // Specify JSON format
+        },
+        body: JSON.stringify(payload), // Attach JSON payload
+      });
+  
+      // Handle the response
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Chart generation successful:', data);
+        alert('Chart generation successful! Check the console for details.');
+      } else {
+        const errorText = await response.text();
+        console.error('Error generating chart:', errorText);
+        alert(`Error generating chart: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An unexpected error occurred. Please try again.');
+    }
   };
 
   return (
