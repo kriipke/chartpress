@@ -126,7 +126,8 @@ function App() {
   };
 
   return (
-    <div>
+    <Router>
+      <div>
       {/* Top Navigation Bar */}
       <nav className="top-nav">
         <div className="nav-left">
@@ -139,37 +140,38 @@ function App() {
           <a href="https://github.com/kriipke/chartpress" target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
       </nav>
-
+    
       {/* Define Routes */}
       <Routes>
-	<Route path="/documentation" element={<Documentation />} />
+        <Route path="/documentation" element={<Documentation />} />
       </Routes>
-
+    
       {/* Main Content */}
       <div className="main-content">
         {/* Wizard Section */}
         <div className="wizard-container">
           <Slider {...settings}>
             {steps.map((step, index) => (
-              <div key={index} className="wizard-step">
-                <h2>{step.title}</h2>
-                {step.content}
-              </div>
+        <div key={index} className="wizard-step">
+          <h2>{step.title}</h2>
+          {step.content}
+        </div>
             ))}
           </Slider>
           {downloadUrl && (
             <div className="download-section">
-              <a href={downloadUrl} download={`${umbrellaChartName}.zip`}>
-                <button>Download Chart</button>
-              </a>
+        <a href={downloadUrl} download={`${umbrellaChartName}.zip`}>
+          <button>Download Chart</button>
+        </a>
             </div>
           )}
         </div>
-
+    
         {/* Tree View Section */}
         <TreeView tree={generateTreeStructure()} />
       </div>
-    </div>
+      </div>
+    <Router>
   );
 }
 
