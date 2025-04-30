@@ -31,7 +31,7 @@ function Documentation() {
         let html;
         try {
           html = asciidoctor.convert(adocText);
-          console.log('[Documentation] Successfully converted ${adocUrl}.adoc to HTML.');
+          console.log(`[Documentation] Successfully converted ${adocUrl}.adoc to HTML.`);
         } catch (conversionError) {
           const errorMessage = '[Documentation] Error converting AsciiDoc to HTML.';
           console.error(errorMessage, conversionError);

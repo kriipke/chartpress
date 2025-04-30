@@ -48,11 +48,8 @@ function App() {
       // Send the POST request to the /chartpress/generate endpoint
       const response = await fetch('/chartpress/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(payload)
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json'},
+        body: JSON.stringify(payload),
       })
       .then(response => response.json())
       .then(payload => console.log('Success:', payload))
