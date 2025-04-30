@@ -1,3 +1,4 @@
+
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -36,15 +37,19 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   padding: 2rem;
+  max-width: 100%; /* Ensure the container does not exceed the viewport width */
+  overflow: hidden; /* Prevent any overflow issues */
 }
 
 .wizard-container {
-  max-width: 60%;
+  flex: 0 0 60%; /* Allocate 60% of the available width */
   margin-right: 2rem;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden; /* Ensure content inside does not overflow */
 }
+
 
 .wizard-step {
   text-align: center;
@@ -85,13 +90,13 @@ button:hover {
 }
 
 .tree-view {
-  max-width: 35%;
+  flex: 0 0 35%; /* Allocate 35% of the available width */
   background: #333;
   color: #fff;
   padding: 1rem;
   border-radius: 8px;
   font-family: monospace;
-  overflow-x: auto;
+  overflow-x: auto; /* Allow horizontal scrolling if content overflows */
   white-space: pre-wrap;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
