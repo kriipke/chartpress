@@ -9,7 +9,7 @@ function Documentation() {
     // Fetch all .adoc files from the /docs directory
     const fetchDocs = async () => {
       try {
-        const response = await fetch('/docs'); // Adjust the path if needed
+        const response = await fetch('/chartpress/docs'); // Adjust the path if needed
         if (!response.ok) {
           throw new Error('Failed to fetch documentation');
         }
