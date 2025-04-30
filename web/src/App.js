@@ -137,6 +137,12 @@ function App() {
         </div>
       </nav>
 
+      {/* Define Routes */}
+      <Routes>
+	<Route path="/" element={<Wizard />} />
+	<Route path="/documentation" element={<Documentation />} />
+      </Routes>
+
       {/* Main Content */}
       <div className="main-content">
         {/* Wizard Section */}
