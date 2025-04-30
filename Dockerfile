@@ -22,10 +22,9 @@ RUN go build -o chartpress-server ./cmd/server
 FROM golang:1.23-bookworm
 # Set the working directory inside the container
 WORKDIR /app
+COPY . .
 # Copy the built binary from the builder stage
 COPY --from=builder /app/chartpress /app/chartpress-server .
-COPY --from=builder /app/templates/umbrella templates/umbrella
-COPY --from=builder /app/templates/subchart templates/subchart
 # Expose the port the service will run on
 EXPOSE 8080
 
