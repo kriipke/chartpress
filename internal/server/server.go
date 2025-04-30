@@ -10,11 +10,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-        "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
-        "helm.sh/helm/v3/pkg/chartutil"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 // Config holds the configuration details for the chart generation
@@ -31,158 +31,145 @@ type Subchart struct {
 
 // Start initializes and starts the HTTP server
 func Start() {
-	// Define the /generate endpoint handler
+	log.Println("[INFO] Starting the server initialization")
 	http.HandleFunc("/generate", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Handling /generate endpoint\n")
-
-		// Allow all origins for CORS
+		log.Printf("[INFO] Handling request at /generate endpoint. Method: %s\n", r.Method)
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
-		// Handle preflight OPTIONS request for CORS
 		if r.Method == http.MethodOptions {
+			log.Println("[INFO] Handling preflight OPTIONS request for CORS")
 			w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 			w.WriteHeader(http.StatusOK)
 			return
 		}
 
-		// Handle the actual POST request
+		log.Println("[INFO] Forwarding request to handleGenerate function")
 		handleGenerate(w, r)
 	})
 
-	// Retrieve the port number from environment variables
 	port := getPort()
-
-	// Log and start the server
-	fmt.Printf("Starting server on port %s...\n", port)
-	log.Printf("Server is starting on port %s", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil)) // Fatal will log and exit on error
+	log.Printf("[INFO] Server is starting on port %s", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
-// getPort retrieves the server port from the environment or defaults to 8080
 func getPort() string {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080" // Default port
-		log.Println("Environment variable PORT not set, defaulting to 8080")
+		log.Println("[WARN] Environment variable PORT not set. Defaulting to 8080")
+		port = "8080"
 	}
+	log.Printf("[INFO] Retrieved port: %s", port)
 	return port
 }
 
-// handleGenerate processes the /generate POST request
 func handleGenerate(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received request to /generate endpoint")
+	log.Println("[INFO] Entering handleGenerate function")
 
-	// Ensure only POST requests are allowed
 	if r.Method != http.MethodPost {
-		log.Printf("Invalid method: %s. Only POST is allowed.", r.Method)
+		log.Printf("[ERROR] Invalid method: %s. Only POST is allowed.", r.Method)
 		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Decode the JSON payload into the Config struct
 	var cfg Config
+	log.Println("[INFO] Decoding JSON payload into Config struct")
 	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
-		log.Printf("Failed to parse JSON: %v", err)
+		log.Printf("[ERROR] Failed to parse JSON: %v", err)
 		http.Error(w, fmt.Sprintf("Failed to parse JSON: %v", err), http.StatusBadRequest)
 		return
 	}
-	log.Printf("Loaded config: %+v", cfg)
+	log.Printf("[INFO] Config successfully loaded: %+v", cfg)
 
-	// Validate the configuration
 	if err := validateConfig(cfg); err != nil {
-		log.Printf("Invalid config: %v", err)
+		log.Printf("[ERROR] Invalid config: %v", err)
 		http.Error(w, fmt.Sprintf("Invalid config: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	// Save the configuration to a file
 	configFilePath := "./chartpress.yaml"
-	log.Printf("Saving configuration to %s", configFilePath)
+	log.Printf("[INFO] Saving configuration to %s", configFilePath)
 	configFile, err := os.Create(configFilePath)
 	if err != nil {
-		log.Printf("Failed to create config file: %v", err)
+		log.Printf("[ERROR] Failed to create config file: %v", err)
 		http.Error(w, fmt.Sprintf("Failed to create config file: %v", err), http.StatusInternalServerError)
 		return
 	}
-	// Ensure the file is properly closed
 	defer func() {
 		if err := configFile.Close(); err != nil {
-			log.Printf("Error closing config file: %v", err)
+			log.Printf("[ERROR] Error closing config file: %v", err)
 		}
 	}()
 
-	// Write the configuration to the file in JSON format
+	log.Println("[INFO] Writing configuration to file in JSON format")
 	if err := json.NewEncoder(configFile).Encode(cfg); err != nil {
-		log.Printf("Failed to write config file: %v", err)
+		log.Printf("[ERROR] Failed to write config file: %v", err)
 		http.Error(w, fmt.Sprintf("Failed to write config file: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Generate the chart from the configuration
 	outputDir, err := generateChart(cfg)
 	if err != nil {
-		log.Printf("Failed to generate chart: %v", err)
+		log.Printf("[ERROR] Failed to generate chart: %v", err)
 		http.Error(w, fmt.Sprintf("Failed to generate chart: %v", err), http.StatusInternalServerError)
 		return
 	}
-	log.Printf("Generated chart at %s", outputDir)
+	log.Printf("[INFO] Chart successfully generated at %s", outputDir)
 
-	// Create a zip file of the generated chart
 	zipFilePath := fmt.Sprintf("%s.zip", outputDir)
+	log.Printf("[INFO] Creating zip file at %s", zipFilePath)
 	if err := zipOutputDir(outputDir, zipFilePath); err != nil {
-		log.Printf("Failed to create zip file: %v", err)
+		log.Printf("[ERROR] Failed to create zip file: %v", err)
 		http.Error(w, fmt.Sprintf("Failed to create zip file: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Serve the zip file to the client
+	log.Printf("[INFO] Serving zip file %s to client", zipFilePath)
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(zipFilePath)))
 	w.Header().Set("Content-Type", "application/zip")
 	http.ServeFile(w, r, zipFilePath)
 }
 
-
-// generateChart generates the Helm chart based on the configuration
 func generateChart(cfg Config) (string, error) {
-	
-    umbrellaChartPath := "templates/umbrella"
-    subchartChartPath := "templates/subchart"
+	log.Println("[INFO] Entering generateChart function")
+	log.Printf("[INFO] Generating umbrella chart with name: %s", cfg.UmbrellaChartName)
 
-    subcharts := cfg.Subcharts
+	umbrellaChartPath := "templates/umbrella"
+	subchartChartPath := "templates/subchart"
+	subcharts := cfg.Subcharts
 
-    // Load the umbrella chart
-    ch, err := loadChart(umbrellaChartPath)
-    if err != nil {
-        fmt.Println("Error loading umbrella chart:", err)
-        return "error", err
-    }
+	ch, err := loadChart(umbrellaChartPath)
+	if err != nil {
+		log.Printf("[ERROR] Error loading umbrella chart: %v", err)
+		return "error", err
+	}
 
-    // Rename the umbrella chart
-    chartName := cfg.UmbrellaChartName
-    chNew, err := renameChart(ch, chartName )
-    if err != nil {
-        fmt.Println("Error renaming umbrella chart:", err)
-        return "error", err
-    }
+	chartName := cfg.UmbrellaChartName
+	chNew, err := renameChart(ch, chartName)
+	if err != nil {
+		log.Printf("[ERROR] Error renaming umbrella chart: %v", err)
+		return "error", err
+	}
 
-    // Add each subchart from config
-    for _, sc := range subcharts {
-        chNew, err = newSubchart(chNew, subchartChartPath, sc.Name)
-        if err != nil {
-            fmt.Printf("Error adding subchart '%s': %v\n", sc.Name, err)
-            return sc.Name, err
-        }
-    }
+	for _, sc := range subcharts {
+		log.Printf("[INFO] Adding subchart: %s", sc.Name)
+		chNew, err = newSubchart(chNew, subchartChartPath, sc.Name)
+		if err != nil {
+			log.Printf("[ERROR] Error adding subchart '%s': %v", sc.Name, err)
+			return sc.Name, err
+		}
+	}
 
-    // Define the output directory
-    outputDir := filepath.Join("output", chartName)
+	outputDir := filepath.Join("output", chartName)
+	log.Printf("[INFO] Saving chart to output directory: %s", outputDir)
+	if err := chartutil.SaveDir(chNew, outputDir); err != nil {
+		log.Printf("[ERROR] Error saving chart to directory: %v", err)
+		return "", err
+	}
 
-    // Save the chart to the output directory
-    if err := chartutil.SaveDir(chNew, outputDir); err != nil {
-        return "", fmt.Errorf("error saving chart to directory: %w", err)
-    }
-
+	log.Printf("[INFO] Chart generation completed successfully. Output directory: %s", outputDir)
+	return outputDir, nil
+}
     return outputDir, nil
 }
 // validateConfig validates the provided configuration
