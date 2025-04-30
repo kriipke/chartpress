@@ -24,8 +24,8 @@ FROM golang:1.23-bookworm
 WORKDIR /app
 # Copy the built binary from the builder stage
 COPY --from=builder /app/chartpress /app/chartpress-server .
-COPY templates/umbrella templates/umbrella
-COPY templates/subchart templates/subchart
+COPY --from=builder templates/umbrella templates/umbrella
+COPY --from=builder templates/subchart templates/subchart
 # Expose the port the service will run on
 EXPOSE 8080
 
