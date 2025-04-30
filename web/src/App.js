@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import chartpressConfig from 'chartpress.yaml'; // Import chartpress.yaml for checkbox options
+import chartpressConfig from './chartpress.yaml'; // Import chartpress.yaml for checkbox options
 
 function App() {
   const [currentSlide, setCurrentSlide] = useState(1);
