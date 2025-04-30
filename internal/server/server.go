@@ -125,23 +125,28 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check the request's Accept header to decide the response format
-	acceptHeader := r.Header.Get("Accept")
-	if strings.Contains(acceptHeader, "application/zip") {
-		// CLI client: Serve the zip file directly
-		log.Printf("[INFO] Serving zip file %s to client as a direct download", zipFilePath)
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(zipFilePath)))
-		w.Header().Set("Content-Type", "application/zip")
-		http.ServeFile(w, r, zipFilePath)
-	} else {
-		// JSON API client: Return the download URL in JSON
-		log.Println("[INFO] Returning JSON response with download URL")
-		w.Header().Set("Content-Type", "application/json")
-		response := map[string]string{
-			"downloadUrl": fmt.Sprintf("/chartpress/download/%s", filepath.Base(zipFilePath)),
-		}
-		json.NewEncoder(w).Encode(response)
-	}
+        acceptHeader := r.Header.Get("Accept")
+        log.Printf("[DEBUG] Accept header received: %s", acceptHeader)
+
+        if strings.Contains(acceptHeader, "application/zip") {
+            // CLI client: Serve the zip file directly
+            log.Printf("[INFO] Serving zip file as a direct download")
+            w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(zipFilePath)))
+            w.Header().Set("Content-Type", "application/zip")
+            http.ServeFile(w, r, zipFilePath)
+        } else if strings.Contains(acceptHeader, "application/json") || acceptHeader == "" {
+            // JSON API client or default: Return the download URL in JSON
+            log.Println("[INFO] Returning JSON response with download URL")
+            w.Header().Set("Content-Type", "application/json")
+            response := map[string]string{
+                "downloadUrl": fmt.Sprintf("/chartpress/download/%s", filepath.Base(zipFilePath)),
+            }
+            json.NewEncoder(w).Encode(response)
+        } else {
+            // Unsupported Accept header
+            log.Printf("[WARN] Unsupported Accept header: %s", acceptHeader)
+            http.Error(w, "Unsupported Accept header. Use 'application/json' or 'application/zip'.", http.StatusNotAcceptable)
+        }
 }
 
 func generateChart(cfg Config) (string, error) {
