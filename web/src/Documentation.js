@@ -6,21 +6,24 @@ function Documentation() {
   const asciidoctor = Asciidoctor();
 
   useEffect(() => {
-    // Fetch all .adoc files from the /docs directory
+    // Fetch the .adoc file from the remote URL
     const fetchDocs = async () => {
+      const adocUrl = '/chartpress/docs/README.adoc'; // Replace with your desired .adoc file URL
+
       try {
-        const response = await fetch('/chartpress/docs'); // Adjust the path if needed
+        const response = await fetch(adocUrl);
         if (!response.ok) {
           throw new Error('Failed to fetch documentation');
         }
+
         const adocText = await response.text();
 
-        // Convert AsciiDoc to HTML
+        // Convert the AsciiDoc content to HTML
         const html = asciidoctor.convert(adocText);
         setHtmlContent(html);
       } catch (error) {
         console.error('Error fetching documentation:', error);
-        setHtmlContent('<p>Failed to load documentation.</p>');
+        setHtmlContent('<p>Failed to load documentation. Please try again later.</p>');
       }
     };
 
@@ -30,7 +33,7 @@ function Documentation() {
   return (
     <div className="documentation-container">
       <h2>Documentation</h2>
-      {/* Render compiled HTML content */}
+      {/* Render the converted HTML content */}
       <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
     </div>
   );
