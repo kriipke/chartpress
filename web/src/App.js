@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import Slider from 'react-slick';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import './App.css'; // Add custom styles here
+import Documentation from './Documentation';
+
 
 function App() {
   const [umbrellaChartName, setUmbrellaChartName] = useState('');
