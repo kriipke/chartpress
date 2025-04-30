@@ -7,7 +7,7 @@ function Home() {
 
   useEffect(() => {
     const fetchReadme = async () => {
-      const adocUrl = '/chartpress/docs/README.adoc'; // Replace with the relative path to your README.adoc file
+      const adocUrl = '/chartpress/docs/README.adoc'; // Path to README.adoc
 
       console.log(`[Home] Fetching README.adoc from: ${adocUrl}`);
 
@@ -28,7 +28,7 @@ function Home() {
         let html;
         try {
           html = asciidoctor.convert(adocText);
-          console.log('[Home] Successfully converted README.adoc to HTML.');
+          console.log('[Home] Successfully converted README.adoc to HTML:', html);
         } catch (conversionError) {
           const errorMessage = '[Home] Error converting AsciiDoc to HTML.';
           console.error(errorMessage, conversionError);
@@ -49,7 +49,10 @@ function Home() {
     <div className="home-container">
       <h2>Welcome to ChartPress</h2>
       {/* Render the converted HTML content */}
-      <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+      <div
+        className="readme-content"
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
     </div>
   );
 }
