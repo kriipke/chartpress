@@ -55,7 +55,7 @@ function App() {
       .then(payload => console.log('Success:', payload))
       .catch(error => console.error('Error:', error));
 
-      /INITIATE DOWNLOAD
+      //INITIATE DOWNLOAD
       let a = document.createElement('a');
       a.href = response["downloadUrl"];
       a.target = '_blank';
