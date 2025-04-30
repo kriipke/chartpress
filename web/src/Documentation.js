@@ -25,13 +25,13 @@ function Documentation() {
 
         // Parse the AsciiDoc content
         const adocText = await response.text();
-        console.log('[Documentation] Successfully fetched .adoc content.');
+        console.log(`[Documentation] Successfully fetched ${adocUrl} content.`);
 
         // Convert AsciiDoc to HTML
         let html;
         try {
           html = asciidoctor.convert(adocText);
-          console.log('[Documentation] Successfully converted .adoc to HTML.');
+          console.log('[Documentation] Successfully converted ${adocUrl}.adoc to HTML.');
         } catch (conversionError) {
           const errorMessage = '[Documentation] Error converting AsciiDoc to HTML.';
           console.error(errorMessage, conversionError);
