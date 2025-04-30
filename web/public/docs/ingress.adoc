@@ -1,0 +1,177 @@
+= Provider-Agnostic Ingress Specification
+:toc:
+
+Below is proposed standard convention for describing the desired state of a Kubernetes ingress in a provider-agnostic way in the `values.yaml` file of a Helm Chart. This allows Helm Charts that use this convention to be deployed to at least:
+
+. **cloud-hosted clusters** via __AWS ALB__
+. **on-prem clusters** via __Emissary Ingress__
+  
+== Ingress
+
+[source,yaml]
+----
+    ingress:
+      # -- Can be either 'aws' or 'emissary'
+      type: "" 
+        # -- e.g. some.host.com 
+      host: ""
+      # -- e.g. /api
+      path: ""
+    
+      # AWS-specific settings (only relevant when ingress.type is 'aws')
+      aws:
+        # -- Can be 'internet-facing' or 'internal'
+        scheme: ""
+        # -- List of subnet IDs
+        subnets: [] 
+        # -- List of security group IDs
+        securityGroups: ""
+        # -- Optional certificate ARN for SSL termination
+        sslCertificateArn: ""
+    
+      # On-prem-specific settings (only relevant when ingress.type is 'onprem')
+      emissary:
+        # -- Number of retries for Emissary
+        retries: 3         
+        # -- Timeout in ms
+        timeout: 30000     
+----
+
+  
+=== ALB Example
+
+[source,yaml]
+----
+    ingress:
+      type: aws
+      host: some.host.com
+      path: /api
+      aws:
+        scheme: internet-facing 
+        subnets:               
+          - subnet-xxxxxxxx
+          - subnet-yyyyyyyy
+        securityGroups:         
+          - sg-xxxxxxxx
+        sslCertificateArn: arn:aws:acm:region:account-id:certificate/certificate-id 
+----
+  
+=== Emissary Example
+
+[source,yaml]
+----
+    ingress:
+      type: emissary
+      host: some.host.com
+      path: /api
+      emissary:
+        retries: 3                                
+        timeout: 30000   
+----
+
+=== Helm Logic
+
+[source,yaml]
+----
+{{- if .Values.ingress.host }}
+  {{- if not (or (eq .Values.ingress.type "aws") (eq .Values.ingress.type "emissary")) }}
+    {{- fail ".Values.ingress.type must be either 'aws' or 'emissary' when .Values.ingress.host is not empty" }}
+  {{- end }}
+{{- end }}
+
+{{- if eq .Values.ingress.type "aws" }}
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-aws-ingress
+  annotations:
+    alb.ingress.kubernetes.io/scheme: {{ default "internal" .Values.ingress.aws.scheme }}
+    alb.ingress.kubernetes.io/target-type: {{ default "ip" .Values.ingress.aws.targetType }}
+    alb.ingress.kubernetes.io/subnets: {{ required ".Values.ingress.aws.subnet must contain values." ( .Values.ingress.aws.subnets | join "," ) }}
+    alb.ingress.kubernetes.io/security-groups: {{  required ".Values.ingress.aws.subnet must contain values." ( .Values.ingress.aws.securityGroups | join "," ) }}
+    {{- if .Values.ingress.aws.sslCertificateArn }}
+    alb.ingress.kubernetes.io/certificate-arn: {{ .Values.ingress.aws.sslCertificateArn }}
+    {{- end }}
+spec:
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: {{ default "/" .Values.ingress.path }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-service
+                port:
+                  number: 80
+
+{{- else if eq .Values.ingress.type "emissary" }}
+
+apiVersion: getambassador.io/v3alpha1
+kind: Mapping
+metadata:
+  name: {{ .Release.Name }}-mapping
+  {{- if .Values.ingress.emissary.annotations }}
+  annotations:
+    {{- with .Values.ingress.emissary.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+  prefix: {{ default "/" .Values.ingress.path }}
+  host: {{ .Values.ingress.host }}
+  service: {{ .Release.Name }}-service.{{ .Release.Namespace }}.svc.cluster.local
+  timeout_ms: {{ default "60000" .Values.ingress.emissary.timeout }}
+  retries: {{ default "3" .Values.ingress.emissary.retries }}
+
+{{- else }}
+# Ingress type is not specified or invalid
+{{- fail "ingress.type must be either 'aws' or 'emissary'" }}
+{{- end }}
+----
+
+==== Explanation
+
+The logic above will attempt to render via Helm under two conditions:
+
+. The `.Values.ingress.host` has been given a value
+. The value of `.Values.ingress.type` is one of either:
+.. `aws`
+.. `emissary`
+
+Many of the values, such as `prefix` have a default value - it's is `/`.
+
+
+=== Usage 
+
+The simplest possible ingress definition is this:
+
+[source,yaml]
+----
+    ingress:
+      type: emissary
+      host: some.host.com
+----
+
+In this situation the rest of the values will use their defaults (see the `Mapping` manifest below). 
+
+AWS **requires** a few additional values:
+
+. subnet IDs
+. securityGroup IDs
+
+The simplet posible AWS ingress definition is:
+
+[source,yaml]
+----
+    ingress:
+      type: aws
+      host: some.host.com
+      aws:
+        subnets:               
+          - subnet-xxxxxxxx
+          - subnet-yyyyyyyy
+        securityGroups:         
+          - sg-xxxxxxxx
+----
