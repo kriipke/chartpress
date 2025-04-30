@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import './App.css'; // Add custom styles here
+import Home from './Home'; // Import the Home component
 import Documentation from './Documentation';
 
 
@@ -135,7 +136,7 @@ function App() {
         </div>
         <div className="nav-right">
           <Link to="/chartpress">Home</Link>
-          <Link to="/generate">Generate</Link>
+          <Link to="/chartpress/generate">Generate</Link>
           <Link to="/chartpress/documentation">Documentation</Link>
           <a href="https://github.com/kriipke/chartpress" target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
@@ -143,6 +144,7 @@ function App() {
     
       {/* Define Routes */}
       <Routes>
+        <Route path="/chartpress" element={<Home />} /> {/* Home route */}
         <Route path="/chartpress/documentation" element={<Documentation />} />
       </Routes>
     
