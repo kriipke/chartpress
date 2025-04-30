@@ -20,29 +20,32 @@ function App() {
     setSubcharts(updatedSubcharts);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const config = { umbrellaChartName, subcharts };
+  const generateTreeStructure = () => {
+    let tree = '';
+    tree += `${umbrellaChartName || 'umbrella-chart'}/\n`;
+    tree += '├── templates/\n';
+    tree += '│   ├── deployment.yaml\n';
+    tree += '│   ├── service.yaml\n';
+    tree += '│   └── ingress.yaml\n';
 
-    try {
-      const response = await fetch('/chartpress/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
-      });
+    subcharts.forEach((subchart, index) => {
+      tree += `├── ${subchart.name || `subchart-${index + 1}`}/\n`;
+      tree += `│   ├── templates/\n`;
+      tree += `│   │   ├── deployment.yaml\n`;
+      tree += `│   │   ├── service.yaml\n`;
+      tree += `│   │   └── ingress.yaml\n`;
+    });
 
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        setDownloadUrl(url);
-        alert('Chart generated successfully! Click "Download Chart" to download the zip file.');
-      } else {
-        const errorText = await response.text();
-        alert(`Error: ${errorText}`);
-      }
-    } catch (error) {
-      console.error('Error submitting configuration:', error);
-    }
+    tree += '└── Chart.yaml\n';
+    return tree;
+  };
+
+  const TreeView = ({ tree }) => {
+    return (
+      <pre className="tree-view">
+        {tree}
+      </pre>
+    );
   };
 
   const steps = [
@@ -102,7 +105,7 @@ function App() {
       content: (
         <div className="step-content">
           <p>Review your configuration and click "Generate" to proceed.</p>
-          <button type="submit" onClick={handleSubmit}>
+          <button type="submit">
             Generate Chart
           </button>
         </div>
@@ -134,23 +137,29 @@ function App() {
         </div>
       </nav>
 
-      {/* Wizard Section */}
-      <div className="wizard-container">
-        <Slider {...settings}>
-          {steps.map((step, index) => (
-            <div key={index} className="wizard-step">
-              <h2>{step.title}</h2>
-              {step.content}
+      {/* Main Content */}
+      <div className="main-content">
+        {/* Wizard Section */}
+        <div className="wizard-container">
+          <Slider {...settings}>
+            {steps.map((step, index) => (
+              <div key={index} className="wizard-step">
+                <h2>{step.title}</h2>
+                {step.content}
+              </div>
+            ))}
+          </Slider>
+          {downloadUrl && (
+            <div className="download-section">
+              <a href={downloadUrl} download={`${umbrellaChartName}.zip`}>
+                <button>Download Chart</button>
+              </a>
             </div>
-          ))}
-        </Slider>
-        {downloadUrl && (
-          <div className="download-section">
-            <a href={downloadUrl} download={`${umbrellaChartName}.zip`}>
-              <button>Download Chart</button>
-            </a>
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* Tree View Section */}
+        <TreeView tree={generateTreeStructure()} />
       </div>
     </div>
   );

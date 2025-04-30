@@ -31,10 +31,16 @@ body {
   color: #ffd700;
 }
 
-.wizard-container {
-  max-width: 800px;
-  margin: 2rem auto;
+.main-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   padding: 2rem;
+}
+
+.wizard-container {
+  max-width: 60%;
+  margin-right: 2rem;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -76,4 +82,16 @@ button:hover {
 .download-section {
   margin-top: 2rem;
   text-align: center;
+}
+
+.tree-view {
+  max-width: 35%;
+  background: #333;
+  color: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  font-family: monospace;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
