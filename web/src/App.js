@@ -134,16 +134,16 @@ function App() {
           <h1>ChartPress</h1>
         </div>
         <div className="nav-right">
-          <Link to="/">Home</Link>
+          <Link to="/chartpress">Home</Link>
           <Link to="/generate">Generate</Link>
-          <Link to="/documentation">Documentation</Link>
+          <Link to="/chartpress/documentation">Documentation</Link>
           <a href="https://github.com/kriipke/chartpress" target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
       </nav>
     
       {/* Define Routes */}
       <Routes>
-        <Route path="/documentation" element={<Documentation />} />
+        <Route path="/chartpress/documentation" element={<Documentation />} />
       </Routes>
     
       {/* Main Content */}
