@@ -17,7 +17,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "npm run copy-docs && react-scripts build -v",
+    "build": "react-scripts build",
     "copy-docs": "rm -rf public/docs/* && mkdir -p public/docs && cp -v -R ./docs/* ./public/docs/"
   },
   "browserslist": {
