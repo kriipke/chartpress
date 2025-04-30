@@ -134,7 +134,9 @@ body {
   font-family: monospace;
 }
 
-
+.tree-view, .wizard-container {
+    padding: 2.5rem;
+}
 .dark-mode-toggle {
   margin-left: 1rem;
   background-color: #007bff;
