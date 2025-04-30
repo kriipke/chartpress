@@ -50,7 +50,7 @@ function App() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
         },
         body: JSON.stringify(payload)
       })
@@ -60,7 +60,7 @@ function App() {
 
       /INITIATE DOWNLOAD
       let a = document.createElement('a');
-      a.href = response["downloadUrl"]
+      a.href = response["downloadUrl"];
       a.target = '_blank';
       a.click();
 
