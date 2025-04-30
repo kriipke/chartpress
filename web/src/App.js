@@ -21,7 +21,7 @@ function App () {
     e.preventDefault()
     const config = { umbrellaChartName, subcharts }
     try {
-      const response = await fetch('/generate', {
+      const response = await fetch('/chartpress/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config)
