@@ -116,6 +116,7 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("[INFO] Chart successfully generated at %s", outputDir)
 
+        // CREATE ZIP FILE
 	zipFilePath := fmt.Sprintf("%s.zip", outputDir)
 	log.Printf("[INFO] Creating zip file at %s", zipFilePath)
 	if err := zipOutputDir(outputDir, zipFilePath); err != nil {
@@ -124,10 +125,23 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("[INFO] Serving zip file %s to client", zipFilePath)
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(zipFilePath)))
-	w.Header().Set("Content-Type", "application/zip")
-	http.ServeFile(w, r, zipFilePath)
+	// Check the request's Accept header to decide the response format
+	acceptHeader := r.Header.Get("Accept")
+	if strings.Contains(acceptHeader, "application/zip") {
+		// CLI client: Serve the zip file directly
+		log.Printf("[INFO] Serving zip file %s to client as a direct download", zipFilePath)
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(zipFilePath)))
+		w.Header().Set("Content-Type", "application/zip")
+		http.ServeFile(w, r, zipFilePath)
+	} else {
+		// JSON API client: Return the download URL in JSON
+		log.Println("[INFO] Returning JSON response with download URL")
+		w.Header().Set("Content-Type", "application/json")
+		response := map[string]string{
+			"downloadUrl": fmt.Sprintf("/chartpress/download/%s", filepath.Base(zipFilePath)),
+		}
+		json.NewEncoder(w).Encode(response)
+	}
 }
 
 func generateChart(cfg Config) (string, error) {
