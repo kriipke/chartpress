@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 // Define source and destination paths
-const SOURCE_DIR = path.join(__dirname, 'docs');
-const DEST_DIR = path.join(__dirname, 'web', 'public', 'docs');
+const SOURCE_DIR = path.join(__dirname, '..', '..', 'docs');
+const DEST_DIR = path.join(__dirname, '..', 'public', 'docs');
 
 // Copy files recursively from source to destination
 function copyFilesRecursive(src, dest) {
