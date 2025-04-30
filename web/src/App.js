@@ -134,9 +134,9 @@ function App() {
           <h1>ChartPress</h1>
         </div>
         <div className="nav-right">
-          <a href="#home">Home</a>
-          <a href="#generate">Generate</a>
-          <a href="#documentation">Documentation</a>
+          <Link to="/">Home</Link>
+          <Link to="/generate">Generate</Link>
+          <Link to="/documentation">Documentation</Link>
           <a href="https://github.com/kriipke/chartpress" target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
       </nav>
