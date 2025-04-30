@@ -22,7 +22,7 @@ function Home() {
         }
 
         const adocText = await response.text();
-        console.log('[Home] Successfully fetched README.adoc content.');
+        console.log(`[Home] Successfully fetched ${adocUrl} content:\n ${adocText}`);
 
         // Convert AsciiDoc to HTML
         let html;

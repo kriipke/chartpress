@@ -1,0 +1,20 @@
+umbrellaChartName: saas-platform
+subcharts:
+  - name: api
+    workload: deployment
+  - name: cache
+    workload: deployment
+  - name: database
+    workload: statefulset
+rules:
+  possible_ingresses:
+    - alb
+  common_annotations: true
+  linked_templates: true
+  resource_names_match_chart_name: true
+  shared_secrets_config: true
+  shared_newrelic_config: true
+  generate_umbrella_readme: true
+  generate_subchart_readme: true
+  include_docs: true
+

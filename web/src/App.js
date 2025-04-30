@@ -1,95 +1,62 @@
 import React, { useState } from 'react';
-import Slider from 'react-slick';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
-import 'slick-carousel/slick/slick.css';
-import 'slick-carousel/slick/slick-theme.css';
-import './App.css'; // Add custom styles here
-import './dark-mode.css';
-import Home from './Home'; // Import the Home component
-import Documentation from './Documentation';
-
+import chartpressConfig from 'chartpress.yaml'; // Import chartpress.yaml for checkbox options
 
 function App() {
-  const [umbrellaChartName, setUmbrellaChartName] = useState('');
-  const [subcharts, setSubcharts] = useState([{ name: '', workload: 'deployment' }]);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [downloadUrl, setDownloadUrl] = useState('');
+  const [currentSlide, setCurrentSlide] = useState(1);
+  const [formData, setFormData] = useState({
+    umbrellaChartName: '',
+    subcharts: [{ name: '', workload: 'deployment' }],
+    settings: {}, // To capture selected settings from chartpress.yaml
+  });
 
-  // DARKMODE
-  const [darkMode, setDarkMode] = useState(false);
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    // Apply or remove the `dark-mode` class to the body
-    if (!darkMode) {
-      document.body.classList.add('dark-mode');
-    } else {
-      document.body.classList.remove('dark-mode');
-    }
-  };
-
-
-  const handleAddSubchart = () => {
-    setSubcharts([...subcharts, { name: '', workload: 'deployment' }]);
+  const handleFieldChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubchartChange = (index, field, value) => {
-    const updatedSubcharts = [...subcharts];
+    const updatedSubcharts = [...formData.subcharts];
     updatedSubcharts[index][field] = value;
-    setSubcharts(updatedSubcharts);
+    setFormData((prev) => ({ ...prev, subcharts: updatedSubcharts }));
   };
 
-  const generateTreeStructure = () => {
-    let tree = '';
-    tree += `${umbrellaChartName || 'umbrella-chart'}/\n`;
-    tree += '├── templates/\n';
-    tree += '│   ├── deployment.yaml\n';
-    tree += '│   ├── service.yaml\n';
-    tree += '│   └── ingress.yaml\n';
-
-    subcharts.forEach((subchart, index) => {
-      tree += `├── ${subchart.name || `subchart-${index + 1}`}/\n`;
-      tree += `│   ├── templates/\n`;
-      tree += `│   │   ├── deployment.yaml\n`;
-      tree += `│   │   ├── service.yaml\n`;
-      tree += `│   │   └── ingress.yaml\n`;
-    });
-
-    tree += '└── Chart.yaml\n';
-    return tree;
+  const handleCheckboxChange = (setting, isChecked) => {
+    setFormData((prev) => ({
+      ...prev,
+      settings: { ...prev.settings, [setting]: isChecked },
+    }));
   };
 
-  const TreeView = ({ tree }) => {
-    return (
-      <pre className="tree-view">
-        {tree}
-      </pre>
-    );
+  const handleNext = () => {
+    setCurrentSlide((prev) => prev + 1);
   };
 
-  const steps = [
-    {
-      title: "Umbrella Chart",
-      content: (
-        <div className="step-content">
+  const handleBack = () => {
+    setCurrentSlide((prev) => prev - 1);
+  };
+
+  const handleSubmit = async () => {
+    // Logic to submit the formData
+    console.log('Submitting configuration:', formData);
+  };
+
+  return (
+    <div style={{ padding: '2rem' }}>
+      <h1>ChartPress Wizard</h1>
+      {currentSlide === 1 && (
+        <div>
+          <h2>Umbrella Chart Configuration</h2>
           <label>
             Umbrella Chart Name:
             <input
               type="text"
-              placeholder="Enter chart name"
-              value={umbrellaChartName}
-              onChange={(e) => setUmbrellaChartName(e.target.value)}
+              value={formData.umbrellaChartName}
+              onChange={(e) => handleFieldChange('umbrellaChartName', e.target.value)}
               required
             />
           </label>
-        </div>
-      ),
-    },
-    {
-      title: "Subcharts",
-      content: (
-        <div className="step-content">
-          {subcharts.map((subchart, index) => (
-            <div key={index} className="subchart-item">
+          <h3>Subcharts</h3>
+          {formData.subcharts.map((subchart, index) => (
+            <div key={index} style={{ marginBottom: '1rem' }}>
               <label>
                 Name:
                 <input
@@ -112,86 +79,37 @@ function App() {
               </label>
             </div>
           ))}
-          <button type="button" onClick={handleAddSubchart}>
+          <button type="button" onClick={() => handleFieldChange('subcharts', [...formData.subcharts, { name: '', workload: 'deployment' }])}>
             Add Subchart
           </button>
+          <div style={{ marginTop: '1rem' }}>
+            <button onClick={handleNext}>Next</button>
+          </div>
         </div>
-      ),
-    },
-    {
-      title: "Review & Generate",
-      content: (
-        <div className="step-content">
-          <p>Review your configuration and click "Generate" to proceed.</p>
-          <button type="submit">
-            Generate Chart
-          </button>
-        </div>
-      ),
-    },
-  ];
+      )}
 
-  const settings = {
-    dots: true,
-    infinite: false,
-    speed: 500,
-    slidesToShow: 1,
-    slidesToScroll: 1,
-    beforeChange: (_, next) => setCurrentStep(next),
-  };
-
-  return (
-    <Router>
-      <div>
-      {/* Top Navigation Bar */}
-      <nav className="top-nav">
-        <div className="nav-left">
-          <h1>ChartPress</h1>
-        </div>
-        <div className="nav-right">
-          <Link to="/chartpress">Home</Link>
-          <Link to="/chartpress/generate">Generate</Link>
-          <Link to="/chartpress/documentation">Documentation</Link>
-          <a href="https://github.com/kriipke/chartpress" target="_blank" rel="noopener noreferrer">GitHub</a>
-	  {/* Dark Mode Toggle */}
-	  <button onClick={toggleDarkMode} className="dark-mode-toggle">
-	    {darkMode ? 'Light Mode' : 'Dark Mode'}
-	  </button>
-        </div>
-      </nav>
-    
-      {/* Define Routes */}
-      <Routes>
-        <Route path="/chartpress" element={<Home />} /> {/* Home route */}
-        <Route path="/chartpress/documentation" element={<Documentation />} />
-      </Routes>
-    
-      {/* Main Content */}
-      <div className="main-content">
-        {/* Wizard Section */}
-        <div className="wizard-container">
-          <Slider {...settings}>
-            {steps.map((step, index) => (
-        <div key={index} className="wizard-step">
-          <h2>{step.title}</h2>
-          {step.content}
-        </div>
-            ))}
-          </Slider>
-          {downloadUrl && (
-            <div className="download-section">
-        <a href={downloadUrl} download={`${umbrellaChartName}.zip`}>
-          <button>Download Chart</button>
-        </a>
+      {currentSlide === 2 && (
+        <div>
+          <h2>ChartPress Settings</h2>
+          {Object.keys(chartpressConfig.rules || {}).map((setting) => (
+            <div key={setting}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={!!formData.settings[setting]}
+                  onChange={(e) => handleCheckboxChange(setting, e.target.checked)}
+                />
+                {setting}
+              </label>
             </div>
-          )}
+          ))}
+          <div style={{ marginTop: '1rem' }}>
+            <button onClick={handleBack}>Back</button>
+            <button onClick={handleSubmit}>Submit</button>
+          </div>
         </div>
-    
-        {/* Tree View Section */}
-        <TreeView tree={generateTreeStructure()} />
-      </div>
-      </div>
-    </Router>
+      )}
+    </div>
   );
 }
 
