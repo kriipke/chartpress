@@ -91,3 +91,10 @@ body {
   line-height: 1.6;
   margin-bottom: 1rem;
 }
+
+.documentation-container code {
+  background: #f4f4f9;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: monospace;
+}
