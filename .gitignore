@@ -1,3 +1,4 @@
-web/node_modules
+/web/public/docs/
+/web/node_modules
 output/*
 !output/.gitkeep
