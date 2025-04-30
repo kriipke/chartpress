@@ -170,8 +170,7 @@ func generateChart(cfg Config) (string, error) {
 	log.Printf("[INFO] Chart generation completed successfully. Output directory: %s", outputDir)
 	return outputDir, nil
 }
-    return outputDir, nil
-}
+
 // validateConfig validates the provided configuration
 func validateConfig(cfg Config) error {
 	// Example validation: Ensure the umbrella chart name is not empty
