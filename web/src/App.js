@@ -66,25 +66,59 @@ function App() {
       alert('An unexpected error occurred. Please try again.');
     }
   };
+  
+  const generateTreeStructure = () => {
+    let tree = '';
+    tree += `${umbrellaChartName || 'umbrella-chart'}/\n`;
+    tree += '├── templates/\n';
+    tree += '│   ├── deployment.yaml\n';
+    tree += '│   ├── service.yaml\n';
+    tree += '│   └── ingress.yaml\n';
 
-  return (
-    <div style={{ padding: '2rem' }}>
-      <h1>ChartPress Wizard</h1>
-      {currentSlide === 1 && (
-        <div>
-          <h2>Umbrella Chart Configuration</h2>
+    subcharts.forEach((subchart, index) => {
+      tree += `├── ${subchart.name || `subchart-${index + 1}`}/\n`;
+      tree += `│   ├── templates/\n`;
+      tree += `│   │   ├── deployment.yaml\n`;
+      tree += `│   │   ├── service.yaml\n`;
+      tree += `│   │   └── ingress.yaml\n`;
+    });
+
+    tree += '└── Chart.yaml\n';
+    return tree;
+  };
+
+  const TreeView = ({ tree }) => {
+    return (
+      <pre className="tree-view">
+        {tree}
+      </pre>
+    );
+  };
+
+  const steps = [
+    {
+      title: "Umbrella Chart",
+      content: (
+        <div className="step-content">
           <label>
             Umbrella Chart Name:
             <input
               type="text"
-              value={formData.umbrellaChartName}
-              onChange={(e) => handleFieldChange('umbrellaChartName', e.target.value)}
+              placeholder="Enter chart name"
+              value={umbrellaChartName}
+              onChange={(e) => setUmbrellaChartName(e.target.value)}
               required
             />
           </label>
-          <h3>Subcharts</h3>
-          {formData.subcharts.map((subchart, index) => (
-            <div key={index} style={{ marginBottom: '1rem' }}>
+        </div>
+      ),
+    },
+    {
+      title: "Subcharts",
+      content: (
+        <div className="step-content">
+          {subcharts.map((subchart, index) => (
+            <div key={index} className="subchart-item">
               <label>
                 Name:
                 <input
@@ -107,37 +141,80 @@ function App() {
               </label>
             </div>
           ))}
-          <button type="button" onClick={() => handleFieldChange('subcharts', [...formData.subcharts, { name: '', workload: 'deployment' }])}>
+          <button type="button" onClick={handleAddSubchart}>
             Add Subchart
           </button>
-          <div style={{ marginTop: '1rem' }}>
-            <button onClick={handleNext}>Next</button>
-          </div>
         </div>
-      )}
+      ),
+    },
+    {
+      title: "Review & Generate",
+      content: (
+        <div className="step-content">
+          <p>Review your configuration and click "Generate" to proceed.</p>
+          <button type="submit">
+            Generate Chart
+          </button>
+        </div>
+      ),
+    },
+  ];
 
-      {currentSlide === 2 && (
-        <div>
-          <h2>ChartPress Settings</h2>
-          {Object.keys(chartpressConfig.rules || {}).map((setting) => (
-            <div key={setting}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={!!formData.settings[setting]}
-                  onChange={(e) => handleCheckboxChange(setting, e.target.checked)}
-                />
-                {setting}
-              </label>
-            </div>
-          ))}
-          <div style={{ marginTop: '1rem' }}>
-            <button onClick={handleBack}>Back</button>
-            <button onClick={handleSubmit}>Submit</button>
-          </div>
-        </div>
-      )}
-    </div>
+  const settings = {
+    dots: true,
+    infinite: false,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    beforeChange: (_, next) => setCurrentStep(next),
+  };
+
+  return (
+    <Router>
+      <div>
+	{/* Top Navigation Bar */}
+	<nav className="top-nav">
+	  <div className="nav-left">
+	    <h1>ChartPress</h1>
+	  </div>
+	  <div className="nav-right">
+	    <a href="/chartpress/">Home</a>
+	    <a href="/chartpress/generate">Generate</a>
+	    <a href="/chartpress/documentation">Documentation</a>
+	    <a href="https://github.com/kriipke/chartpress" target="_blank" rel="noopener noreferrer">GitHub</a>
+	  </div>
+	</nav>
+
+        {/* Define Routes */}
+        <Routes>
+          <Route path="/chartpress/documentation" element={<Documentation />} />
+        </Routes>
+	{/* Main Content */}
+	<div className="main-content">
+	  {/* Wizard Section */}
+	  <div className="wizard-container">
+	    <Slider {...settings}>
+	      {steps.map((step, index) => (
+		<div key={index} className="wizard-step">
+		  <h2>{step.title}</h2>
+		  {step.content}
+		</div>
+	      ))}
+	    </Slider>
+	    {downloadUrl && (
+	      <div className="download-section">
+		<a href={downloadUrl} download={`${umbrellaChartName}.zip`}>
+		  <button>Download Chart</button>
+		</a>
+	      </div>
+	    )}
+	  </div>
+
+	  {/* Tree View Section */}
+	  <TreeView tree={generateTreeStructure()} />
+	</div>
+      </div>
+    </Router>
   );
 }
 
