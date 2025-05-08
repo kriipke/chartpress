@@ -104,7 +104,7 @@ function App() {
             <input
               type="text"
               placeholder="Enter chart name"
-              value={umbrellaChartName}
+              value=`${umbrellaChartName}`
               onChange={(e) => setUmbrellaChartName(e.target.value)}
               required
             />
