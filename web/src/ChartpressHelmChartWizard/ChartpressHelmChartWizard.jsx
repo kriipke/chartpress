@@ -1,6 +1,29 @@
 import "./ChartpressHelmChartWizard.css";
+import React, { useState } from "react";
+
 
 export const ChartpressHelmChartWizard = ({ className, ...props }) => {
+  // Inside your component:
+  const [wizardData, setWizardData] = useState({ /* your initial state */ });
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const handleGenerate = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(wizardData), // Send your collected form data
+      });
+      const data = await response.json();
+      setResult(data);
+    } catch (err) {
+      alert("Error generating chart: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className={"chartpress-helm-chart-wizard " + className}>
       <div className="container">
@@ -421,8 +444,8 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
               <div className="chart">Chart </div>
             </div>
           </div>
-          <div className="button-27">
-            <div className="generate">GENERATE </div>
+          <div className="button-27" onClick={handleGenerate} style={{ cursor: "pointer" }}>
+            <div className="generate">{loading ? "Generating..." : "GENERATE"}</div>
           </div>
         </div>
         <div className="textarea">
