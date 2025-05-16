@@ -11,7 +11,7 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/generate", {
+      const response = await fetch("/chartpress/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(wizardData), // Send your collected form data
