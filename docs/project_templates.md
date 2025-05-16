@@ -1,53 +1,73 @@
-git@github.com:alan2207/bulletproof-react
-git@github.com:kubernetes/examples
-git@github.com:akuity-cluster-addons-workshop/control-plane
-git@github.com:ChristianLempa/boilerplates
-git@github.com:redhat-cop/infra-ansible
-git@github.com:stefanprodan/podinfo
-git@github.com:buchanae/github-release-notes
-git@github.com:devspace/awesome-github-templates
-git@github.com:FalcoSuessgott/golang-cli-template
-git@github.com:iwootten/python-pipenv-github
-git@github.com:devcontainers/templates
-git@github.com:manekinekko/awesome-devcontainers
-git@github.com:fluxcd/flux2-kustomize-helm-example
-git@github.com:kostis-codefresh/many-appsets-demo
-git@github.com:GoogleCloudPlatform/microservices-demo
-git@github.com:cloud-native-toolkit/multi-tenancy-gitops
-git@github.com:hasura/gitkube
-git@github.com:backstage/backstage
-git@github.com:openrndr/openrndr-template
-git@github.com:ionelmc/cookiecutter-pylibrary
-git@github.com:tbakerx/react-resume-template
-git@github.com:evrone/go-clean-template
-git@github.com:copilot-extensions/rag-extension
-git@github.com:klezVirus/klezVirus.github.io
-git@github.com:aeksco/react-typescript-web-extension-starter
-git@github.com:donnemartin/system-design-primer
-git@github.com:CircleCI-Public/sample-python-cfd
-git@github.com:TezRomacH/python-package-template
-git@github.com:fastapi/full-stack-fastapi-template
-git@github.com:tensult/terraform
-git@github.com:actions/toolkit
-git@github.com:actions/container-toolkit-action
-git@github.com:JoeArauzo/AsciiDoc-README-Template
-git@github.com:vmware/packer-examples-for-vsphere
-git@github.com:docker/awesome-compose
-git@github.com:roy-pstr/fastapi-serverless-aws-backend-service
-git@github.com:wmnnd/nginx-certbot
-git@github.com:old-xebis/repository-template
-git@github.com:hashicorp-education/learn-terraform-provision-eks-cluster
-git@github.com:cloudposse/terraform-aws-eks-cluster
-git@github.com:aws-samples/eks-workshop-v2
-git@github.com:ericsysmin/docker-ansible-images
-git@github.com:audreyfeldroy/cookiecutter-pypackage
-git@github.com:aws-ia/terraform-aws-eks-blueprints
-git@github.com:superseb/multipass-k3s
-git@github.com:arashkaffamanesh/kubeadm-multipass
-git@github.com:joshukraine/dotfiles
-git@github.com:google/docsy-example
-git@github.com:nginx-proxy/nginx-proxy
-git@github.com:MagalixCorp/sample-api
-git@github.com:boolean-world/appimage-resources
-git@github.com:xxh/cookiecutter-xxh-plugin-prerun
-git@github.com:lacion/cookiecutter-golang
+    git@github.com:BytLabs/MicroserviceTemplate
+    git@github.com:vmware-tanzu/simple-k8s-webapp
+    git@github.com:GoogleCloudPlatform/cloud-run-microservice-template
+    git@github.com:berthubert/go-microservice-template
+    git@github.com:jasontaylordev/CleanArchitecture
+    git@github.com:okteto/microservices-demo
+    git@github.com:ewolff/microservice-kubernetes
+    git@github.com:expressjs/express-api-starter
+    git@github.com:tiangolo/full-stack-fastapi-postgresql
+    git@github.com:strongloop/loopback-next
+    git@github.com:spring-petclinic/spring-petclinic-microservices
+    git@github.com:thomasvitale/microservices-patterns
+    git@github.com:codingpot/practical-microservices
+    git@github.com:GoogleCloudPlatform/kubernetes-engine-samples
+    git@github.com:asyncapi/template-for-microservices
+    git@github.com:ory/k8s
+    git@github.com:ory/examples
+    git@github.com:teracyhq/dev
+    git@github.com:ory/kratos
+    git@github.com:ory/hydra
+    git@github.com:alan2207/bulletproof-react
+    git@github.com:kubernetes/examples
+    git@github.com:akuity-cluster-addons-workshop/control-plane
+    git@github.com:ChristianLempa/boilerplates
+    git@github.com:redhat-cop/infra-ansible
+    git@github.com:stefanprodan/podinfo
+    git@github.com:buchanae/github-release-notes
+    git@github.com:devspace/awesome-github-templates
+    git@github.com:FalcoSuessgott/golang-cli-template
+    git@github.com:iwootten/python-pipenv-github
+    git@github.com:devcontainers/templates
+    git@github.com:manekinekko/awesome-devcontainers
+    git@github.com:fluxcd/flux2-kustomize-helm-example
+    git@github.com:kostis-codefresh/many-appsets-demo
+    git@github.com:GoogleCloudPlatform/microservices-demo
+    git@github.com:cloud-native-toolkit/multi-tenancy-gitops
+    git@github.com:hasura/gitkube
+    git@github.com:backstage/backstage
+    git@github.com:openrndr/openrndr-template
+    git@github.com:ionelmc/cookiecutter-pylibrary
+    git@github.com:tbakerx/react-resume-template
+    git@github.com:evrone/go-clean-template
+    git@github.com:copilot-extensions/rag-extension
+    git@github.com:klezVirus/klezVirus.github.io
+    git@github.com:aeksco/react-typescript-web-extension-starter
+    git@github.com:donnemartin/system-design-primer
+    git@github.com:CircleCI-Public/sample-python-cfd
+    git@github.com:TezRomacH/python-package-template
+    git@github.com:fastapi/full-stack-fastapi-template
+    git@github.com:tensult/terraform
+    git@github.com:actions/toolkit
+    git@github.com:actions/container-toolkit-action
+    git@github.com:JoeArauzo/AsciiDoc-README-Template
+    git@github.com:vmware/packer-examples-for-vsphere
+    git@github.com:docker/awesome-compose
+    git@github.com:roy-pstr/fastapi-serverless-aws-backend-service
+    git@github.com:wmnnd/nginx-certbot
+    git@github.com:old-xebis/repository-template
+    git@github.com:hashicorp-education/learn-terraform-provision-eks-cluster
+    git@github.com:cloudposse/terraform-aws-eks-cluster
+    git@github.com:aws-samples/eks-workshop-v2
+    git@github.com:ericsysmin/docker-ansible-images
+    git@github.com:audreyfeldroy/cookiecutter-pypackage
+    git@github.com:aws-ia/terraform-aws-eks-blueprints
+    git@github.com:superseb/multipass-k3s
+    git@github.com:arashkaffamanesh/kubeadm-multipass
+    git@github.com:joshukraine/dotfiles
+    git@github.com:google/docsy-example
+    git@github.com:nginx-proxy/nginx-proxy
+    git@github.com:MagalixCorp/sample-api
+    git@github.com:boolean-world/appimage-resources
+    git@github.com:xxh/cookiecutter-xxh-plugin-prerun
+    git@github.com:lacion/cookiecutter-golang
