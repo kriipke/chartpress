@@ -1,0 +1,86 @@
+// ChartpressService.mdsl
+// MDSL Service Specification for chartpress (a Helm chart templater)
+
+endpoint type ChartpressServiceEndpoint {
+  operation RenderChartTemplate expects RenderRequest yields RenderResponse
+  operation ListTemplates yields TemplateListResponse
+  operation GetTemplate expects TemplateRequest yields TemplateResponse
+  operation ValidateTemplate expects TemplateRequest yields ValidationResult
+  operation PublishChart expects PublishRequest yields PublishResponse
+}
+
+data type RenderRequest {
+  chartName: String
+  version: String
+  values: Map<String, Any>
+}
+
+data type RenderResponse {
+  renderedManifest: String
+  warnings: List<String>
+}
+
+data type TemplateListResponse {
+  templates: List<String>
+}
+
+data type TemplateRequest {
+  templateName: String
+}
+
+data type TemplateResponse {
+  templateContent: String
+}
+
+data type ValidationResult {
+  isValid: Boolean
+  errors: List<String>
+}
+
+data type PublishRequest {
+  chartName: String
+  version: String
+  registryUrl: String
+  credentials: Credentials
+}
+
+data type PublishResponse {
+  published: Boolean
+  location: String
+  error: String
+}
+
+data type Credentials {
+  username: String
+  password: String
+}
+
+endpoint chartpress at "https://api.example.com/chartpress" offers ChartpressServiceEndpoint
+
+// Tutorial Narrative
+//
+// The chartpress service is a microservice that automates the rendering, validation, and publishing of Helm charts.
+// It offers the following operations:
+// - RenderChartTemplate: Render a Helm chart with user-provided values, returning the manifest.
+// - ListTemplates: List all available chart templates managed by the service.
+// - GetTemplate: Return the raw content of a specified chart template.
+// - ValidateTemplate: Validate the syntax and structure of a given chart template.
+// - PublishChart: Publish a Helm chart to a remote registry.
+//
+// Example Usage:
+//
+// use endpoint chartpress
+//   .RenderChartTemplate(RenderRequest {
+//     chartName: "my-service",
+//     version: "1.0.0",
+//     values: { "replicaCount": 3, "image.tag": "v1.0.0" }
+//   })
+// returns RenderResponse
+//
+// use endpoint chartpress
+//   .ListTemplates()
+// returns TemplateListResponse
+//
+// use endpoint chartpress
+//   .ValidateTemplate(TemplateRequest { templateName: "my-service" })
+// returns ValidationResult
