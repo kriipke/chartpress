@@ -1,26 +1,29 @@
-# Frontend Dockerfile
-FROM node:18 as builder
+# Use an official Node.js runtime as the base image
+FROM node:18-alpine AS build
+
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package.json package-lock.json ./
+# Copy package.json and package-lock.json (if available)
+COPY package.json ./
 
 # Install dependencies
 RUN npm install
 
-# Copy the source code and public directory
-COPY ./src ./src
-COPY ./public ./public
+# Copy the rest of the application code
+COPY . .
 
 # Build the React app
 RUN npm run build
 
-# Use nginx to serve the built app
+# Use a lightweight web server to serve the built app
 FROM nginx:alpine
-COPY --from=builder /app/build /usr/share/nginx/html
+
+# Copy the built React app from the previous stage
+COPY --from=build /app/dist /usr/share/nginx/html
 
 # Expose port 80
-EXPOSE 80
+EXPOSE 8080
 
-# Start nginx
+# Start Nginx server
 CMD ["nginx", "-g", "daemon off;"]

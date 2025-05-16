@@ -1,8 +1,9 @@
 import "./ChartpressHelmChartWizard.css";
 import React, { useState } from "react";
 
-export const ChartpressHelmChartWizard = ({ className, ...props }) => {
 
+export const ChartpressHelmChartWizard = ({ className, ...props }) => {
+  // Inside your component:
   const [wizardData, setWizardData] = useState({ /* your initial state */ });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -23,7 +24,6 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
       setLoading(false);
     }
   };
-
   return (
     <div className={"chartpress-helm-chart-wizard " + className}>
       <div className="container">
@@ -444,9 +444,9 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
               <div className="chart">Chart </div>
             </div>
           </div>
-        </div>
-        <div className="button-27" onClick={handleGenerate} style={{ cursor: "pointer" }}>
-          <div className="generate">{loading ? "Generating..." : "GENERATE"}</div>
+          <div className="button-27" onClick={handleGenerate} style={{ cursor: "pointer" }}>
+            <div className="generate">{loading ? "Generating..." : "GENERATE"}</div>
+          </div>
         </div>
         <div className="textarea">
           <div className="input-text">Input text </div>

@@ -6,10 +6,13 @@ on:
       - main
     paths:
       - 'Dockerfile'
-      - 'api.go'
+      - 'cmd/*.go'
+      - 'cmd/*/*.go'
+      - 'internal/*/*.go'
       - '.github/workflows/build-api.yaml'
       - './.github/workflows/docker-build-publish.yaml'
-
+    tags:
+      - '*'
   workflow_dispatch:
 
 permissions:
