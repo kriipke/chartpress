@@ -1,15 +1,163 @@
-= Chartpress: Helm Chart
+= Chartpress
+:toc: macro
+:toclevels: 3
+:icons: font
+:source-highlighter: highlightjs
 
+image:https://img.shields.io/github/license/kriipke/chartpress[License]
+image:https://img.shields.io/github/languages/top/kriipke/chartpress[Top Language]
+image:https://img.shields.io/github/repo-size/kriipke/chartpress[Repo Size]
 
-= Installation
+Effortlessly template, validate, and publish Helm charts for your Kubernetes apps. Chartpress streamlines CI/CD for cloud-native deployments—fast, flexible, and built for modern DevOps.
 
-Before you install the helm chart you must create a secret to hold your DigitalOcean cred used by cert-manager to issue certificates.
+toc::[]
 
-[source,bash]
+== Features
+
+* Render Helm charts with dynamic values
+* Validate chart syntax and structure before deployment
+* Publish charts to remote registries
+* Integrate seamlessly with CI/CD pipelines
+* Written in Go, Smarty, and JavaScript for speed and flexibility
+
+== Getting Started
+
+=== Prerequisites
+
+* link:https://golang.org/doc/install[Go] (1.18+ recommended)
+* link:https://helm.sh/[Helm] (v3+)
+* Docker (for containerized workflows; optional)
+
+=== Installation
+
+.Clone using Git
+[source,sh]
 ----
-DO_API_TOKEN=XXXXXXXXXX
-
-kubectl create secret generic "digitalocean-dns" \
-  --namespace backend \
-  --from-literal=access-token="$DO_API_TOKEN"
+git clone git@github.com:kriipke/chartpress.git
+cd chartpress
 ----
+
+.Build the binary
+[source,sh]
+----
+go build -o chartpress ./cmd/chartpress
+----
+
+.Run using Docker (optional)
+[source,sh]
+----
+docker build -t chartpress .
+docker run --rm -v $(pwd):/work chartpress [command] [options]
+----
+
+== Usage
+
+=== Render a Helm Chart
+
+[source,sh]
+----
+./chartpress render --chart=./charts/my-app --values=./values/dev.yaml
+----
+
+=== Validate a Chart
+
+[source,sh]
+----
+./chartpress validate --chart=./charts/my-app
+----
+
+=== Publish a Chart
+
+[source,sh]
+----
+./chartpress publish --chart=./charts/my-app --version=1.2.3 --registry=https://my-helm-registry.example.com
+----
+
+=== List Templates
+
+[source,sh]
+----
+./chartpress list-templates
+----
+
+=== Configuration
+
+Chartpress can be configured via command-line flags or environment variables. See `./chartpress --help` for all options.
+
+== Example CI/CD Integration
+
+For GitHub Actions:
+
+[source,yaml]
+----
+- name: Render Helm Chart
+  run: ./chartpress render --chart=./charts/my-app --values=./values/ci.yaml
+
+- name: Validate Helm Chart
+  run: ./chartpress validate --chart=./charts/my-app
+
+- name: Publish Helm Chart
+  run: ./chartpress publish --chart=./charts/my-app --version=${GITHUB_SHA}
+----
+
+== Architecture Overview
+
+[plantuml]
+----
+@startuml
+actor User
+participant "chartpress CLI" as CLI
+participant "Helm CLI" as Helm
+participant "Registry (optional)" as Registry
+
+User -> CLI : Run chartpress command
+CLI -> Helm : Render/validate chart
+CLI -> Registry : Publish chart (if requested)
+@enduml
+----
+
+== Development
+
+* Go code in `cmd/` and `pkg/`
+* Templating with Smarty
+* JavaScript for any web or UI components
+* Makefile for common tasks
+
+=== Running Tests
+
+[source,sh]
+----
+make test
+----
+
+== Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Create a new Pull Request
+
+See link:CONTRIBUTING.adoc[CONTRIBUTING.adoc] for more details.
+
+== License
+
+This project is licensed under the MIT License - see the link:LICENSE[LICENSE] file for details.
+
+== Authors & Acknowledgements
+
+* link:https://github.com/kriipke[@kriipke] - creator and primary maintainer
+
+== See Also
+
+* link:https://helm.sh/[Helm]
+* link:https://github.com/helm/chart-testing[chart-testing]
+* link:https://microservice-api-patterns.github.io/MDSL-Specification/tutorial[MDSL Specification]
+
+== Security
+
+If you discover any security-related issues, please email kriipke@users.noreply.github.com instead of using the issue tracker.
+
+== Changelog
+
+See link:CHANGELOG.adoc[CHANGELOG.adoc] for recent changes.
