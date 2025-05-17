@@ -1,26 +1,39 @@
-
-a,
-button,
-input,
-select,
-h1,
-h2,
-h3,
-h4,
-h5,
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    border: none;
-    text-decoration: none;
-    background: none;
-
-    -webkit-font-smoothing: antialiased;
+.subchart-input-table {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-top: 32px;
+  background: #fff;
+  width: 100%;
+  border-collapse: collapse;
 }
-
-menu, ol, ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
+.subchart-input-table th,
+.subchart-input-table td {
+  padding: 10px 8px;
+  text-align: left;
+  font-size: 15px;
+}
+.subchart-input-table input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  font-size: 15px;
+}
+.subchart-input-table button {
+  background: #5c4cff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 18px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.subchart-input-table button:hover {
+  background: #3b2ac0;
+}
+.subchart-card {
+  transition: box-shadow 0.2s;
+}
+.subchart-card:hover {
+  box-shadow: 0 4px 16px #c8c8fa;
 }

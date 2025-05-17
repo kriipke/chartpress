@@ -1,10 +1,10 @@
-import "./ChartpressHelmChartWizard.css";
 import React, { useState } from "react";
+import SubchartDetails from "./SubchartDetails";
 
 
 export const ChartpressHelmChartWizard = ({ className, ...props }) => {
   // Inside your component:
-  const [wizardData, setWizardData] = useState({ /* your initial state */ });
+  const [subcharts, setSubcharts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
@@ -14,7 +14,7 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
       const response = await fetch("/chartpress/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(wizardData), // Send your collected form data
+        body: JSON.stringify(subcharts), // Send your collected form data
       });
       const data = await response.json();
       setResult(data);
@@ -77,6 +77,7 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
           </div>
           <div className="frame6">
             <div className="subchart-details">Subchart Details </div>
+            <SubchartDetails subcharts={subcharts} setSubcharts={setSubcharts} />
           </div>
           <div className="frame7">
             <div className="structure">Structure </div>
