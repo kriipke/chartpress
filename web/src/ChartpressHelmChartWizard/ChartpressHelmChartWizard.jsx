@@ -78,7 +78,6 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
           </div>
           <div className="frame6">
             <div className="subchart-details">Subchart Details </div>
-            <SubchartDetails subcharts={subcharts} setSubcharts={setSubcharts} />
           </div>
           <div className="frame7">
             <div className="structure">Structure </div>
@@ -484,6 +483,9 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
         </div>
         <div className="configuration">Configuration </div>
       </div>
+    </div>
+    <div>
+      <SubchartDetails subcharts={subcharts} setSubcharts={setSubcharts} />
     </div>
   );
 };
