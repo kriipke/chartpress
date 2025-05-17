@@ -1,8 +1,14 @@
 import "./ChartpressHelmChartWizard.css";
 import React, { useState } from "react";
 
+<<<<<<< HEAD
 export const ChartpressHelmChartWizard = ({ className, ...props }) => {
 
+=======
+
+export const ChartpressHelmChartWizard = ({ className, ...props }) => {
+  // Inside your component:
+>>>>>>> frontend-revamp
   const [wizardData, setWizardData] = useState({ /* your initial state */ });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -10,7 +16,11 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
   const handleGenerate = async () => {
     setLoading(true);
     try {
+<<<<<<< HEAD
       const response = await fetch("/generate", {
+=======
+      const response = await fetch("/chartpress/generate", {
+>>>>>>> frontend-revamp
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(wizardData), // Send your collected form data
@@ -23,7 +33,10 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
       setLoading(false);
     }
   };
+<<<<<<< HEAD
 
+=======
+>>>>>>> frontend-revamp
   return (
     <div className={"chartpress-helm-chart-wizard " + className}>
       <div className="container">
@@ -444,9 +457,15 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
               <div className="chart">Chart </div>
             </div>
           </div>
+<<<<<<< HEAD
         </div>
         <div className="button-27" onClick={handleGenerate} style={{ cursor: "pointer" }}>
           <div className="generate">{loading ? "Generating..." : "GENERATE"}</div>
+=======
+          <div className="button-27" onClick={handleGenerate} style={{ cursor: "pointer" }}>
+            <div className="generate">{loading ? "Generating..." : "GENERATE"}</div>
+          </div>
+>>>>>>> frontend-revamp
         </div>
         <div className="textarea">
           <div className="input-text">Input text </div>

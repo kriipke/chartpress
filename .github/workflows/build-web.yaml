@@ -9,6 +9,8 @@ on:
       - 'web/**'
       - '.github/workflows/build-web.yaml'
       - './.github/workflows/docker-build-publish.yaml'
+    tags:
+      - '*'
   workflow_dispatch:
 
 permissions:
