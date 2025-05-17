@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import SubchartDetails from "./SubchartDetails";
+import "./ChartpressHelmChartWizard.css";
 
 
 export const ChartpressHelmChartWizard = ({ className, ...props }) => {
