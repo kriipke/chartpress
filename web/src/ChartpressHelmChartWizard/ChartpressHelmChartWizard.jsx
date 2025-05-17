@@ -129,13 +129,7 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
             </div>
             <div className="count">Count </div>
             <div className="container-2">
-              <div className="_10">10 </div>
-              <div className="arrow-drop-down-large-1">
-                <img className="group8" src="group7.svg" />
-              </div>
-              <div className="arrow-drop-down-large-2">
-                <img className="group9" src="group8.svg" />
-              </div>
+              <SubchartDetails subcharts={subcharts} setSubcharts={setSubcharts} />
             </div>
           </div>
         </div>
@@ -246,143 +240,6 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
           </div>
         </div>
         <div className="subchart-management">
-          <div className="subchart-information-container">
-            <div className="image-container">
-              <img className="subchart-image" src="subchart-image0.png" />
-            </div>
-            <div className="favorite-icon">
-              <img className="group14" src="group13.svg" />
-            </div>
-            <div className="web-label">Web </div>
-            <div className="deployment-label">Deployment </div>
-            <div className="web-repository-link">oci://your.repo/web </div>
-            <div className="forked-repository-icon">
-              <img className="group15" src="group14.svg" />
-            </div>
-            <div className="networked-label">Networked </div>
-            <div className="bookmark-icon">
-              <img className="group16" src="group15.svg" />
-            </div>
-          </div>
-          <div className="table-2">
-            <div className="header">
-              <div className="frame8">
-                <div className="type2">Type </div>
-              </div>
-              <div className="frame9">
-                <div className="image2">Image </div>
-              </div>
-              <div className="frame10"></div>
-              <div className="frame11">
-                <div className="tag">Tag </div>
-              </div>
-              <div className="frame12">
-                <div className="description2">Description </div>
-              </div>
-              <div className="frame13">
-                <div className="subchart">Subchart </div>
-              </div>
-            </div>
-            <div className="row">
-              <div className="frame14">
-                <div className="checkbox">
-                  <div className="frame15">
-                    <div className="rectangle3"></div>
-                  </div>
-                </div>
-              </div>
-              <div className="frame16">
-                <div className="cache2">Cache </div>
-              </div>
-              <div className="frame17">
-                <div className="tag2">
-                  <div className="frame18">
-                    <div className="new-tag">New tag </div>
-                  </div>
-                </div>
-              </div>
-              <div className="frame19">
-                <img className="image3" src="image2.png" />
-              </div>
-              <div className="frame20">
-                <div className="pen">
-                  <img className="group17" src="group16.svg" />
-                </div>
-                <div className="kriipke-cache">kriipke/cache </div>
-              </div>
-              <div className="frame21">
-                <div className="minim-ullamco-duis-minim-consequat-officia-mollit-sit-officia">
-                  Minim ullamco duis minim consequat officia mollit sit officia{" "}
-                </div>
-              </div>
-            </div>
-            <div className="row2">
-              <div className="frame19">
-                <img className="image3" src="image3.png" />
-              </div>
-              <div className="frame16">
-                <div className="api">API </div>
-              </div>
-              <div className="frame14">
-                <div className="checkbox">
-                  <div className="frame15">
-                    <div className="rectangle3"></div>
-                  </div>
-                </div>
-              </div>
-              <div className="frame20">
-                <div className="kriipke-api">kriipke/api </div>
-                <div className="pen">
-                  <img className="group18" src="group17.svg" />
-                </div>
-              </div>
-              <div className="frame17">
-                <div className="tag2">
-                  <div className="frame18">
-                    <div className="new-tag">New tag </div>
-                  </div>
-                </div>
-              </div>
-              <div className="frame21">
-                <div className="occaecat-amet-deserunt-magna-elit-ex-esse-aliquip-enim-f">
-                  Occaecat amet deserunt magna elit ex esse aliquip. Enim f{" "}
-                </div>
-              </div>
-            </div>
-            <div className="row3">
-              <div className="frame14">
-                <div className="checkbox">
-                  <div className="frame15">
-                    <div className="rectangle3"></div>
-                  </div>
-                </div>
-              </div>
-              <div className="frame17">
-                <div className="tag2">
-                  <div className="frame18">
-                    <div className="new-tag">New tag </div>
-                  </div>
-                </div>
-              </div>
-              <div className="frame16">
-                <div className="web">Web </div>
-              </div>
-              <div className="frame19">
-                <img className="image3" src="image4.png" />
-              </div>
-              <div className="frame20">
-                <div className="pen">
-                  <img className="group19" src="group18.svg" />
-                </div>
-                <div className="kriipke-web">kriipke/web </div>
-              </div>
-              <div className="frame21">
-                <div className="ad-consectetur-tempor-laboris-magna-in-adipisicing-aute-si">
-                  Ad consectetur tempor laboris magna in adipisicing aute si{" "}
-                </div>
-              </div>
-            </div>
-          </div>
           <div className="card-api"></div>
           <div className="icon-bg"></div>
           <div className="favorite-icon-2">
@@ -483,9 +340,6 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
         </div>
         <div className="configuration">Configuration </div>
       </div>
-    </div>
-    <div>
-      <SubchartDetails subcharts={subcharts} setSubcharts={setSubcharts} />
     </div>
   );
 };
