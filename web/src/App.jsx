@@ -1,11 +1,11 @@
-import "./styles.css";
+import SubchartConfigurator from './components/SubchartConfigurator';
 
-import { ChartpressHelmChartWizard } from "./ChartpressHelmChartWizard/ChartpressHelmChartWizard";
-
-export default function App() {
+function App() {
   return (
     <div>
-      <ChartpressHelmChartWizard />
+      {/* other content */}
+      <SubchartConfigurator />
     </div>
   );
 }
+export default App;
