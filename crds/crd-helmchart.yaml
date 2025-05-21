@@ -1,0 +1,76 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: chartpressconfigs.kriipke.dev
+spec:
+  group: kriipke.dev
+  names:
+    kind: ChartpressConfig
+    plural: chartpressconfigs
+    singular: chartpressconfig
+    shortNames:
+      - cpress
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                umbrellaChartName:
+                  type: string
+                  description: "Name of the umbrella Helm chart."
+                subcharts:
+                  type: array
+                  description: "List of subcharts and their workload types."
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        description: "The name of the subchart."
+                      workload:
+                        type: string
+                        enum: ["deployment", "statefulset", "daemonset", "job", "cronjob"]
+                        description: "The workload type for the subchart."
+                rules:
+                  type: object
+                  properties:
+                    possible_ingresses:
+                      type: array
+                      items:
+                        type: string
+                        enum: ["alb", "nginx", "traefik", "istio", "gce"]
+                      description: "Possible ingress controller types."
+                    common_annotations:
+                      type: boolean
+                      description: "Enable or disable common annotations."
+                    linked_templates:
+                      type: boolean
+                      description: "Should templates be linked?"
+                    resource_names_match_chart_name:
+                      type: boolean
+                      description: "Should resource names match chart name?"
+                    shared_secrets_config:
+                      type: boolean
+                      description: "Enable shared secrets configuration."
+                    shared_newrelic_config:
+                      type: boolean
+                      description: "Enable shared New Relic configuration."
+                    generate_umbrella_readme:
+                      type: boolean
+                      description: "Generate a README for the umbrella chart."
+                    generate_subchart_readme:
+                      type: boolean
+                      description: "Generate READMEs for subcharts."
+                    include_docs:
+                      type: boolean
+                      description: "Include documentation in the output."
+              required: ["umbrellaChartName", "subcharts", "rules"]
+      subresources:
+        status: {}
