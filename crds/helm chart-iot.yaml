@@ -1,0 +1,25 @@
+apiVersion: kriipke.dev/v1alpha1
+kind: HelmChart
+metadata:
+  name: iot-hub
+spec:
+  umbrellaChartName: iot-hub
+  subcharts:
+    - name: device-manager
+      workload: deployment
+    - name: mqtt-broker
+      workload: statefulset
+    - name: timescaledb
+      workload: statefulset
+  rules:
+    possible_ingresses:
+      - gce
+      - nginx
+    common_annotations: true
+    linked_templates: true
+    resource_names_match_chart_name: true
+    shared_secrets_config: false
+    shared_newrelic_config: false
+    generate_umbrella_readme: false
+    generate_subchart_readme: true
+    include_docs: true
