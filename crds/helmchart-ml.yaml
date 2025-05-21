@@ -1,0 +1,26 @@
+apiVersion: kriipke.dev/v1alpha1
+kind: HelmChart
+metadata:
+  name: ml-platform
+spec:
+  umbrellaChartName: ml-platform
+  subcharts:
+    - name: trainer
+      workload: deployment
+    - name: predictor
+      workload: deployment
+    - name: model-db
+      workload: statefulset
+    - name: worker
+      workload: deployment
+  rules:
+    possible_ingresses:
+      - istio
+    common_annotations: false
+    linked_templates: false
+    resource_names_match_chart_name: false
+    shared_secrets_config: true
+    shared_newrelic_config: true
+    generate_umbrella_readme: true
+    generate_subchart_readme: true
+    include_docs: false
