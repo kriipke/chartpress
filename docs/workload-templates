@@ -1,0 +1,86 @@
+Based on the architectural patterns detailed on Microservices.io, here is a refined Microservice Architecture Ontology tailored for Chartpress. This ontology categorizes common microservice types, aligning them with relevant Helm workload patterns to facilitate the generation of subcharts.
+
+⸻
+
+🧩 Chartpress Microservice Ontology
+
+1. API Gateway
+	•	Label: api-gateway
+	•	Workload: Deployment
+	•	Description: Serves as the single entry point for clients, routing requests to appropriate backend services, handling concerns like authentication, rate limiting, and response aggregation.  ￼
+
+2. Backend for Frontend (BFF)
+	•	Label: bff
+	•	Workload: Deployment
+	•	Description: Tailors APIs to specific client needs, such as web or mobile applications, by aggregating data from multiple services.  ￼
+
+3. Web Server
+	•	Label: web-server
+	•	Workload: Deployment
+	•	Description: Hosts static content and serves as the frontend interface, often implemented using frameworks like React or Angular.
+
+4. API Service
+	•	Label: api-service
+	•	Workload: Deployment
+	•	Description: Handles business logic and exposes RESTful or GraphQL APIs to clients.
+
+5. Worker Service
+	•	Label: worker
+	•	Workload: Deployment
+	•	Description: Processes asynchronous tasks, such as background jobs or message consumption, often communicating via message queues.
+
+6. Message Queue
+	•	Label: message-queue
+	•	Workload: StatefulSet
+	•	Description: Facilitates asynchronous communication between services, commonly implemented using systems like RabbitMQ or Kafka.
+
+7. Database
+	•	Label: database
+	•	Workload: StatefulSet
+	•	Description: Stores persistent data, with each microservice typically having its own database to ensure loose coupling. ￼
+
+8. Cache
+	•	Label: cache
+	•	Workload: StatefulSet
+	•	Description: Provides fast, in-memory data storage to improve application performance, often using systems like Redis.
+
+9. Configuration Server
+	•	Label: config-server
+	•	Workload: Deployment
+	•	Description: Manages externalized configuration for services, allowing dynamic updates without redeployment.
+
+10. Service Registry
+	•	Label: service-registry
+	•	Workload: Deployment
+	•	Description: Maintains a directory of service instances, enabling dynamic discovery and load balancing.
+
+11. Circuit Breaker
+	•	Label: circuit-breaker
+	•	Workload: Deployment
+	•	Description: Monitors service interactions and prevents cascading failures by halting requests to failing services.
+
+12. Monitoring
+	•	Label: monitoring
+	•	Workload: Deployment
+	•	Description: Collects and visualizes metrics, logs, and traces to observe system health and performance.
+
+13. Logging
+	•	Label: logging
+	•	Workload: Deployment
+	•	Description: Aggregates and stores logs from various services for analysis and debugging.
+
+14. Authentication Service
+	•	Label: auth-service
+	•	Workload: Deployment
+	•	Description: Manages user authentication and authorization, issuing tokens and handling access control.
+
+15. Scheduler
+	•	Label: scheduler
+	•	Workload: CronJob
+	•	Description: Executes scheduled tasks, such as periodic data processing or maintenance jobs.
+
+⸻
+
+This ontology provides a structured approach to defining microservice components within Chartpress, aligning with established patterns from Microservices.io. Each component is associated with a typical Kubernetes workload type, facilitating the generation of appropriate Helm subcharts.
+
+If you would like this ontology exported as a YAML file or integrated into the Chartpress UI schema, please let me know.
