@@ -1,12 +1,8 @@
-Based on the architectural patterns detailed on Microservices.io, here is a refined Microservice Architecture Ontology tailored for Chartpress. This ontology categorizes common microservice types, aligning them with relevant Helm workload patterns to facilitate the generation of subcharts.
-
-⸻
-
 🧩 Chartpress Microservice Ontology
 
 1. API Gateway
 	•	Label: api-gateway
-	•	Workload: Deployment
+	•Workload: Deployment
 	•	Description: Serves as the single entry point for clients, routing requests to appropriate backend services, handling concerns like authentication, rate limiting, and response aggregation.  ￼
 
 2. Backend for Frontend (BFF)
@@ -79,8 +75,7 @@ Based on the architectural patterns detailed on Microservices.io, here is a refi
 	•	Workload: CronJob
 	•	Description: Executes scheduled tasks, such as periodic data processing or maintenance jobs.
 
-⸻
 
-This ontology provides a structured approach to defining microservice components within Chartpress, aligning with established patterns from Microservices.io. Each component is associated with a typical Kubernetes workload type, facilitating the generation of appropriate Helm subcharts.
 
-If you would like this ontology exported as a YAML file or integrated into the Chartpress UI schema, please let me know.
+
+
