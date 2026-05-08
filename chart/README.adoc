@@ -1,5 +1,22 @@
 = ChartPress API Documentation
 
+== DNSimple cert-manager webhook
+
+This chart is configured to use the DNSimple cert-manager DNS01 webhook solver instead of the built-in DigitalOcean solver.
+
+Before installing this chart, install the DNSimple webhook in the cluster. The upstream project is `puzzle/cert-manager-webhook-dnsimple`, and its default webhook API group is `acme.dnsimple.com`.
+
+Create the DNSimple token secret in the same namespace as this release:
+
+[source,bash]
+----
+kubectl create secret generic dnsimple-dns \
+  --from-literal=token='<DNSIMPLE_API_TOKEN>' \
+  -n <release-namespace>
+----
+
+If you use a DNSimple user token, also set `issuer.acme.dnsimple.accountID`. Account tokens can usually leave that value empty.
+
 == Overview
 
 The ChartPress API is a Go-based HTTP server that allows users to generate Helm charts dynamically based on user-provided configurations. It includes endpoints for handling chart generation and supports JSON-based configuration input.

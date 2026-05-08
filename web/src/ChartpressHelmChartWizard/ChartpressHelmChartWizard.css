@@ -267,6 +267,27 @@
   top: 50%;
   translate: 0 -50%;
 }
+.chartpress-helm-chart-wizard .helm-chart-name-input {
+  background: transparent;
+  border: 0;
+  color: #e8618c;
+  font-family: "Almarai-Regular", sans-serif;
+  font-size: 24px;
+  line-height: 36px;
+  font-weight: 400;
+  position: absolute;
+  right: 16px;
+  left: 60px;
+  top: 50%;
+  translate: 0 -50%;
+}
+.chartpress-helm-chart-wizard .helm-chart-name-input:focus {
+  outline: none;
+}
+.chartpress-helm-chart-wizard .helm-chart-name-input::placeholder {
+  color: #e8618c;
+  opacity: 0.7;
+}
 .chartpress-helm-chart-wizard .box-3-d-50 {
   width: 32px;
   height: 32px;
@@ -735,6 +756,19 @@
   left: 506px;
   top: 0px;
   overflow: hidden;
+}
+.chartpress-helm-chart-wizard .subchart-details-panel {
+  background: #ffffff;
+  border: 1px solid #dee1e6;
+  border-radius: 8px;
+  width: 800px;
+  max-width: 100%;
+  position: absolute;
+  left: 0px;
+  top: 64px;
+  padding: 16px;
+  box-shadow: 0px 8px 24px rgba(18, 15, 40, 0.08);
+  z-index: 2;
 }
 .chartpress-helm-chart-wizard ._10 {
   color: #171a1f;
@@ -2583,6 +2617,19 @@
   left: 50%;
   translate: -50% -50%;
   top: 50%;
+}
+.chartpress-helm-chart-wizard .download-link {
+  color: #636ae8;
+  font-family: "Almarai-Regular", sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  position: absolute;
+  left: 1069px;
+  top: 545px;
+  text-decoration: none;
+}
+.chartpress-helm-chart-wizard .download-link:hover {
+  text-decoration: underline;
 }
 .chartpress-helm-chart-wizard .textarea {
   background: rgba(0, 0, 0, 0);

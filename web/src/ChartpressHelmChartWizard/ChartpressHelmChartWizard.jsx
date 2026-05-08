@@ -4,19 +4,33 @@ import "./ChartpressHelmChartWizard.css";
 
 
 export const ChartpressHelmChartWizard = ({ className, ...props }) => {
-  // Inside your component:
+  const [umbrellaChartName, setUmbrellaChartName] = useState("my-umbrella");
   const [subcharts, setSubcharts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
   const handleGenerate = async () => {
     setLoading(true);
+    setResult(null);
     try {
+      const payload = {
+        umbrellaChartName,
+        subcharts: subcharts.map((subchart) => ({
+          name: subchart.subchart,
+          workload: subchart.type.toLowerCase(),
+        })),
+      };
+
       const response = await fetch("/chartpress/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(subcharts), // Send your collected form data
+        body: JSON.stringify(payload),
       });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
       const data = await response.json();
       setResult(data);
     } catch (err) {
@@ -62,7 +76,12 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
       </div>
       <div className="chart-description">Chart Description </div>
       <div className="textbox-32">
-        <div className="helm-chart-name">Helm Chart Name </div>
+        <input
+          className="helm-chart-name-input"
+          value={umbrellaChartName}
+          onChange={(e) => setUmbrellaChartName(e.target.value)}
+          placeholder="Helm chart name"
+        />
         <div className="box-3-d-50">
           <img className="group5" src="group4.svg" />
         </div>
@@ -128,7 +147,7 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
               <div className="library">Library </div>
             </div>
             <div className="count">Count </div>
-            <div className="container-2">
+            <div className="subchart-details-panel">
               <SubchartDetails subcharts={subcharts} setSubcharts={setSubcharts} />
             </div>
           </div>
@@ -305,6 +324,11 @@ export const ChartpressHelmChartWizard = ({ className, ...props }) => {
           <div className="button-27" onClick={handleGenerate} style={{ cursor: "pointer" }}>
             <div className="generate">{loading ? "Generating..." : "GENERATE"}</div>
           </div>
+          {result?.downloadUrl ? (
+            <a className="download-link" href={result.downloadUrl}>
+              Download generated chart
+            </a>
+          ) : null}
         </div>
         <div className="textarea">
           <div className="input-text">Input text </div>

@@ -11,7 +11,13 @@ spec:
       name: {{ .Values.issuer.acme.privateKeySecretRef }}
     solvers:
       - dns01:
-          digitalocean:
-            tokenSecretRef:
-              name: {{ .Values.issuer.acme.solverSecret.name }}
-              key: {{ .Values.issuer.acme.solverSecret.key }}
+          webhook:
+            groupName: {{ .Values.issuer.acme.dnsimple.groupName | quote }}
+            solverName: {{ .Values.issuer.acme.dnsimple.solverName | quote }}
+            config:
+              tokenSecretRef:
+                name: {{ .Values.issuer.acme.dnsimple.tokenSecretRef.name }}
+                key: {{ .Values.issuer.acme.dnsimple.tokenSecretRef.key }}
+              {{- with .Values.issuer.acme.dnsimple.accountID }}
+              accountID: {{ . | quote }}
+              {{- end }}

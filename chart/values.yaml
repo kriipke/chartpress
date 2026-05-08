@@ -17,21 +17,21 @@ frontend:
 ingress:
   class: nginx
   rewriteTarget: /
-  host: kubedash.io
-  secretName: kubedash.io
+  host: ziinc.dev
+  secretName: cert-wcard
   path: /chartpress/
   backend:
     service: chartpress-frontend
     port: 80
 
 certificate:
-  name: kubedash.io
+  name: cert-wcard
   secretName: cert-wcard
   issuerName: letsencrypt-wcard
-  commonName: kubedash.io
+  commonName: ziinc.dev
   dnsNames:
-    - "*.kubedash.io"
-    - "kubedash.io"
+    - "*.ziinc.dev"
+    - "ziinc.dev"
 
 issuer:
   name: letsencrypt-wcard
@@ -39,6 +39,10 @@ issuer:
     email: kriipke@protonmail.com
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef: letsencrypt-wcard
-    solverSecret:
-      name: digitalocean-dns
-      key: access-token
+    dnsimple:
+      groupName: acme.dnsimple.com
+      solverName: dnsimple
+      accountID: ""
+      tokenSecretRef:
+        name: dnsimple-dns
+        key: token

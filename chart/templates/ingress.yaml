@@ -5,20 +5,20 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     kubernetes.io/ingress.class: {{ .Values.ingress.class }}
-    nginx.ingress.kubernetes.io/rewrite-target: {{ .Values.ingress.rewriteTarget }}
-    cert-manager.io/issuer: {{ .Values.certificate.issuerName }}
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: {{ .Values.ingress.class }}
   tls:
     - hosts:
         - {{ .Values.ingress.host }}
-      secretName: {{ .Values.ingress.secretName }}
+      secretName: {{ .Values.ingress.secretName | default .Values.certificate.secretName }}
   rules:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
-          - path: {{ .Values.ingress.path }}
-            pathType: Prefix
+          - path: {{ trimSuffix "/" .Values.ingress.path }}(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: {{ .Values.ingress.backend.service }}
