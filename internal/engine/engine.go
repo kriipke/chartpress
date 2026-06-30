@@ -108,6 +108,7 @@ func buildSubchart(sub *chart.Chart, sc Subchart, spec Spec) error {
 	applySubchartFileToggles(sub, spec.Rules)
 	applySharedSecretsSubchart(sub, spec)
 	applySharedNewrelicSubchart(sub, spec)
+	applyIngress(sub, spec.Rules.Ingress)
 	return nil
 }
 
