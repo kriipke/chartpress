@@ -14,22 +14,33 @@ spec:
       labels:
         app: chartpress-backend
     spec:
+      serviceAccountName: {{ .Values.backend.serviceAccount.name }}
       containers:
         - name: backend
           image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
           ports:
             - containerPort: 8080
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OPENAI_MODEL
+              value: {{ .Values.backend.openai.model | quote }}
+            {{- if .Values.backend.openai.apiKeySecret.name }}
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.openai.apiKeySecret.name }}
+                  key: {{ .Values.backend.openai.apiKeySecret.key }}
+            {{- end }}
           volumeMounts:
             - name: chartpress-config
               mountPath: /app/chartpress.yaml
               subPath: chartpress.yaml
             # /app/templates is intentionally NOT mounted: the chart templates
             # are baked into the image and an emptyDir mount would hide them.
-            - name: output-volume
-              mountPath: /app/output
       volumes:
-        - name: output-volume
-          emptyDir: {}
         - name: chartpress-config
           configMap:
             name: chartpress-config
