@@ -6,9 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/kriipke/chartpress/internal/apis"
 	"github.com/kriipke/chartpress/internal/engine"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func zipEntries(t *testing.T, b []byte) map[string]bool {
@@ -45,33 +43,6 @@ func TestChartRendererProducesValidChartZip(t *testing.T) {
 			t.Fatalf("zip missing %q; entries = %v", want, names)
 		}
 	}
-}
-
-// crObj is temporarily inlined here so Task 4 compiles before Task 5 (reconcile_test.go)
-// is written. It will be removed when Task 5 defines it in reconcile_test.go.
-func crObj(name string, generation int64) *unstructured.Unstructured {
-	return &unstructured.Unstructured{Object: map[string]interface{}{
-		"apiVersion": apis.GroupVersion,
-		"kind":       apis.Kind,
-		"metadata": map[string]interface{}{
-			"name":       name,
-			"namespace":  "chartpress-system",
-			"generation": generation,
-		},
-		"spec": map[string]interface{}{
-			"umbrellaChartName": name,
-			"subcharts": []interface{}{
-				map[string]interface{}{"name": "api", "workload": "deployment"},
-			},
-			"rules": map[string]interface{}{
-				"ingress":                  "alb",
-				"linked_templates":         true,
-				"generate_umbrella_readme": true,
-				"generate_subchart_readme": true,
-				"include_docs":             true,
-			},
-		},
-	}}
 }
 
 func TestDecodeSpecFromUnstructured(t *testing.T) {
