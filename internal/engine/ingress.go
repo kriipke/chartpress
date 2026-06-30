@@ -42,12 +42,61 @@ spec:
 `, ann, controller)
 }
 
+func istioTemplate() string {
+	return `{{- if .Values.ingress.host }}
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: {{ include (print .Chart.Name ".fullname") . }}
+  labels:
+    {{- include (print .Chart.Name ".labels") . | nindent 4 }}
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - {{ .Values.ingress.host | quote }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ include (print .Chart.Name ".fullname") . }}
+  labels:
+    {{- include (print .Chart.Name ".labels") . | nindent 4 }}
+spec:
+  hosts:
+    - {{ .Values.ingress.host | quote }}
+  gateways:
+    - {{ include (print .Chart.Name ".fullname") . }}
+  http:
+    - match:
+        - uri:
+            prefix: {{ default "/" .Values.ingress.path }}
+      route:
+        - destination:
+            host: {{ include (print .Chart.Name ".fullname") . }}
+            port:
+              number: {{ .Values.service.port }}
+{{- end }}
+`
+}
+
 // applyIngress replaces the subchart ingress manifest with a controller-specific
-// one, or removes it for "none"/"istio" (istio handled separately in Task 11).
+// one, or removes it for "none"; for "istio" emits a Gateway + VirtualService.
 func applyIngress(sub *chart.Chart, controller string) {
 	sub.Templates = dropTemplate(sub.Templates, "templates/ingress.yaml")
 	switch controller {
-	case "none", "istio":
+	case "none":
+		return
+	case "istio":
+		sub.Templates = append(sub.Templates, &chart.File{
+			Name: "templates/istio.yaml",
+			Data: []byte(istioTemplate()),
+		})
 		return
 	default:
 		sub.Templates = append(sub.Templates, &chart.File{
