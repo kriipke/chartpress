@@ -106,6 +106,7 @@ func buildSubchart(sub *chart.Chart, sc Subchart, spec Spec) error {
 	applyCommonAnnotationsSubchart(sub, spec)
 	applyResourceNaming(sub, spec.Rules.ResourceNamesMatchChartName)
 	applySubchartFileToggles(sub, spec.Rules)
+	applySharedSecretsSubchart(sub, spec)
 	return nil
 }
 
@@ -129,5 +130,6 @@ func replacePlaceholders(ch *chart.Chart, repl map[string]string) {
 func applyUmbrellaRules(ch *chart.Chart, spec Spec) error {
 	applyUmbrellaFileToggles(ch, spec.Rules)
 	applyCommonAnnotationsUmbrella(ch, spec)
+	applySharedSecretsUmbrella(ch, spec)
 	return nil
 }

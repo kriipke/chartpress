@@ -106,6 +106,43 @@ func appendToAnnotationsDefine(data []byte, chartName string) []byte {
 
 func indexOf(s, sub string) int { return strings.Index(s, sub) }
 
+// applySharedSecretsUmbrella emits a shared-secrets Secret template into the
+// umbrella chart and seeds global.sharedSecrets.data so the template renders.
+func applySharedSecretsUmbrella(ch *chart.Chart, spec Spec) {
+	if !spec.Rules.SharedSecretsConfig {
+		return
+	}
+	name := spec.UmbrellaChartName + "-shared-secrets"
+	tmpl := "apiVersion: v1\nkind: Secret\nmetadata:\n  name: " + name +
+		"\ntype: Opaque\nstringData:\n{{- range $k, $v := .Values.global.sharedSecrets.data }}\n  {{ $k }}: {{ $v | quote }}\n{{- end }}\n"
+	ch.Templates = append(ch.Templates, &chart.File{Name: "templates/shared-secrets.yaml", Data: []byte(tmpl)})
+
+	global, _ := ch.Values["global"].(map[string]interface{})
+	if global == nil {
+		global = map[string]interface{}{}
+		ch.Values["global"] = global
+	}
+	global["sharedSecrets"] = map[string]interface{}{"data": map[string]interface{}{}}
+}
+
+// applySharedSecretsSubchart appends an envFrom secretRef entry to the subchart
+// values so the deployment template mounts the shared-secrets Secret.
+func applySharedSecretsSubchart(sub *chart.Chart, spec Spec) {
+	if !spec.Rules.SharedSecretsConfig {
+		return
+	}
+	appendEnvFrom(sub, map[string]interface{}{
+		"secretRef": map[string]interface{}{"name": spec.UmbrellaChartName + "-shared-secrets"},
+	})
+}
+
+// appendEnvFrom adds an entry to the subchart's .Values.envFrom (the deployment
+// template already ranges over it).
+func appendEnvFrom(sub *chart.Chart, entry map[string]interface{}) {
+	cur, _ := sub.Values["envFrom"].([]interface{})
+	sub.Values["envFrom"] = append(cur, entry)
+}
+
 // applyResourceNaming rewrites the subchart fullname helper to emit just the chart
 // name. The helper define line looks like:
 //
