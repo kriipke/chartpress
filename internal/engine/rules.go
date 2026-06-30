@@ -145,6 +145,59 @@ func appendEnvFrom(sub *chart.Chart, entry map[string]interface{}) {
 	sub.Values["envFrom"] = append(cur, entry)
 }
 
+// applySharedNewrelicUmbrella emits a newrelic-config ConfigMap and newrelic-license
+// Secret template into the umbrella chart, and seeds global.newrelic so the secret
+// template renders without erroring.
+func applySharedNewrelicUmbrella(ch *chart.Chart, spec Spec) {
+	if !spec.Rules.SharedNewrelicConfig {
+		return
+	}
+	cfg := spec.UmbrellaChartName + "-newrelic-config"
+	lic := spec.UmbrellaChartName + "-newrelic-license"
+	cm := "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: " + cfg +
+		"\ndata:\n  NEW_RELIC_ENABLED: \"true\"\n  NEW_RELIC_DISTRIBUTED_TRACING_ENABLED: \"true\"\n  NEW_RELIC_LABELS: \"app:" + spec.UmbrellaChartName + "\"\n"
+	secret := "apiVersion: v1\nkind: Secret\nmetadata:\n  name: " + lic +
+		"\ntype: Opaque\nstringData:\n  NEW_RELIC_LICENSE_KEY: {{ .Values.global.newrelic.licenseKey | default \"\" | quote }}\n"
+	ch.Templates = append(ch.Templates,
+		&chart.File{Name: "templates/newrelic-config.yaml", Data: []byte(cm)},
+		&chart.File{Name: "templates/newrelic-license.yaml", Data: []byte(secret)},
+	)
+	global, _ := ch.Values["global"].(map[string]interface{})
+	if global == nil {
+		global = map[string]interface{}{}
+		ch.Values["global"] = global
+	}
+	if _, ok := global["newrelic"]; !ok {
+		global["newrelic"] = map[string]interface{}{"licenseKey": ""}
+	}
+}
+
+// applySharedNewrelicSubchart wires the shared newrelic ConfigMap via envFrom and
+// adds the per-subchart NEW_RELIC_LICENSE_KEY (from the shared secret) and
+// NEW_RELIC_APP_NAME (= subchart name) env entries.
+func applySharedNewrelicSubchart(sub *chart.Chart, spec Spec) {
+	if !spec.Rules.SharedNewrelicConfig {
+		return
+	}
+	appendEnvFrom(sub, map[string]interface{}{
+		"configMapRef": map[string]interface{}{"name": spec.UmbrellaChartName + "-newrelic-config"},
+	})
+	env, _ := sub.Values["env"].([]interface{})
+	env = append(env,
+		map[string]interface{}{
+			"name": "NEW_RELIC_LICENSE_KEY",
+			"valueFrom": map[string]interface{}{
+				"secretKeyRef": map[string]interface{}{
+					"name": spec.UmbrellaChartName + "-newrelic-license",
+					"key":  "NEW_RELIC_LICENSE_KEY",
+				},
+			},
+		},
+		map[string]interface{}{"name": "NEW_RELIC_APP_NAME", "value": sub.Metadata.Name},
+	)
+	sub.Values["env"] = env
+}
+
 // applyResourceNaming rewrites the subchart fullname helper to emit just the chart
 // name. The helper define line looks like:
 //

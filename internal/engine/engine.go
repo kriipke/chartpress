@@ -107,6 +107,7 @@ func buildSubchart(sub *chart.Chart, sc Subchart, spec Spec) error {
 	applyResourceNaming(sub, spec.Rules.ResourceNamesMatchChartName)
 	applySubchartFileToggles(sub, spec.Rules)
 	applySharedSecretsSubchart(sub, spec)
+	applySharedNewrelicSubchart(sub, spec)
 	return nil
 }
 
@@ -131,5 +132,6 @@ func applyUmbrellaRules(ch *chart.Chart, spec Spec) error {
 	applyUmbrellaFileToggles(ch, spec.Rules)
 	applyCommonAnnotationsUmbrella(ch, spec)
 	applySharedSecretsUmbrella(ch, spec)
+	applySharedNewrelicUmbrella(ch, spec)
 	return nil
 }
