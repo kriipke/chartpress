@@ -98,6 +98,7 @@ func buildSubchart(sub *chart.Chart, sc Subchart, spec Spec) error {
 		}
 	}
 	sub.Templates = filtered
+	applyWorkload(sub, sc.Workload)
 	replacePlaceholders(sub, map[string]string{
 		placeholderName: spec.UmbrellaChartName,
 		"component":     sc.Name,
