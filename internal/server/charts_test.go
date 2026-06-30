@@ -81,7 +81,7 @@ func TestChartsListMapsFields(t *testing.T) {
 		byName[c.Name] = c
 	}
 	if c := byName["ready-one"]; c.Phase != "Ready" || c.SubchartCount != 3 || c.LastGenerated != "2026-06-30T03:10:00Z" || c.DownloadURL != "" {
-		t.Fatalf("ready-one = %+v (downloadUrl must be empty in Phase 2)", c)
+		t.Fatalf("ready-one = %+v (downloadUrl must be empty when the Server has no Presigner)", c)
 	}
 	if c := byName["fresh-one"]; c.Phase != "Pending" {
 		t.Fatalf("empty status should map to Pending, got %q", c.Phase)
