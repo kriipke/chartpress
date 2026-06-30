@@ -1,7 +1,7 @@
 backend:
   image:
     repository: ghcr.io/kriipke/chartpress/api
-    tag: 0.1.11-rc3
+    tag: 0.1.13
   service:
     type: ClusterIP
     port: 8080
@@ -38,7 +38,7 @@ s3:
 frontend:
   image:
     repository: ghcr.io/kriipke/chartpress/web
-    tag: 0.1.11-rc3
+    tag: 0.1.13
   service:
     type: ClusterIP
     port: 80

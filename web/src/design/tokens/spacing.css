@@ -1,0 +1,16 @@
+/* chartpress — spacing scale (Radix Themes, scaling = 1, in px) */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 48px;
+  --space-9: 64px;
+
+  /* layout */
+  --page-max: 1040px; /* app main content max-width */
+  --page-gutter: 28px; /* nav + main horizontal padding */
+}

@@ -25,9 +25,10 @@ type chartSummary struct {
 const presignExpiry = 15 * time.Minute
 
 // summarize maps a ChartpressConfig CR to the Charts-row shape. When the operator
-// has marked it Ready and recorded an artifactKey, it mints a fresh presigned GET
-// URL; any presign error is logged and leaves downloadUrl empty (the row still
-// renders). downloadUrl stays empty for every non-Ready phase.
+// has marked it Ready for the CURRENT generation and recorded an artifactKey, it
+// mints a fresh presigned GET URL; any presign error is logged and leaves
+// downloadUrl empty (the row still renders). downloadUrl stays empty for every
+// non-Ready phase and for a Ready status left over from a superseded spec.
 func summarize(ctx context.Context, p Presigner, obj unstructured.Unstructured) chartSummary {
 	subs, _, _ := unstructured.NestedSlice(obj.Object, "spec", "subcharts")
 	phase, _, _ := unstructured.NestedString(obj.Object, "status", "phase")
@@ -43,7 +44,15 @@ func summarize(ctx context.Context, p Presigner, obj unstructured.Unstructured) 
 		LastGenerated: lastGen,
 		Message:       msg,
 	}
-	if phase == "Ready" && p != nil {
+	// Only mint a URL when the Ready status reflects the spec the API server
+	// currently holds. The operator stamps observedGeneration to
+	// metadata.generation only on a successful render, so when a user reapplies a
+	// changed spec the generation increments while the prior Ready status (and its
+	// artifactKey) lingers until the operator reconciles. Without this gate /charts
+	// would hand out a presigned URL for the stale artifact — indefinitely if the
+	// operator is down. Mirrors the operator's own Ready short-circuit.
+	observed, _, _ := unstructured.NestedInt64(obj.Object, "status", "observedGeneration")
+	if phase == "Ready" && observed == obj.GetGeneration() && p != nil {
 		if key, _, _ := unstructured.NestedString(obj.Object, "status", "artifactKey"); key != "" {
 			if url, err := p.PresignGet(ctx, key, presignExpiry); err != nil {
 				log.Printf("[ERROR] presign %q: %v", key, err)

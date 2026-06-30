@@ -1,3 +1,5 @@
 /web/node_modules
 output/*
 !output/.gitkeep
+.claude
+skills-lock.json

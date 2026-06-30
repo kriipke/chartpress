@@ -1,0 +1,11 @@
+/* chartpress design system — global entry point.
+ * Consumers link THIS one file. It is an @import manifest only; every rule
+ * lives in a token file below. Order: fonts → foundations → semantic.
+ */
+@import "./tokens/fonts.css";
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/radius.css";
+@import "./tokens/shadows.css";
+@import "./tokens/animations.css";

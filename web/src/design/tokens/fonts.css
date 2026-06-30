@@ -1,0 +1,11 @@
+/* chartpress — webfonts
+ * The chartpress app ships with the system UI sans stack and no bundled font.
+ * Code is central to the product (Helm trees, YAML, repository URIs), so we
+ * layer JetBrains Mono — a clean, open monospace with strong legibility at
+ * small sizes — in front of the system mono stack. Loaded from Google Fonts.
+ *
+ * SUBSTITUTION FLAG: there is no brand-owned typeface in the chartpress repo;
+ * JetBrains Mono is our choice for code surfaces. Swap it for a licensed brand
+ * mono by replacing this import.
+ */
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap");

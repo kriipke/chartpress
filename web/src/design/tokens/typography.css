@@ -1,0 +1,57 @@
+/* chartpress — typography tokens
+ * Faithful to the app: a system UI sans stack (no webfont download), and a
+ * monospace stack for the chart-structure preview / code. JetBrains Mono is
+ * layered in front of the system mono stack because code (Helm trees, YAML)
+ * is central to this product; it falls back cleanly if the webfont is absent.
+ * Scale values mirror Radix Themes (scaling = 1).
+ */
+:root {
+  /* ---- Families ---- */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Helvetica, Arial, system-ui, sans-serif;
+  --font-mono:
+    "JetBrains Mono", "SF Mono", "Menlo", "Consolas", "Bitstream Vera Sans Mono",
+    monospace;
+
+  /* ---- Size scale (px) ---- */
+  --font-size-1: 12px;
+  --font-size-2: 14px; /* default body / form text */
+  --font-size-3: 16px;
+  --font-size-4: 18px;
+  --font-size-5: 20px;
+  --font-size-6: 24px; /* panel H1 in the app */
+  --font-size-7: 28px;
+  --font-size-8: 35px;
+  --font-size-9: 60px;
+
+  /* ---- Line heights ---- */
+  --line-height-1: 16px;
+  --line-height-2: 20px;
+  --line-height-3: 24px;
+  --line-height-4: 26px;
+  --line-height-5: 28px;
+  --line-height-6: 30px;
+  --line-height-7: 36px;
+  --line-height-8: 40px;
+  --line-height-9: 60px;
+  --line-height-code: 1.55; /* tree / code blocks */
+
+  /* ---- Weights ---- */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500; /* nav links, field hints */
+  --font-weight-semibold: 600; /* labels, buttons, badges */
+  --font-weight-bold: 700; /* logo, headings */
+
+  /* ---- Letter spacing ---- */
+  --letter-spacing-tight: -0.01em; /* logo / large headings */
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide: 0.04em; /* uppercase eyebrows / GENERATE */
+
+  /* ---- Semantic roles ---- */
+  --text-heading-size: var(--font-size-6);
+  --text-heading-weight: var(--font-weight-bold);
+  --text-body-size: var(--font-size-2);
+  --text-label-size: 13px; /* exact app field-label size */
+  --text-label-weight: var(--font-weight-semibold);
+}

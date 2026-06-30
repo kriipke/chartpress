@@ -1,0 +1,32 @@
+/* chartpress — shared keyframes & motion tokens.
+ * Motion is restrained: spinners for loading, a soft pulse for the live
+ * "Generating" status, a quick settle for "Ready". Standard easing, no bounce.
+ */
+:root {
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+  --duration-fast: 0.15s; /* @kind other */
+  --duration-base: 0.2s; /* @kind other */
+}
+
+@keyframes cp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* live "Generating" badge — gentle breathing */
+@keyframes cp-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+/* "Ready" settle — a one-shot pop */
+@keyframes cp-pop {
+  0% { transform: scale(0.9); opacity: 0; }
+  60% { transform: scale(1.04); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* row entering the charts list */
+@keyframes cp-row-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

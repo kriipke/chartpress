@@ -1,0 +1,18 @@
+/* chartpress app base — global reset layered on top of the design tokens.
+ * Tokens (colors/type/spacing/…) come from ../design/tokens.css; this file only
+ * sets the page surface, the system-sans body font, and a border-box reset. */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--surface-page);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-2);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

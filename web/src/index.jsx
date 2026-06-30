@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import './styles.css';
-import './vars.css';
+import "./design/tokens.css"; // design-system tokens (colors, type, spacing, …)
+import "./app/base.css"; // page surface + reset
 
 import App from "./App";
 

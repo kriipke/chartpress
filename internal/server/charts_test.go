@@ -133,16 +133,19 @@ func (p *fakePresigner) PresignGet(_ context.Context, key string, _ time.Duratio
 	return p.url, p.err
 }
 
+// crReady builds a Ready CR whose status reflects the current generation — the
+// state the operator leaves after a successful reconcile (observedGeneration ==
+// metadata.generation), so /charts should mint a download URL.
 func crReady(name, artifactKey string) unstructured.Unstructured {
 	return unstructured.Unstructured{Object: map[string]interface{}{
 		"apiVersion": apiVersionV1alpha1,
 		"kind":       kindChartpressConfig,
-		"metadata":   map[string]interface{}{"name": name},
+		"metadata":   map[string]interface{}{"name": name, "generation": int64(1)},
 		"spec": map[string]interface{}{
 			"umbrellaChartName": name,
 			"subcharts":         []interface{}{map[string]interface{}{"name": "api", "workload": "deployment"}},
 		},
-		"status": map[string]interface{}{"phase": "Ready", "artifactKey": artifactKey},
+		"status": map[string]interface{}{"phase": "Ready", "artifactKey": artifactKey, "observedGeneration": int64(1)},
 	}}
 }
 
@@ -166,6 +169,39 @@ func TestChartsMintsDownloadURLWhenReady(t *testing.T) {
 	}
 	if pre.lastKey != "charts/demo.zip" {
 		t.Fatalf("presigned key = %q, want charts/demo.zip", pre.lastKey)
+	}
+}
+
+// A user reapplied a changed spec: metadata.generation is now 2, but the operator
+// has only reconciled generation 1, so the lingering Ready status describes the
+// superseded artifact. /charts must NOT presign it (the URL would point at a stale
+// chart, indefinitely if the operator is down).
+func TestChartsNoDownloadURLWhenGenerationStale(t *testing.T) {
+	cr := crReady("demo", "charts/demo.zip") // observedGeneration=1
+	_ = unstructured.SetNestedField(cr.Object, int64(2), "metadata", "generation")
+
+	pre := &fakePresigner{url: "https://should-not-be-used"}
+	srv := &Server{
+		Lister:    &fakeLister{items: []unstructured.Unstructured{cr}},
+		Presigner: pre,
+		Namespace: "ns",
+	}
+	req := httptest.NewRequest(http.MethodGet, "/charts", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	var got []chartSummary
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(got) != 1 || got[0].Phase != "Ready" {
+		t.Fatalf("want a single Ready row, got %+v", got)
+	}
+	if got[0].DownloadURL != "" {
+		t.Fatalf("downloadUrl must be empty for a stale Ready status; got %q", got[0].DownloadURL)
+	}
+	if pre.callCount != 0 {
+		t.Fatalf("presigner must not be called when observedGeneration != generation; calls=%d", pre.callCount)
 	}
 }
 

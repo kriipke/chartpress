@@ -1,0 +1,120 @@
+/* chartpress — color tokens
+ * Neutral ramp: Radix "slate" (cool gray, matches the app's blue-tinted grays).
+ * Accent ramp: a violet anchored on the brand accent #5c4cff at step 9
+ *   (Radix-iris family, retuned to chartpress's punchier brand violet).
+ * Semantic ramps: red / green / amber for failed / ready / in-progress.
+ * Steps follow the Radix 1–12 model: 1–2 app/subtle backgrounds, 3–5 component
+ * backgrounds, 6–8 borders, 9 solid, 10 solid-hover, 11 low-contrast text,
+ * 12 high-contrast text.
+ */
+:root {
+  /* ---- Neutral (slate) ---- */
+  --slate-1: #fcfcfd;
+  --slate-2: #f9f9fb;
+  --slate-3: #f0f0f3;
+  --slate-4: #e8e8ec;
+  --slate-5: #e0e1e6;
+  --slate-6: #d9d9e0;
+  --slate-7: #cdced6;
+  --slate-8: #b9bbc6;
+  --slate-9: #8b8d98;
+  --slate-10: #80838d;
+  --slate-11: #60646c;
+  --slate-12: #1c2024;
+
+  /* ---- Accent (brand violet, 9 = #5c4cff) ---- */
+  --violet-1: #fdfcff;
+  --violet-2: #f7f5ff;
+  --violet-3: #efeaff;
+  --violet-4: #e5dcff;
+  --violet-5: #d9ccff;
+  --violet-6: #c9b9ff;
+  --violet-7: #b39ffb;
+  --violet-8: #9a7ff5;
+  --violet-9: #5c4cff; /* brand accent */
+  --violet-10: #4d3aef; /* brand accent hover (--cp-accent-dark family) */
+  --violet-11: #5546e0;
+  --violet-12: #1f1a4d;
+  /* soft tinted focus ring, from the app's box-shadow */
+  --violet-a4: rgba(92, 76, 255, 0.15);
+  --violet-a3: rgba(92, 76, 255, 0.08);
+
+  /* ---- Red (failed / destructive) ---- */
+  --red-1: #fffcfc;
+  --red-2: #fff7f7;
+  --red-3: #feebec;
+  --red-4: #fddcdd;
+  --red-6: #f3c2c8; /* brand error border */
+  --red-7: #eb9091;
+  --red-9: #e5484d;
+  --red-10: #d93d42;
+  --red-11: #b3242f; /* brand error text */
+  --red-surface: #fdecee; /* brand error background */
+
+  /* ---- Green (ready / success) ---- */
+  --green-2: #f3fdf6;
+  --green-3: #e4f8eb;
+  --green-4: #d2f1dc;
+  --green-6: #b4dfc4;
+  --green-9: #30a46c;
+  --green-10: #2b9a66;
+  --green-11: #218358;
+  --green-surface: #f1fdf5;
+
+  /* ---- Amber (queued / attention) ---- */
+  --amber-2: #fffbeb;
+  --amber-3: #fff3d6;
+  --amber-6: #f0d399;
+  --amber-9: #ffc53d;
+  --amber-11: #ab6400;
+  --amber-surface: #fff8e8;
+
+  /* ===================================================================
+   * Semantic aliases — reference these in components, not the ramps.
+   * =================================================================== */
+
+  /* Text */
+  --text-1: var(--slate-12); /* headings / high-emphasis */
+  --text-2: var(--slate-11); /* body / secondary */
+  --text-muted: var(--slate-10); /* placeholder / captions */
+  --text-on-accent: #ffffff; /* text on a solid accent fill */
+  --text-accent: var(--violet-11); /* links, accent text */
+
+  /* Surfaces */
+  --surface-page: var(--slate-2); /* app background (--cp-bg) */
+  --surface-card: #ffffff; /* panels, cards */
+  --surface-sunken: var(--slate-3); /* inset wells, code blocks bg */
+  --surface-code: #1c1c28; /* dark terminal / tree preview */
+  --text-on-code: #d6d6e7;
+
+  /* Borders */
+  --border-subtle: var(--slate-5);
+  --border-default: var(--slate-6); /* default card / input border */
+  --border-strong: var(--slate-8);
+  --border-input: #d2d2dc; /* exact app input border */
+
+  /* Accent */
+  --accent-solid: var(--violet-9);
+  --accent-solid-hover: var(--violet-10);
+  --accent-tint: var(--violet-3); /* light accent fill */
+  --accent-tint-hover: var(--violet-4);
+  --accent-border: var(--violet-7);
+  --focus-ring: var(--violet-a4); /* 0 0 0 3px focus halo */
+
+  /* Status — chart generation phases */
+  --status-pending-fg: var(--slate-11);
+  --status-pending-bg: var(--slate-3);
+  --status-pending-border: var(--slate-6);
+
+  --status-generating-fg: var(--violet-11);
+  --status-generating-bg: var(--violet-3);
+  --status-generating-border: var(--violet-6);
+
+  --status-ready-fg: var(--green-11);
+  --status-ready-bg: var(--green-3);
+  --status-ready-border: var(--green-6);
+
+  --status-failed-fg: var(--red-11);
+  --status-failed-bg: var(--red-3);
+  --status-failed-border: var(--red-6);
+}
