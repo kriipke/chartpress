@@ -20,8 +20,8 @@ func TestCommonAnnotationsMergedOntoResources(t *testing.T) {
 	if !strings.Contains(man, "app.kubernetes.io/part-of: demo") {
 		t.Fatalf("expected part-of annotation, got:\n%s", man)
 	}
-	if !strings.Contains(man, "chartpress.dev/managed:") {
-		t.Fatalf("expected managed annotation, got:\n%s", man)
+	if !strings.Contains(man, `chartpress.dev/managed: "true"`) {
+		t.Fatalf("expected managed annotation with value \"true\", got:\n%s", man)
 	}
 }
 

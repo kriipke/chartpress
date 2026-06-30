@@ -13,9 +13,14 @@ import (
 
 const placeholderName = "umbrella-chart" // the literal name inside templates/umbrella
 
-// BuildChart assembles the umbrella chart in memory from spec. templatesDir must
-// contain "umbrella" and "subchart" subdirectories.
+// BuildChart assembles the umbrella chart in memory from spec. spec must already
+// be Normalized; BuildChart validates it and returns an error for any invalid
+// input before touching the filesystem. templatesDir must contain "umbrella" and
+// "subchart" subdirectories.
 func BuildChart(spec Spec, templatesDir string) (*chart.Chart, error) {
+	if err := Validate(spec); err != nil {
+		return nil, fmt.Errorf("invalid spec: %w", err)
+	}
 	umbrellaPath := filepath.Join(templatesDir, "umbrella")
 	subchartPath := filepath.Join(templatesDir, "subchart")
 
@@ -81,7 +86,7 @@ func chartDescription(desc, name string) string {
 }
 
 // renameChart replaces the placeholder umbrella name across metadata, templates,
-// values, and files.
+// and files.
 func renameChart(ch *chart.Chart, newName string) {
 	old := ch.Metadata.Name
 	ch.Metadata.Name = newName

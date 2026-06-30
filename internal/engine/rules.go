@@ -27,13 +27,7 @@ func applyWorkload(sub *chart.Chart, workload string) {
 }
 
 func dropTemplate(files []*chart.File, name string) []*chart.File {
-	out := files[:0]
-	for _, f := range files {
-		if f.Name != name {
-			out = append(out, f)
-		}
-	}
-	return out
+	return dropFile(files, func(n string) bool { return n == name })
 }
 
 func dropFile(files []*chart.File, pred func(name string) bool) []*chart.File {
@@ -95,7 +89,7 @@ func applyCommonAnnotationsSubchart(sub *chart.Chart, spec Spec) {
 func appendToAnnotationsDefine(data []byte, chartName string) []byte {
 	open := "{{- define \"" + chartName + ".annotations\" -}}"
 	s := string(data)
-	idx := indexOf(s, open)
+	idx := strings.Index(s, open)
 	if idx < 0 {
 		return data
 	}
@@ -103,8 +97,6 @@ func appendToAnnotationsDefine(data []byte, chartName string) []byte {
 	merge := "\n{{- with .Values.global.commonAnnotations }}\n{{ toYaml . }}\n{{- end }}"
 	return []byte(s[:insertAt] + merge + s[insertAt:])
 }
-
-func indexOf(s, sub string) int { return strings.Index(s, sub) }
 
 // applySharedSecretsUmbrella emits a shared-secrets Secret template into the
 // umbrella chart and seeds global.sharedSecrets.data so the template renders.
@@ -129,6 +121,13 @@ func applySharedSecretsUmbrella(ch *chart.Chart, spec Spec) {
 
 // applySharedSecretsSubchart appends an envFrom secretRef entry to the subchart
 // values so the deployment template mounts the shared-secrets Secret.
+//
+// Phase-1 limitation: the env/envFrom wiring renders ONLY on the "deployment"
+// workload, because only deployment.tpl consumes .Values.env/.Values.envFrom;
+// statefulset.tpl and daemonset.tpl have no env/envFrom blocks and Phase 1 may
+// not edit them, so StatefulSet/DaemonSet subcharts do NOT receive these env
+// vars/mounts. The umbrella-level Secret still renders regardless of workload.
+// This is a known Phase-1 limitation, deferred to Phase 2.
 func applySharedSecretsSubchart(sub *chart.Chart, spec Spec) {
 	if !spec.Rules.SharedSecretsConfig {
 		return
@@ -175,6 +174,13 @@ func applySharedNewrelicUmbrella(ch *chart.Chart, spec Spec) {
 // applySharedNewrelicSubchart wires the shared newrelic ConfigMap via envFrom and
 // adds the per-subchart NEW_RELIC_LICENSE_KEY (from the shared secret) and
 // NEW_RELIC_APP_NAME (= subchart name) env entries.
+//
+// Phase-1 limitation: the env/envFrom wiring renders ONLY on the "deployment"
+// workload, because only deployment.tpl consumes .Values.env/.Values.envFrom;
+// statefulset.tpl and daemonset.tpl have no env/envFrom blocks and Phase 1 may
+// not edit them, so StatefulSet/DaemonSet subcharts do NOT receive these env
+// vars/mounts. The umbrella-level ConfigMap and Secret still render regardless
+// of workload. This is a known Phase-1 limitation, deferred to Phase 2.
 func applySharedNewrelicSubchart(sub *chart.Chart, spec Spec) {
 	if !spec.Rules.SharedNewrelicConfig {
 		return

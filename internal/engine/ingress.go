@@ -31,7 +31,7 @@ spec:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
-          - path: {{ default "/" .Values.ingress.path }}
+          - path: {{ default "/" .Values.ingress.path | quote }}
             pathType: Prefix
             backend:
               service:
@@ -75,7 +75,7 @@ spec:
   http:
     - match:
         - uri:
-            prefix: {{ default "/" .Values.ingress.path }}
+            prefix: {{ default "/" .Values.ingress.path | quote }}
       route:
         - destination:
             host: {{ include (print .Chart.Name ".fullname") . }}

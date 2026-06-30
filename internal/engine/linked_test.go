@@ -35,7 +35,11 @@ func TestLinkedFalseInlinesUmbrellaDefines(t *testing.T) {
 }
 
 func TestLinkedTrueDoesNotInline(t *testing.T) {
-	ch, _ := BuildChart(basicSpec(), testdataTemplates) // defaults linked=true
+	ch, err := BuildChart(basicSpec(), testdataTemplates)
+	if err != nil {
+		t.Fatalf("BuildChart: %v", err)
+	}
+	// defaults linked=true
 	for _, d := range ch.Dependencies() {
 		for _, tf := range d.Templates {
 			if tf.Name == "templates/_helpers.tpl" && strings.Contains(string(tf.Data), `define "umbrella-chart.deployment"`) {
