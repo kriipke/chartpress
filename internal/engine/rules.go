@@ -3,6 +3,7 @@ package engine
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"helm.sh/helm/v3/pkg/chart"
@@ -57,5 +58,23 @@ func applyUmbrellaFileToggles(ch *chart.Chart, r Rules) {
 func applySubchartFileToggles(sub *chart.Chart, r Rules) {
 	if !r.GenerateSubchartReadme {
 		sub.Files = dropFile(sub.Files, func(n string) bool { return n == "README.adoc" })
+	}
+}
+
+// applyResourceNaming rewrites the subchart fullname helper to emit just the chart
+// name. The helper define line looks like:
+//
+//	{{- define "api.fullname" -}}
+//	{{- template "umbrella-chart.fullname" . }}-{{ .Chart.Name }}
+//	{{- end }}
+func applyResourceNaming(sub *chart.Chart, match bool) {
+	if !match {
+		return
+	}
+	def := regexp.MustCompile(`(?s)(\{\{-?\s*define\s+"` + regexp.QuoteMeta(sub.Metadata.Name) + `\.fullname"\s*-?\}\}).*?(\{\{-?\s*end\s*-?\}\})`)
+	for _, t := range sub.Templates {
+		if t.Name == "templates/_helpers.tpl" {
+			t.Data = def.ReplaceAll(t.Data, []byte("${1}\n{{ .Chart.Name }}\n${2}"))
+		}
 	}
 }

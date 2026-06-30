@@ -103,6 +103,7 @@ func buildSubchart(sub *chart.Chart, sc Subchart, spec Spec) error {
 		placeholderName: spec.UmbrellaChartName,
 		"component":     sc.Name,
 	})
+	applyResourceNaming(sub, spec.Rules.ResourceNamesMatchChartName)
 	applySubchartFileToggles(sub, spec.Rules)
 	return nil
 }
