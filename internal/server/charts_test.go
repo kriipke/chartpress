@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -80,7 +81,7 @@ func TestChartsListMapsFields(t *testing.T) {
 		byName[c.Name] = c
 	}
 	if c := byName["ready-one"]; c.Phase != "Ready" || c.SubchartCount != 3 || c.LastGenerated != "2026-06-30T03:10:00Z" || c.DownloadURL != "" {
-		t.Fatalf("ready-one = %+v (downloadUrl must be empty in Phase 2)", c)
+		t.Fatalf("ready-one = %+v (downloadUrl must be empty when the Server has no Presigner)", c)
 	}
 	if c := byName["fresh-one"]; c.Phase != "Pending" {
 		t.Fatalf("empty status should map to Pending, got %q", c.Phase)
@@ -116,5 +117,77 @@ func TestChartByNameNotFound(t *testing.T) {
 	srv.Handler().ServeHTTP(rec, req)
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404", rec.Code)
+	}
+}
+
+type fakePresigner struct {
+	url       string
+	err       error
+	lastKey   string
+	callCount int
+}
+
+func (p *fakePresigner) PresignGet(_ context.Context, key string, _ time.Duration) (string, error) {
+	p.callCount++
+	p.lastKey = key
+	return p.url, p.err
+}
+
+func crReady(name, artifactKey string) unstructured.Unstructured {
+	return unstructured.Unstructured{Object: map[string]interface{}{
+		"apiVersion": apiVersionV1alpha1,
+		"kind":       kindChartpressConfig,
+		"metadata":   map[string]interface{}{"name": name},
+		"spec": map[string]interface{}{
+			"umbrellaChartName": name,
+			"subcharts":         []interface{}{map[string]interface{}{"name": "api", "workload": "deployment"}},
+		},
+		"status": map[string]interface{}{"phase": "Ready", "artifactKey": artifactKey},
+	}}
+}
+
+func TestChartsMintsDownloadURLWhenReady(t *testing.T) {
+	pre := &fakePresigner{url: "https://s3.example.com/charts/demo.zip?sig=abc"}
+	srv := &Server{
+		Lister:    &fakeLister{items: []unstructured.Unstructured{crReady("demo", "charts/demo.zip")}},
+		Presigner: pre,
+		Namespace: "ns",
+	}
+	req := httptest.NewRequest(http.MethodGet, "/charts", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	var got []chartSummary
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(got) != 1 || got[0].DownloadURL != "https://s3.example.com/charts/demo.zip?sig=abc" {
+		t.Fatalf("downloadUrl = %q (got %+v)", got[0].DownloadURL, got)
+	}
+	if pre.lastKey != "charts/demo.zip" {
+		t.Fatalf("presigned key = %q, want charts/demo.zip", pre.lastKey)
+	}
+}
+
+func TestChartsNoDownloadURLWhenNotReady(t *testing.T) {
+	pre := &fakePresigner{url: "https://should-not-be-used"}
+	srv := &Server{
+		Lister: &fakeLister{items: []unstructured.Unstructured{
+			crWith("pending-one", "Generating", "", 1, ""), // existing helper; no artifactKey
+		}},
+		Presigner: pre,
+		Namespace: "ns",
+	}
+	req := httptest.NewRequest(http.MethodGet, "/charts", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	var got []chartSummary
+	_ = json.Unmarshal(rec.Body.Bytes(), &got)
+	if len(got) != 1 || got[0].DownloadURL != "" {
+		t.Fatalf("downloadUrl must be empty when not Ready; got %+v", got)
+	}
+	if pre.callCount != 0 {
+		t.Fatalf("presigner must not be called for non-Ready charts; calls=%d", pre.callCount)
 	}
 }

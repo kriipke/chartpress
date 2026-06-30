@@ -15,6 +15,26 @@ backend:
       name: ""   # set to a Secret name to inject OPENAI_API_KEY; empty omits the env
       key: api-key
 
+operator:
+  serviceAccount:
+    name: chartpress-operator
+  rbac:
+    create: true
+
+s3:
+  # Render the chartpress-s3 Secret from accessKey/secretKey below (BYO bucket).
+  # Set existingSecret to reference a pre-existing Secret instead (overrides create).
+  create: true
+  existingSecret: ""
+  endpoint: s3.amazonaws.com
+  bucket: chartpress-charts
+  region: us-east-1
+  useSSL: true
+  accessKeyKey: access-key
+  secretKeyKey: secret-key
+  accessKey: ""
+  secretKey: ""
+
 frontend:
   image:
     repository: ghcr.io/kriipke/chartpress/web

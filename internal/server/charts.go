@@ -2,9 +2,12 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -19,10 +22,13 @@ type chartSummary struct {
 	DownloadURL   string `json:"downloadUrl,omitempty"`
 }
 
-// summarize maps a ChartpressConfig CR to the Charts-row shape. Phase defaults
-// to "Pending" before the operator sets status. downloadUrl stays empty in
-// Phase 2 — presigned URLs are minted in Phase 3 once status.artifactKey exists.
-func summarize(obj unstructured.Unstructured) chartSummary {
+const presignExpiry = 15 * time.Minute
+
+// summarize maps a ChartpressConfig CR to the Charts-row shape. When the operator
+// has marked it Ready and recorded an artifactKey, it mints a fresh presigned GET
+// URL; any presign error is logged and leaves downloadUrl empty (the row still
+// renders). downloadUrl stays empty for every non-Ready phase.
+func summarize(ctx context.Context, p Presigner, obj unstructured.Unstructured) chartSummary {
 	subs, _, _ := unstructured.NestedSlice(obj.Object, "spec", "subcharts")
 	phase, _, _ := unstructured.NestedString(obj.Object, "status", "phase")
 	if phase == "" {
@@ -30,13 +36,23 @@ func summarize(obj unstructured.Unstructured) chartSummary {
 	}
 	msg, _, _ := unstructured.NestedString(obj.Object, "status", "message")
 	lastGen, _, _ := unstructured.NestedString(obj.Object, "status", "lastGenerated")
-	return chartSummary{
+	cs := chartSummary{
 		Name:          obj.GetName(),
 		Phase:         phase,
 		SubchartCount: len(subs),
 		LastGenerated: lastGen,
 		Message:       msg,
 	}
+	if phase == "Ready" && p != nil {
+		if key, _, _ := unstructured.NestedString(obj.Object, "status", "artifactKey"); key != "" {
+			if url, err := p.PresignGet(ctx, key, presignExpiry); err != nil {
+				log.Printf("[ERROR] presign %q: %v", key, err)
+			} else {
+				cs.DownloadURL = url
+			}
+		}
+	}
+	return cs
 }
 
 func (s *Server) handleCharts(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +67,7 @@ func (s *Server) handleCharts(w http.ResponseWriter, r *http.Request) {
 	}
 	out := make([]chartSummary, 0, len(items))
 	for _, it := range items {
-		out = append(out, summarize(it))
+		out = append(out, summarize(r.Context(), s.Presigner, it))
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(out)
@@ -77,5 +93,5 @@ func (s *Server) handleChartByName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(summarize(*obj))
+	_ = json.NewEncoder(w).Encode(summarize(r.Context(), s.Presigner, *obj))
 }
