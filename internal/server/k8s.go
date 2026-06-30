@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/kriipke/chartpress/internal/engine"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
@@ -31,30 +30,15 @@ type Drafter interface {
 
 type dynamicApplier struct{ client dynamic.Interface }
 
+// Apply server-side-applies the CR. Against a real apiserver this is an atomic
+// create-or-update owned by the chartpress-backend field manager; Force resolves
+// field-ownership conflicts in the backend's favor. Errors are surfaced as-is —
+// we never fall back to a non-SSA write that could mask an apiserver rejection.
 func (a *dynamicApplier) Apply(ctx context.Context, namespace string, obj *unstructured.Unstructured) error {
-	ri := a.client.Resource(chartpressGVR).Namespace(namespace)
-	_, err := ri.Apply(ctx, obj.GetName(), obj, metav1.ApplyOptions{FieldManager: fieldManager, Force: true})
-	if err == nil {
-		return nil
-	}
-	// The real apiserver handles SSA create-or-update atomically. The fake
-	// dynamic client's basic object tracker does not support strategic merge
-	// patch on Unstructured objects (it requires typed schemas). Fall back to a
-	// manual upsert so that tests using NewSimpleDynamicClientWithCustomListKinds
-	// work correctly.
-	if apierrors.IsNotFound(err) {
-		_, createErr := ri.Create(ctx, obj, metav1.CreateOptions{FieldManager: fieldManager})
-		return createErr
-	}
-	// Object exists but Apply failed (likely the fake tracker's StrategicMergePatch
-	// issue with Unstructured). Fetch, merge spec, and update.
-	existing, getErr := ri.Get(ctx, obj.GetName(), metav1.GetOptions{})
-	if getErr != nil {
-		return err // return original apply error
-	}
-	obj.SetResourceVersion(existing.GetResourceVersion())
-	_, updateErr := ri.Update(ctx, obj, metav1.UpdateOptions{FieldManager: fieldManager})
-	return updateErr
+	_, err := a.client.Resource(chartpressGVR).Namespace(namespace).Apply(
+		ctx, obj.GetName(), obj, metav1.ApplyOptions{FieldManager: fieldManager, Force: true},
+	)
+	return err
 }
 
 type dynamicLister struct{ client dynamic.Interface }

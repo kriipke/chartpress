@@ -3,14 +3,16 @@ package server
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/kriipke/chartpress/internal/engine"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
+	clienttesting "k8s.io/client-go/testing"
 )
 
 func newFakeDynamic(objs ...runtime.Object) *dynamicfake.FakeDynamicClient {
@@ -30,39 +32,59 @@ func specFor(name string) engine.Spec {
 	})
 }
 
-func TestDynamicApplierCreatesThenUpdates(t *testing.T) {
+// The dynamic fake's basic object tracker cannot round-trip a server-side apply
+// of an Unstructured object, so we capture the apply action via a reactor and
+// assert the applier issues a correctly-targeted SSA patch (ApplyPatchType) —
+// the behavioral contract dynamicApplier owns. Higher-level upsert behavior is
+// exercised against the handler with a fake Applier in generate_test.go.
+func TestDynamicApplierIssuesServerSideApply(t *testing.T) {
 	fc := newFakeDynamic()
+
+	var (
+		gotType     types.PatchType
+		gotName     string
+		gotNS       string
+		gotResource string
+		gotBody     []byte
+	)
+	fc.PrependReactor("patch", "chartpressconfigs", func(action clienttesting.Action) (bool, runtime.Object, error) {
+		pa := action.(clienttesting.PatchAction)
+		gotType = pa.GetPatchType()
+		gotName = pa.GetName()
+		gotNS = pa.GetNamespace()
+		gotResource = pa.GetResource().Resource
+		gotBody = pa.GetPatch()
+		return true, wrapManifest(specFor("demo")), nil
+	})
+
 	a := &dynamicApplier{client: fc}
-	ctx := context.Background()
-
-	if err := a.Apply(ctx, "team-a", wrapManifest(specFor("demo"))); err != nil {
-		t.Fatalf("first apply: %v", err)
-	}
-	got, err := fc.Resource(chartpressGVR).Namespace("team-a").Get(ctx, "demo", metav1.GetOptions{})
-	if err != nil {
-		t.Fatalf("get after apply: %v", err)
-	}
-	if got.GetKind() != "ChartpressConfig" {
-		t.Fatalf("kind = %q", got.GetKind())
-	}
-	desc, _, _ := unstructured.NestedString(got.Object, "spec", "description")
-	if desc != "" {
-		t.Fatalf("unexpected description %q", desc)
+	if err := a.Apply(context.Background(), "team-a", wrapManifest(specFor("demo"))); err != nil {
+		t.Fatalf("apply: %v", err)
 	}
 
-	// Re-apply with a changed spec → SSA updates the same object.
-	updated := specFor("demo")
-	updated.Description = "now with a description"
-	if err := a.Apply(ctx, "team-a", wrapManifest(updated)); err != nil {
-		t.Fatalf("second apply: %v", err)
+	if gotType != types.ApplyPatchType {
+		t.Fatalf("patch type = %q, want server-side apply (%q)", gotType, types.ApplyPatchType)
 	}
-	got2, err := fc.Resource(chartpressGVR).Namespace("team-a").Get(ctx, "demo", metav1.GetOptions{})
-	if err != nil {
-		t.Fatalf("get after re-apply: %v", err)
+	if gotResource != "chartpressconfigs" || gotNS != "team-a" || gotName != "demo" {
+		t.Fatalf("apply targeted resource=%q ns=%q name=%q, want chartpressconfigs/team-a/demo", gotResource, gotNS, gotName)
 	}
-	desc2, _, _ := unstructured.NestedString(got2.Object, "spec", "description")
-	if desc2 != "now with a description" {
-		t.Fatalf("description after update = %q", desc2)
+	if !strings.Contains(string(gotBody), "umbrellaChartName") {
+		t.Fatalf("apply body missing the spec: %s", gotBody)
+	}
+}
+
+// Apply must surface apiserver errors rather than silently retrying with a
+// non-SSA write (the production code has no Get+Update fallback).
+func TestDynamicApplierSurfacesApplyError(t *testing.T) {
+	fc := newFakeDynamic()
+	fc.PrependReactor("patch", "chartpressconfigs", func(action clienttesting.Action) (bool, runtime.Object, error) {
+		return true, nil, apierrors.NewInvalid(
+			schema.GroupKind{Group: apiGroup, Kind: kindChartpressConfig}, "demo", nil)
+	})
+
+	a := &dynamicApplier{client: fc}
+	if err := a.Apply(context.Background(), "team-a", wrapManifest(specFor("demo"))); err == nil {
+		t.Fatal("expected apply error to be surfaced, got nil")
 	}
 }
 
