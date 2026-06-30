@@ -1,20 +1,22 @@
-apiVersion: kriipke.dev/v1alpha1
+apiVersion: chartpress.dev/v1alpha1
 kind: ChartpressConfig
 metadata:
   name: iot-hub
 spec:
   umbrellaChartName: iot-hub
+  description: "IoT ingestion and device-management platform."
   subcharts:
     - name: device-manager
       workload: deployment
+      description: "Device registry and lifecycle API."
     - name: mqtt-broker
       workload: statefulset
+      description: "MQTT message broker."
     - name: timescaledb
       workload: statefulset
+      description: "Time-series database for telemetry."
   rules:
-    possible_ingresses:
-      - gce
-      - nginx
+    ingress: nginx
     common_annotations: true
     linked_templates: true
     resource_names_match_chart_name: true
