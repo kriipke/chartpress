@@ -13,9 +13,11 @@ metadata:
   name: chartpress-backend
   namespace: {{ .Release.Namespace }}
 rules:
+  # patch is required: /generate uses server-side apply (an apply PATCH), and
+  # create covers the apply-creates-the-object case.
   - apiGroups: ["chartpress.dev"]
     resources: ["chartpressconfigs"]
-    verbs: ["create", "get", "list", "watch"]
+    verbs: ["create", "get", "list", "patch", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

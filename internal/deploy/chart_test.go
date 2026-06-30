@@ -44,7 +44,7 @@ func TestBackendRBACGrantsChartpressConfigs(t *testing.T) {
 		"kind: ServiceAccount",
 		"chartpress.dev",
 		"chartpressconfigs",
-		`verbs: ["create", "get", "list", "watch"]`,
+		`verbs: ["create", "get", "list", "patch", "watch"]`,
 	} {
 		if !strings.Contains(man, want) {
 			t.Fatalf("rendered chart missing %q", want)
@@ -63,5 +63,24 @@ func TestBackendDeploymentHasDownwardNamespaceAndSA(t *testing.T) {
 		if !strings.Contains(man, want) {
 			t.Fatalf("backend deployment missing %q", want)
 		}
+	}
+}
+
+// The frontend nginx must reverse-proxy every backend API route to the backend
+// service; otherwise /charts and /text-to-config fall through to the SPA and are
+// unreachable through the public ingress.
+func TestFrontendNginxProxiesBackendRoutes(t *testing.T) {
+	man := renderChart(t)
+	for _, want := range []string{
+		"location ~ ^/(generate|charts|text-to-config)(/|$)",
+		"proxy_pass http://chartpress-backend:8080;",
+	} {
+		if !strings.Contains(man, want) {
+			t.Fatalf("frontend nginx config missing %q", want)
+		}
+	}
+	// /download was removed with the sync backend; its proxy must be gone too.
+	if strings.Contains(man, "location /download/") {
+		t.Fatal("stale /download/ nginx proxy still present")
 	}
 }
