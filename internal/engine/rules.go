@@ -198,6 +198,36 @@ func applySharedNewrelicSubchart(sub *chart.Chart, spec Spec) {
 	sub.Values["env"] = env
 }
 
+// collectUmbrellaDefines returns the concatenated bodies of every umbrella .tpl
+// named-template file (the files whose name ends in .tpl under templates/).
+// Must be called on a PRISTINE (un-renamed) umbrella so the define names remain
+// "umbrella-chart.*" rather than the renamed umbrella name.
+func collectUmbrellaDefines(umbrella *chart.Chart) string {
+	var b strings.Builder
+	for _, t := range umbrella.Templates {
+		if strings.HasSuffix(t.Name, ".tpl") {
+			b.Write(t.Data)
+			b.WriteString("\n")
+		}
+	}
+	return b.String()
+}
+
+// applyInlining appends the umbrella named-template defines into the subchart's
+// _helpers.tpl so the subchart resolves its includes standalone.
+func applyInlining(sub *chart.Chart, defines string) {
+	for _, t := range sub.Templates {
+		if t.Name == "templates/_helpers.tpl" {
+			t.Data = append(append([]byte{}, t.Data...), append([]byte("\n"), []byte(defines)...)...)
+			return
+		}
+	}
+	sub.Templates = append(sub.Templates, &chart.File{
+		Name: "templates/_helpers.tpl",
+		Data: []byte(defines),
+	})
+}
+
 // applyResourceNaming rewrites the subchart fullname helper to emit just the chart
 // name. The helper define line looks like:
 //

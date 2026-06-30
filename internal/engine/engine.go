@@ -29,12 +29,21 @@ func BuildChart(spec Spec, templatesDir string) (*chart.Chart, error) {
 	// clean values; subchart defaults come from each subchart's own values.yaml.
 	umbrella.Values = map[string]interface{}{}
 
+	var inlineDefines string
+	if !spec.Rules.LinkedTemplates {
+		pristine, err := loader.Load(umbrellaPath)
+		if err != nil {
+			return nil, fmt.Errorf("load umbrella for inlining: %w", err)
+		}
+		inlineDefines = collectUmbrellaDefines(pristine)
+	}
+
 	for _, sc := range spec.Subcharts {
 		sub, err := loader.Load(subchartPath)
 		if err != nil {
 			return nil, fmt.Errorf("load subchart template: %w", err)
 		}
-		if err := buildSubchart(sub, sc, spec); err != nil {
+		if err := buildSubchart(sub, sc, spec, inlineDefines); err != nil {
 			return nil, fmt.Errorf("subchart %q: %w", sc.Name, err)
 		}
 		umbrella.AddDependency(sub)
@@ -86,7 +95,7 @@ func renameChart(ch *chart.Chart, newName string) {
 
 // buildSubchart renames the subchart and applies per-subchart rules. Rule-specific
 // behavior is filled in by later tasks; for now it only renames.
-func buildSubchart(sub *chart.Chart, sc Subchart, spec Spec) error {
+func buildSubchart(sub *chart.Chart, sc Subchart, spec Spec, inlineDefines string) error {
 	sub.Metadata.Name = sc.Name
 	sub.Metadata.Description = chartDescription(sc.Description, sc.Name)
 	// Strip test-only templates (templates/tests/) that require user-supplied
@@ -109,6 +118,9 @@ func buildSubchart(sub *chart.Chart, sc Subchart, spec Spec) error {
 	applySharedSecretsSubchart(sub, spec)
 	applySharedNewrelicSubchart(sub, spec)
 	applyIngress(sub, spec.Rules.Ingress)
+	if !spec.Rules.LinkedTemplates {
+		applyInlining(sub, inlineDefines)
+	}
 	return nil
 }
 
