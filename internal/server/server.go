@@ -23,6 +23,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/generate", s.cors(s.handleGenerate))
 	mux.HandleFunc("/charts", s.cors(s.handleCharts))
 	mux.HandleFunc("/charts/", s.cors(s.handleChartByName))
+	mux.HandleFunc("/text-to-config", s.cors(s.handleTextToConfig))
 	return mux
 }
 
@@ -51,6 +52,7 @@ func Start() {
 	srv := &Server{
 		Applier:   &dynamicApplier{client: client},
 		Lister:    &dynamicLister{client: client},
+		Drafter:   newOpenAIDrafter(),
 		Namespace: resolveNamespace(),
 	}
 	port := getPort()
