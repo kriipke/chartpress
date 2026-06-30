@@ -61,6 +61,51 @@ func applySubchartFileToggles(sub *chart.Chart, r Rules) {
 	}
 }
 
+// applyCommonAnnotationsUmbrella seeds global.commonAnnotations in the umbrella
+// chart's values so that Helm propagates them to every subchart at render time.
+func applyCommonAnnotationsUmbrella(ch *chart.Chart, spec Spec) {
+	if !spec.Rules.CommonAnnotations {
+		return
+	}
+	global, _ := ch.Values["global"].(map[string]interface{})
+	if global == nil {
+		global = map[string]interface{}{}
+		ch.Values["global"] = global
+	}
+	global["commonAnnotations"] = map[string]interface{}{
+		"app.kubernetes.io/part-of": spec.UmbrellaChartName,
+		"chartpress.dev/managed":    "true",
+	}
+}
+
+// applyCommonAnnotationsSubchart appends the global.commonAnnotations merge block
+// into the subchart's <name>.annotations named template. Must be called AFTER
+// replacePlaceholders so the define is already named "<sub.Metadata.Name>.annotations".
+func applyCommonAnnotationsSubchart(sub *chart.Chart, spec Spec) {
+	if !spec.Rules.CommonAnnotations {
+		return
+	}
+	for _, t := range sub.Templates {
+		if t.Name == "templates/_helpers.tpl" {
+			t.Data = appendToAnnotationsDefine(t.Data, sub.Metadata.Name)
+		}
+	}
+}
+
+func appendToAnnotationsDefine(data []byte, chartName string) []byte {
+	open := "{{- define \"" + chartName + ".annotations\" -}}"
+	s := string(data)
+	idx := indexOf(s, open)
+	if idx < 0 {
+		return data
+	}
+	insertAt := idx + len(open)
+	merge := "\n{{- with .Values.global.commonAnnotations }}\n{{ toYaml . }}\n{{- end }}"
+	return []byte(s[:insertAt] + merge + s[insertAt:])
+}
+
+func indexOf(s, sub string) int { return strings.Index(s, sub) }
+
 // applyResourceNaming rewrites the subchart fullname helper to emit just the chart
 // name. The helper define line looks like:
 //
