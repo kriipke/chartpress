@@ -5,24 +5,20 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/kriipke/chartpress/internal/apis"
 	"github.com/kriipke/chartpress/internal/engine"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	sigsyaml "sigs.k8s.io/yaml"
 )
 
 const (
-	apiGroup             = "chartpress.dev"
-	apiVersionV1alpha1   = "chartpress.dev/v1alpha1"
-	kindChartpressConfig = "ChartpressConfig"
-	fieldManager         = "chartpress-backend"
+	apiGroup             = apis.Group
+	apiVersionV1alpha1   = apis.GroupVersion
+	kindChartpressConfig = apis.Kind
+	fieldManager         = apis.FieldManagerBackend
 )
 
-var chartpressGVR = schema.GroupVersionResource{
-	Group:    apiGroup,
-	Version:  "v1alpha1",
-	Resource: "chartpressconfigs",
-}
+var chartpressGVR = apis.GVR
 
 // wrapManifest builds an unstructured ChartpressConfig CR from a (already
 // normalized) spec. metadata.name == spec.UmbrellaChartName; .spec is the spec
