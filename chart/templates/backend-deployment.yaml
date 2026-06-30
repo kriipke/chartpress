@@ -23,13 +23,11 @@ spec:
             - name: chartpress-config
               mountPath: /app/chartpress.yaml
               subPath: chartpress.yaml
-            - name: templates-volume
-              mountPath: /app/templates
+            # /app/templates is intentionally NOT mounted: the chart templates
+            # are baked into the image and an emptyDir mount would hide them.
             - name: output-volume
               mountPath: /app/output
       volumes:
-        - name: templates-volume
-          emptyDir: {}
         - name: output-volume
           emptyDir: {}
         - name: chartpress-config

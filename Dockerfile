@@ -11,20 +11,20 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy the application source code
-#COPY api.go cmd/* chartpress.yaml .
 COPY . .
 
-# Build the application
-RUN go build -o chartpress ./cmd/chartpress
-RUN go build -o chartpress-server ./cmd/server
+# Build statically-linked binaries so they run on a minimal runtime image
+RUN CGO_ENABLED=0 go build -o chartpress ./cmd/chartpress
+RUN CGO_ENABLED=0 go build -o chartpress-server ./cmd/server
 
- 
-FROM golang:1.23-bookworm
+
+FROM alpine:3.20
 # Set the working directory inside the container
 WORKDIR /app
-COPY . .
-# Copy the built binary from the builder stage
-COPY --from=builder /app/chartpress /app/chartpress-server .
+# Copy the built binaries from the builder stage
+COPY --from=builder /app/chartpress /app/chartpress-server ./
+# The server reads the chart templates from ./templates at runtime
+COPY --from=builder /app/templates ./templates
 # Expose the port the service will run on
 EXPOSE 8080
 

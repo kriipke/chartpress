@@ -5,7 +5,7 @@
 all: test-curl
 
 # Variables
-PORT := 9090
+PORT := 8080
 DEST_FILENAME := "chart.zip"
 
 

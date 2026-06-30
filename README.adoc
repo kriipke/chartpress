@@ -4,21 +4,20 @@
 :icons: font
 :source-highlighter: highlightjs
 
-image:https://img.shields.io/github/license/kriipke/chartpress[License]
 image:https://img.shields.io/github/languages/top/kriipke/chartpress[Top Language]
 image:https://img.shields.io/github/repo-size/kriipke/chartpress[Repo Size]
 
-Effortlessly template, validate, and publish Helm charts for your Kubernetes apps. Chartpress streamlines CI/CD for cloud-native deployments—fast, flexible, and built for modern DevOps.
+Effortlessly scaffold umbrella Helm charts and their subcharts for your Kubernetes apps from a single config file. Chartpress streamlines CI/CD for cloud-native deployments—fast, flexible, and built for modern DevOps.
 
 toc::[]
 
 == Features
 
-* Render Helm charts with dynamic values
-* Validate chart syntax and structure before deployment
-* Publish charts to remote registries
-* Integrate seamlessly with CI/CD pipelines
-* Written in Go, Smarty, and JavaScript for speed and flexibility
+* Generate an umbrella Helm chart and its subcharts from a single config file
+* Pick a workload type per subchart (Deployment, StatefulSet, or DaemonSet)
+* Use it three ways: a CLI (`chartpress`), an HTTP API (`chartpress-server`), or the web wizard
+* Ships reusable umbrella/subchart templates plus a Helm chart to self-host the service
+* Written in Go and JavaScript
 
 == Getting Started
 
@@ -37,10 +36,13 @@ git clone git@github.com:kriipke/chartpress.git
 cd chartpress
 ----
 
-.Build the binary
+.Build the binaries
 [source,sh]
 ----
+# CLI
 go build -o chartpress ./cmd/chartpress
+# HTTP server (optional)
+go build -o chartpress-server ./cmd/server
 ----
 
 .Run using Docker (optional)
@@ -52,37 +54,69 @@ docker run --rm -v $(pwd):/work chartpress [command] [options]
 
 == Usage
 
-=== Render a Helm Chart
-
-[source,sh]
-----
-./chartpress render --chart=./charts/my-app --values=./values/dev.yaml
-----
-
-=== Validate a Chart
-
-[source,sh]
-----
-./chartpress validate --chart=./charts/my-app
-----
-
-=== Publish a Chart
-
-[source,sh]
-----
-./chartpress publish --chart=./charts/my-app --version=1.2.3 --registry=https://my-helm-registry.example.com
-----
-
-=== List Templates
-
-[source,sh]
-----
-./chartpress list-templates
-----
-
 === Configuration
 
-Chartpress can be configured via command-line flags or environment variables. See `./chartpress --help` for all options.
+Chartpress reads a config file (default `./chartpress.yaml`) describing the
+umbrella chart and its subcharts:
+
+[source,yaml]
+----
+umbrellaChartName: saas-platform
+subcharts:
+  - name: api
+    workload: deployment
+  - name: cache
+    workload: deployment
+  - name: database
+    workload: statefulset
+----
+
+`workload` must be one of `deployment`, `statefulset`, or `daemonset`.
+
+=== Generate a Chart (CLI)
+
+The `create` command renders the umbrella chart and subcharts into
+`output/<umbrellaChartName>-<timestamp>/`:
+
+[source,sh]
+----
+./chartpress create my-platform
+----
+
+Flags:
+
+[cols="1,3"]
+|===
+| Flag | Description
+
+| `-c, --config` | Path to the config file (default `./chartpress.yaml`)
+| `--umbrella-template` | Path to the umbrella chart template (default `./templates/umbrella`)
+| `--subchart-template` | Path to the subchart template (default `./templates/subchart`)
+|===
+
+Run `./chartpress --help` for all options.
+
+=== Generate a Chart (HTTP server)
+
+Start the server (listens on `$PORT`, default `8080`):
+
+[source,sh]
+----
+./chartpress-server
+----
+
+POST a config as JSON to `/generate`. With `Accept: application/zip` the chart
+archive is streamed back directly; otherwise a JSON body with a `downloadUrl`
+(served from `/download/<file>`) is returned:
+
+[source,sh]
+----
+curl -X POST http://localhost:8080/generate \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/zip" \
+  --data '{"umbrellaChartName":"saas-platform","subcharts":[{"name":"api","workload":"deployment"}]}' \
+  -o chart.zip
+----
 
 == Example CI/CD Integration
 
@@ -90,14 +124,11 @@ For GitHub Actions:
 
 [source,yaml]
 ----
-- name: Render Helm Chart
-  run: ./chartpress render --chart=./charts/my-app --values=./values/ci.yaml
+- name: Build chartpress
+  run: go build -o chartpress ./cmd/chartpress
 
-- name: Validate Helm Chart
-  run: ./chartpress validate --chart=./charts/my-app
-
-- name: Publish Helm Chart
-  run: ./chartpress publish --chart=./charts/my-app --version=${GITHUB_SHA}
+- name: Generate umbrella chart
+  run: ./chartpress create my-platform --config ./chartpress.yaml
 ----
 
 == Architecture Overview
@@ -106,43 +137,46 @@ For GitHub Actions:
 ----
 @startuml
 actor User
-participant "chartpress CLI" as CLI
-participant "Helm CLI" as Helm
-participant "Registry (optional)" as Registry
+participant "chartpress CLI / web wizard" as Client
+participant "chartpress(-server)" as Engine
+participant "Chart templates" as Templates
+participant "output/ (chart + .zip)" as Output
 
-User -> CLI : Run chartpress command
-CLI -> Helm : Render/validate chart
-CLI -> Registry : Publish chart (if requested)
+User -> Client : Provide config (chartpress.yaml / JSON)
+Client -> Engine : create / POST /generate
+Engine -> Templates : Render umbrella + subcharts
+Engine -> Output : Write generated chart (and archive)
 @enduml
 ----
 
 == Development
 
-* Go code in `cmd/` and `pkg/`
-* Templating with Smarty
-* JavaScript for any web or UI components
-* Makefile for common tasks
+* Go code in `cmd/` (entrypoints) and `internal/` (server logic)
+* Chart templates in `templates/umbrella` and `templates/subchart`
+* React/Vite web wizard in `web/`
+* Makefile for common tasks (`make build-api`, `make build-web`, `make tests`)
 
 === Running Tests
 
+The `tests` target posts a sample config to a running `chartpress-server`
+(default port 8080) and saves the resulting archive:
+
 [source,sh]
 ----
-make test
+make tests
 ----
 
 == Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/my-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin feature/my-feature`)
-5. Create a new Pull Request
-
-See link:CONTRIBUTING.adoc[CONTRIBUTING.adoc] for more details.
+This is a proprietary, source-available project and is **not open to outside
+contributions**. Forks and pull requests are not accepted. See
+link:CONTRIBUTING.adoc[CONTRIBUTING.adoc] for details.
 
 == License
 
-This project is licensed under the MIT License - see the link:LICENSE[LICENSE] file for details.
+This project is proprietary and **All Rights Reserved**. It is source-available
+for viewing only; no rights to use, copy, modify, or distribute are granted. See
+the link:LICENSE[LICENSE] file for details.
 
 == Authors & Acknowledgements
 

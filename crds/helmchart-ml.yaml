@@ -1,5 +1,5 @@
 apiVersion: kriipke.dev/v1alpha1
-kind: HelmChart
+kind: ChartpressConfig
 metadata:
   name: ml-platform
 spec:

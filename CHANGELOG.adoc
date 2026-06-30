@@ -1,0 +1,37 @@
+= Changelog
+:icons: font
+
+All notable changes to this project are documented in this file.
+
+The format is based on link:https://keepachangelog.com/en/1.1.0/[Keep a Changelog],
+and this project adheres to link:https://semver.org/[Semantic Versioning].
+
+== [Unreleased]
+
+=== Added
+* `GET /download/<file>` endpoint on `chartpress-server` so generated chart
+  archives referenced by the JSON `downloadUrl` response can actually be fetched.
+* `LICENSE`, `CONTRIBUTING.adoc`, and this changelog.
+
+=== Changed
+* Documentation (`README.adoc`, `crds/README.md`) now reflects the real CLI
+  (`create`) and the `ChartpressConfig` CRD instead of commands and a `HelmChart`
+  kind that never existed.
+* Slimmed the server runtime image (Alpine + statically-linked binaries) and bake
+  the chart templates into the image.
+
+=== Fixed
+* `chartpress-server` now creates the `output/` directory on demand and clears a
+  stale chart directory before regenerating, so repeated requests succeed.
+* The Helm chart no longer mounts an empty `emptyDir` over `/app/templates`,
+  which previously hid the templates baked into the image.
+* `Makefile` `clean` target no longer writes into a just-deleted directory and
+  now targets the `web/` directory instead of a non-existent `frontend/`.
+* CI workflow passes the Dockerfile path via the correct `file:` input.
+
+== [0.1.0]
+
+=== Added
+* Initial release: generate umbrella Helm charts and subcharts from a config
+  file via the `chartpress` CLI, the `chartpress-server` HTTP API, and a web
+  wizard.

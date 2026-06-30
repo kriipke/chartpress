@@ -1,0 +1,13 @@
+= Contributing
+
+Chartpress is a proprietary, source-available project. See the
+link:LICENSE[LICENSE] for the full terms.
+
+== Contributions are not accepted
+
+This repository is published for viewing only. Forks, pull requests, and
+redistribution are not permitted, and outside contributions will not be
+accepted or merged.
+
+For inquiries — including licensing or usage requests — please contact the
+copyright holder.

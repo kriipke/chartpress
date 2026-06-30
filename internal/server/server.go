@@ -48,6 +48,12 @@ func Start() {
 		handleGenerate(w, r)
 	})
 
+	http.HandleFunc("/download/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("[INFO] Handling request at /download/ endpoint. Method: %s\n", r.Method)
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		handleDownload(w, r)
+	})
+
 	port := getPort()
 	log.Printf("[INFO] Server is starting on port %s", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
@@ -84,6 +90,12 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 	if err := validateConfig(cfg); err != nil {
 		log.Printf("[ERROR] Invalid config: %v", err)
 		http.Error(w, fmt.Sprintf("Invalid config: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	if err := os.MkdirAll("output", 0755); err != nil {
+		log.Printf("[ERROR] Failed to create output directory: %v", err)
+		http.Error(w, fmt.Sprintf("Failed to create output directory: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -134,19 +146,48 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
             w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(zipFilePath)))
             w.Header().Set("Content-Type", "application/zip")
             http.ServeFile(w, r, zipFilePath)
-        } else if strings.Contains(acceptHeader, "application/json") || acceptHeader == "" {
-            // JSON API client or default: Return the download URL in JSON
+        } else {
+            // Default (browsers, curl, JSON API clients all send */* or
+            // application/json): return the download URL in JSON.
             log.Println("[INFO] Returning JSON response with download URL")
             w.Header().Set("Content-Type", "application/json")
             response := map[string]string{
                 "downloadUrl": fmt.Sprintf("/chartpress/download/%s", filepath.Base(zipFilePath)),
             }
             json.NewEncoder(w).Encode(response)
-        } else {
-            // Unsupported Accept header
-            log.Printf("[WARN] Unsupported Accept header: %s", acceptHeader)
-            http.Error(w, "Unsupported Accept header. Use 'application/json' or 'application/zip'.", http.StatusNotAcceptable)
         }
+}
+
+// handleDownload serves a previously generated chart archive from the output
+// directory. The requested name is reduced to its base name to prevent path
+// traversal outside of ./output.
+func handleDownload(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		log.Printf("[ERROR] Invalid method: %s. Only GET is allowed.", r.Method)
+		http.Error(w, "Only GET method is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	requested := strings.TrimPrefix(r.URL.Path, "/download/")
+	if requested == "" {
+		http.Error(w, "Missing file name", http.StatusBadRequest)
+		return
+	}
+
+	// Guard against path traversal: only ever serve a bare file from ./output.
+	filename := filepath.Base(filepath.Clean("/" + requested))
+	filePath := filepath.Join("output", filename)
+
+	if _, err := os.Stat(filePath); err != nil {
+		log.Printf("[ERROR] Requested file not found: %s (%v)", filePath, err)
+		http.Error(w, "File not found", http.StatusNotFound)
+		return
+	}
+
+	log.Printf("[INFO] Serving file %s", filePath)
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	w.Header().Set("Content-Type", "application/zip")
+	http.ServeFile(w, r, filePath)
 }
 
 func generateChart(cfg Config) (string, error) {
@@ -181,6 +222,12 @@ func generateChart(cfg Config) (string, error) {
 
 	outputDir := filepath.Join("output", chartName)
 	log.Printf("[INFO] Saving chart to output directory: %s", outputDir)
+	// Remove any chart left over from a previous request with the same name;
+	// chartutil.SaveDir fails if the destination already exists.
+	if err := os.RemoveAll(filepath.Join(outputDir, chartName)); err != nil {
+		log.Printf("[ERROR] Error clearing stale output directory: %v", err)
+		return "", err
+	}
 	if err := chartutil.SaveDir(chNew, outputDir); err != nil {
 		log.Printf("[ERROR] Error saving chart to directory: %v", err)
 		return "", err

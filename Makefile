@@ -16,17 +16,18 @@ TESTS_DIR := ./tests
 clean:
 	@echo "Cleaning output directories and npm artifacts..."
 	@rm -rf ./output
-	@echo > ./output/.gitkeep
-	@rm -rf ./frontend/node_modules
-	@rm -rf ./frontend/build
-	@find ./frontend -name "*.log" -type f -delete
+	@mkdir -p ./output
+	@touch ./output/.gitkeep
+	@rm -rf $(FRONTEND_DIR)/node_modules
+	@rm -rf $(FRONTEND_DIR)/build $(FRONTEND_DIR)/dist
+	@find $(FRONTEND_DIR) -name "*.log" -type f -delete
 	@echo "Clean complete."
 
 # Build target: builds the Docker image
 build-api:
 	@echo "Building Docker image..."
 	@docker build -t chartpress-api:0.1 .
-	@echo "Docker image built: chartpress-server:0.1"
+	@echo "Docker image built: chartpress-api:0.1"
 
 # Build target: builds the Docker image
 build-web:

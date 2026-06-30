@@ -1,10 +1,10 @@
-# HelmChart Custom Resource Definition (CRD)
+# ChartpressConfig Custom Resource Definition (CRD)
 
-The `HelmChart` Custom Resource Definition (CRD) enables you to declaratively define and manage umbrella Helm charts and their subcharts within your Kubernetes clusters. This CRD is designed to work with Chartpress or similar tools to streamline the templating, validation, and publishing of Helm charts for your cloud-native applications.
+The `ChartpressConfig` Custom Resource Definition (CRD) enables you to declaratively define and manage umbrella Helm charts and their subcharts within your Kubernetes clusters. This CRD is designed to work with Chartpress or similar tools to streamline the templating, validation, and publishing of Helm charts for your cloud-native applications.
 
 ## Overview
 
-The `HelmChart` resource describes the desired state of a Helm umbrella chart, its subcharts, and a set of rules that control chart templating, documentation, and configuration sharing.
+The `ChartpressConfig` resource describes the desired state of a Helm umbrella chart, its subcharts, and a set of rules that control chart templating, documentation, and configuration sharing.
 
 **Key Features:**
 - Define umbrella and subcharts with their workload types (Deployment, StatefulSet, etc.).
@@ -15,7 +15,7 @@ The `HelmChart` resource describes the desired state of a Helm umbrella chart, i
 
 ```yaml
 apiVersion: kriipke.dev/v1alpha1
-kind: HelmChart
+kind: ChartpressConfig
 metadata:
   name: saas-platform
 spec:
@@ -72,27 +72,24 @@ spec:
 1. **Apply the CRD**  
    Install the CRD definition using `kubectl`:
    ```sh
-   kubectl apply -f chartpresscrd.yaml
+   kubectl apply -f crd-helmchart.yaml
    ```
 
-2. **Create HelmChart Resources**  
-   Define your `HelmChart` resources as YAML manifests and apply them:
+2. **Create ChartpressConfig Resources**  
+   Define your `ChartpressConfig` resources as YAML manifests and apply them:
    ```sh
-   kubectl apply -f helmchart1.yaml
+   kubectl apply -f helmchart-iot.yaml
    ```
 
 3. **Integrate with Chartpress/Controller**  
-   Ensure your cluster has a controller or operator that understands the `HelmChart` CRD for automated chart templating and deployment.
+   Ensure your cluster has a controller or operator that understands the `ChartpressConfig` CRD for automated chart templating and deployment. (No such controller ships in this repository yet — the CRD is provided for use with your own operator.)
 
 ## Manifests
 
-- [chartpresscrd.yaml](./chartpresscrd.yaml) — HelmChart CRD definition
-- [helmchart1.yaml](./helmchart1.yaml) — Example resource manifest
-- [helmchart2.yaml](./helmchart2.yaml)
-- [helmchart3.yaml](./helmchart3.yaml)
-- [helmchart4.yaml](./helmchart4.yaml)
-- [helmchart5.yaml](./helmchart5.yaml)
+- [crd-helmchart.yaml](./crd-helmchart.yaml) — ChartpressConfig CRD definition
+- [helmchart-iot.yaml](./helmchart-iot.yaml) — Example resource: IoT platform
+- [helmchart-ml.yaml](./helmchart-ml.yaml) — Example resource: ML platform
 
 ## License
 
-This project is provided under the [MIT License](LICENSE).
+This project is proprietary — **All Rights Reserved**. See the [LICENSE](../LICENSE) for details.

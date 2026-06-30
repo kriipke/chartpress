@@ -22,8 +22,8 @@ FROM nginx:alpine
 # Copy the built React app from the previous stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Expose port 80
-EXPOSE 8080
+# Expose port 80 (nginx default listen port)
+EXPOSE 80
 
 # Start Nginx server
 CMD ["nginx", "-g", "daemon off;"]
