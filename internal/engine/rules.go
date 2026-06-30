@@ -122,7 +122,9 @@ func applySharedSecretsUmbrella(ch *chart.Chart, spec Spec) {
 		global = map[string]interface{}{}
 		ch.Values["global"] = global
 	}
-	global["sharedSecrets"] = map[string]interface{}{"data": map[string]interface{}{}}
+	if _, exists := global["sharedSecrets"]; !exists {
+		global["sharedSecrets"] = map[string]interface{}{"data": map[string]interface{}{}}
+	}
 }
 
 // applySharedSecretsSubchart appends an envFrom secretRef entry to the subchart
