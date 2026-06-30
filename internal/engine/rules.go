@@ -120,14 +120,12 @@ func applySharedSecretsUmbrella(ch *chart.Chart, spec Spec) {
 }
 
 // applySharedSecretsSubchart appends an envFrom secretRef entry to the subchart
-// values so the deployment template mounts the shared-secrets Secret.
+// values so the workload template mounts the shared-secrets Secret.
 //
-// Phase-1 limitation: the env/envFrom wiring renders ONLY on the "deployment"
-// workload, because only deployment.tpl consumes .Values.env/.Values.envFrom;
-// statefulset.tpl and daemonset.tpl have no env/envFrom blocks and Phase 1 may
-// not edit them, so StatefulSet/DaemonSet subcharts do NOT receive these env
-// vars/mounts. The umbrella-level Secret still renders regardless of workload.
-// This is a known Phase-1 limitation, deferred to Phase 2.
+// The env/envFrom wiring now renders on all three workload types — deployment,
+// statefulset, and daemonset — because each workload template (deployment.tpl,
+// statefulset.tpl, daemonset.tpl) consumes .Values.env and .Values.envFrom.
+// The umbrella-level Secret also renders regardless of workload.
 func applySharedSecretsSubchart(sub *chart.Chart, spec Spec) {
 	if !spec.Rules.SharedSecretsConfig {
 		return
@@ -175,12 +173,10 @@ func applySharedNewrelicUmbrella(ch *chart.Chart, spec Spec) {
 // adds the per-subchart NEW_RELIC_LICENSE_KEY (from the shared secret) and
 // NEW_RELIC_APP_NAME (= subchart name) env entries.
 //
-// Phase-1 limitation: the env/envFrom wiring renders ONLY on the "deployment"
-// workload, because only deployment.tpl consumes .Values.env/.Values.envFrom;
-// statefulset.tpl and daemonset.tpl have no env/envFrom blocks and Phase 1 may
-// not edit them, so StatefulSet/DaemonSet subcharts do NOT receive these env
-// vars/mounts. The umbrella-level ConfigMap and Secret still render regardless
-// of workload. This is a known Phase-1 limitation, deferred to Phase 2.
+// The env/envFrom wiring now renders on all three workload types — deployment,
+// statefulset, and daemonset — because each workload template (deployment.tpl,
+// statefulset.tpl, daemonset.tpl) consumes .Values.env and .Values.envFrom.
+// The umbrella-level ConfigMap and Secret also render regardless of workload.
 func applySharedNewrelicSubchart(sub *chart.Chart, spec Spec) {
 	if !spec.Rules.SharedNewrelicConfig {
 		return

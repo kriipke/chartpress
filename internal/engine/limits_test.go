@@ -6,14 +6,17 @@ import (
 	"testing"
 )
 
-// TestStatefulSetSubchartPhase1Limit documents and locks the known Phase-1
-// limitation: env/envFrom wiring from applySharedNewrelicSubchart is written
-// into .Values.env/.Values.envFrom, which only deployment.tpl consumes.
-// statefulset.tpl has no env/envFrom blocks, so StatefulSet subcharts do NOT
-// receive NEW_RELIC_APP_NAME or any other env var wired this way in Phase 1.
-// The umbrella-level ConfigMap and Secret still render correctly.
-// This test asserts current behavior; revisit in Phase 2.
-func TestStatefulSetSubchartPhase1Limit(t *testing.T) {
+// These tests assert that env/envFrom wiring from SharedNewrelicConfig and
+// SharedSecretsConfig now renders on all three workload types: deployment,
+// statefulset, and daemonset.  The former Phase-1 limitation (env wiring was
+// deployment-only) is resolved: statefulset.tpl and daemonset.tpl now include
+// the same {{- with .Values.envFrom }} / {{- with .Values.env }} blocks as
+// deployment.tpl.
+
+// TestStatefulSetSharedNewrelicEnv verifies that a statefulset subchart
+// receives the full New Relic env wiring: configMap envFrom, license-key
+// secretKeyRef, and the per-app NEW_RELIC_APP_NAME value env var.
+func TestStatefulSetSharedNewrelicEnv(t *testing.T) {
 	spec := Normalize(Spec{
 		UmbrellaChartName: "demo",
 		Subcharts:         []Subchart{{Name: "db", Workload: "statefulset"}},
@@ -25,19 +28,63 @@ func TestStatefulSetSubchartPhase1Limit(t *testing.T) {
 	}
 	man := allManifests(renderChart(t, ch))
 
-	// Umbrella resources MUST render regardless of subchart workload type.
-	if !strings.Contains(man, "demo-newrelic-config") {
-		t.Fatalf("expected umbrella demo-newrelic-config ConfigMap, got:\n%s", man)
+	for _, want := range []string{
+		"demo-newrelic-config",
+		"demo-newrelic-license",
+		"NEW_RELIC_LICENSE_KEY",
+		"NEW_RELIC_APP_NAME",
+		"value: db",
+	} {
+		if !strings.Contains(man, want) {
+			t.Fatalf("missing %q in statefulset manifests:\n%s", want, man)
+		}
 	}
-	if !strings.Contains(man, "demo-newrelic-license") {
-		t.Fatalf("expected umbrella demo-newrelic-license Secret, got:\n%s", man)
-	}
+}
 
-	// KNOWN Phase-1 limitation: the StatefulSet manifest does NOT carry
-	// NEW_RELIC_APP_NAME because statefulset.tpl has no env block.
-	// This assertion locks current behavior; it must be revisited in Phase 2
-	// when env wiring is extended to StatefulSet/DaemonSet workloads.
-	if strings.Contains(man, "NEW_RELIC_APP_NAME") {
-		t.Fatalf("Phase-1 limit violated: StatefulSet subchart should NOT carry NEW_RELIC_APP_NAME (env wiring is deployment-only); update this test in Phase 2")
+// TestDaemonSetSharedNewrelicEnv verifies that a daemonset subchart receives
+// the full New Relic env wiring, including NEW_RELIC_APP_NAME = subchart name.
+func TestDaemonSetSharedNewrelicEnv(t *testing.T) {
+	spec := Normalize(Spec{
+		UmbrellaChartName: "demo",
+		Subcharts:         []Subchart{{Name: "agent", Workload: "daemonset"}},
+		Rules:             func() Rules { r := DefaultRules(); r.SharedNewrelicConfig = true; return r }(),
+	})
+	ch, err := BuildChart(spec, testdataTemplates)
+	if err != nil {
+		t.Fatalf("BuildChart: %v", err)
+	}
+	man := allManifests(renderChart(t, ch))
+
+	for _, want := range []string{
+		"NEW_RELIC_APP_NAME",
+		"value: agent",
+	} {
+		if !strings.Contains(man, want) {
+			t.Fatalf("missing %q in daemonset manifests:\n%s", want, man)
+		}
+	}
+}
+
+// TestStatefulSetSharedSecretsEnvFrom verifies that a statefulset subchart
+// receives an envFrom secretRef mount for the shared-secrets Secret.
+func TestStatefulSetSharedSecretsEnvFrom(t *testing.T) {
+	spec := Normalize(Spec{
+		UmbrellaChartName: "demo",
+		Subcharts:         []Subchart{{Name: "db", Workload: "statefulset"}},
+		Rules:             func() Rules { r := DefaultRules(); r.SharedSecretsConfig = true; return r }(),
+	})
+	ch, err := BuildChart(spec, testdataTemplates)
+	if err != nil {
+		t.Fatalf("BuildChart: %v", err)
+	}
+	man := allManifests(renderChart(t, ch))
+
+	for _, want := range []string{
+		"secretRef",
+		"demo-shared-secrets",
+	} {
+		if !strings.Contains(man, want) {
+			t.Fatalf("missing %q in statefulset manifests:\n%s", want, man)
+		}
 	}
 }
