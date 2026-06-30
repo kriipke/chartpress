@@ -16,7 +16,7 @@ endif::[]
   <img width="275" height="275" src="docs/chartpress.png">
 </p>
 <p align="center">
-    <h1 align="center">vaultsync</h1>
+    <h1 align="center">chartpress</h1>
 
 
     <!-- REPLACE THE FOLLOWING WITH YOUR REPOSITORY/PROJECT'S SHORT DESCRIPTION -->
