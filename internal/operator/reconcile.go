@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	phasePending    = "Pending"
 	phaseGenerating = "Generating"
 	phaseReady      = "Ready"
 	phaseFailed     = "Failed"
