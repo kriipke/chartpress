@@ -1,21 +1,25 @@
-apiVersion: kriipke.dev/v1alpha1
+apiVersion: chartpress.dev/v1alpha1
 kind: ChartpressConfig
 metadata:
   name: ml-platform
 spec:
   umbrellaChartName: ml-platform
+  description: "Model training and serving platform."
   subcharts:
     - name: trainer
       workload: deployment
+      description: "Batch training jobs runner."
     - name: predictor
       workload: deployment
+      description: "Online inference service."
     - name: model-db
       workload: statefulset
+      description: "Model + metadata store."
     - name: worker
       workload: deployment
+      description: "Async task worker."
   rules:
-    possible_ingresses:
-      - istio
+    ingress: istio
     common_annotations: false
     linked_templates: false
     resource_names_match_chart_name: false
