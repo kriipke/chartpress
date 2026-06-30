@@ -34,13 +34,15 @@ func BuildChart(spec Spec, templatesDir string) (*chart.Chart, error) {
 	// clean values; subchart defaults come from each subchart's own values.yaml.
 	umbrella.Values = map[string]interface{}{}
 
+	// For linked_templates: false, collect the umbrella's named-template bodies
+	// AFTER rename so the inlined defines carry the umbrella-name prefix that the
+	// subchart's (also-renamed) include stubs reference. This makes each subchart
+	// self-contained and standalone-renderable (design §4.2); collecting a pristine,
+	// un-renamed copy would leave dangling umbrella-chart.* defines that none of the
+	// subchart's <umbrella>.* includes resolve.
 	var inlineDefines string
 	if !spec.Rules.LinkedTemplates {
-		pristine, err := loader.Load(umbrellaPath)
-		if err != nil {
-			return nil, fmt.Errorf("load umbrella for inlining: %w", err)
-		}
-		inlineDefines = collectUmbrellaDefines(pristine)
+		inlineDefines = collectUmbrellaDefines(umbrella)
 	}
 
 	for _, sc := range spec.Subcharts {
@@ -113,10 +115,7 @@ func buildSubchart(sub *chart.Chart, sc Subchart, spec Spec, inlineDefines strin
 	}
 	sub.Templates = filtered
 	applyWorkload(sub, sc.Workload)
-	replacePlaceholders(sub, map[string]string{
-		placeholderName: spec.UmbrellaChartName,
-		"component":     sc.Name,
-	})
+	replacePlaceholders(sub, placeholderName, spec.UmbrellaChartName, "component", sc.Name)
 	applyCommonAnnotationsSubchart(sub, spec)
 	applyResourceNaming(sub, spec.Rules.ResourceNamesMatchChartName)
 	applySubchartFileToggles(sub, spec.Rules)
@@ -129,19 +128,21 @@ func buildSubchart(sub *chart.Chart, sc Subchart, spec Spec, inlineDefines strin
 	return nil
 }
 
-func replacePlaceholders(ch *chart.Chart, repl map[string]string) {
-	apply := func(b []byte) []byte {
-		s := string(b)
-		for old, nw := range repl {
-			s = strings.ReplaceAll(s, old, nw)
-		}
-		return []byte(s)
-	}
+// replacePlaceholders substitutes placeholder tokens across the chart's templates
+// and files. oldnew is a flat (old, new, old, new, ...) sequence, applied in a
+// single left-to-right pass via strings.Replacer: matches do not overlap and
+// already-substituted text is never re-scanned. This keeps replacement
+// deterministic and correct even when a substitution value contains another
+// placeholder token (e.g. an umbrella name like "my-component" that embeds the
+// "component" placeholder) — a map-based, unordered, repeated-ReplaceAll loop
+// could otherwise corrupt it depending on iteration order.
+func replacePlaceholders(ch *chart.Chart, oldnew ...string) {
+	r := strings.NewReplacer(oldnew...)
 	for _, t := range ch.Templates {
-		t.Data = apply(t.Data)
+		t.Data = []byte(r.Replace(string(t.Data)))
 	}
 	for _, f := range ch.Files {
-		f.Data = apply(f.Data)
+		f.Data = []byte(r.Replace(string(f.Data)))
 	}
 }
 

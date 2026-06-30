@@ -40,7 +40,7 @@ spec:
           env:
             {{- range . }}
             {{- $name := .name }}
-            {{- if or .value .valueFrom }}
+            {{- if or (hasKey . "value") .valueFrom }}
             - {{ toYaml . | nindent 14 | trim }}
             {{- else if .secretKeyRef }}
               {{- if eq .keys "*" }}
