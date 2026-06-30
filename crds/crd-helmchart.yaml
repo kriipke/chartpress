@@ -1,9 +1,9 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: chartpressconfigs.kriipke.dev
+  name: chartpressconfigs.chartpress.dev
 spec:
-  group: kriipke.dev
+  group: chartpress.dev
   names:
     kind: ChartpressConfig
     plural: chartpressconfigs
@@ -24,7 +24,10 @@ spec:
               properties:
                 umbrellaChartName:
                   type: string
-                  description: "Name of the umbrella Helm chart."
+                  description: "Name of the umbrella Helm chart (kebab-case)."
+                description:
+                  type: string
+                  description: "Human-readable description for the umbrella chart."
                 subcharts:
                   type: array
                   description: "List of subcharts and their workload types."
@@ -33,35 +36,36 @@ spec:
                     properties:
                       name:
                         type: string
-                        description: "The name of the subchart."
+                        description: "The name of the subchart (kebab-case)."
                       workload:
                         type: string
-                        enum: ["deployment", "statefulset", "daemonset", "job", "cronjob"]
+                        enum: ["deployment", "statefulset", "daemonset"]
                         description: "The workload type for the subchart."
+                      description:
+                        type: string
+                        description: "Human-readable description for this subchart."
                 rules:
                   type: object
                   properties:
-                    possible_ingresses:
-                      type: array
-                      items:
-                        type: string
-                        enum: ["alb", "nginx", "traefik", "istio", "gce"]
-                      description: "Possible ingress controller types."
+                    ingress:
+                      type: string
+                      enum: ["alb", "nginx", "traefik", "istio", "gce", "none"]
+                      description: "Platform-wide ingress controller (single)."
                     common_annotations:
                       type: boolean
                       description: "Enable or disable common annotations."
                     linked_templates:
                       type: boolean
-                      description: "Should templates be linked?"
+                      description: "Should subchart templates link shared umbrella partials?"
                     resource_names_match_chart_name:
                       type: boolean
-                      description: "Should resource names match chart name?"
+                      description: "Should resource names match the chart name (no release prefix)?"
                     shared_secrets_config:
                       type: boolean
-                      description: "Enable shared secrets configuration."
+                      description: "Enable a shared umbrella Secret wired into every subchart."
                     shared_newrelic_config:
                       type: boolean
-                      description: "Enable shared New Relic configuration."
+                      description: "Enable shared New Relic config + license wired into every subchart."
                     generate_umbrella_readme:
                       type: boolean
                       description: "Generate a README for the umbrella chart."
@@ -70,7 +74,27 @@ spec:
                       description: "Generate READMEs for subcharts."
                     include_docs:
                       type: boolean
-                      description: "Include documentation in the output."
+                      description: "Include the docs/ directory in the output."
               required: ["umbrellaChartName", "subcharts", "rules"]
+            status:
+              type: object
+              description: "Operator-owned status (written by the chartpress operator)."
+              properties:
+                phase:
+                  type: string
+                  enum: ["Pending", "Generating", "Ready", "Failed"]
+                  description: "Lifecycle phase of the generated chart."
+                observedGeneration:
+                  type: integer
+                  description: "metadata.generation last reconciled by the operator."
+                artifactKey:
+                  type: string
+                  description: "Object-storage key of the generated chart archive."
+                lastGenerated:
+                  type: string
+                  description: "RFC3339 timestamp of the last successful generation."
+                message:
+                  type: string
+                  description: "Human-readable status detail (error text when Failed)."
       subresources:
         status: {}

@@ -12,16 +12,10 @@ data:
             try_files $uri /index.html;
         }
 
-        location /generate {
-            proxy_pass http://chartpress-backend:8080;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection 'upgrade';
-            proxy_set_header Host $host;
-            proxy_cache_bypass $http_upgrade;
-        }
-
-        location /download/ {
+        # Backend API: async generate, chart listing/detail, and prompt
+        # drafting. /download was removed with the sync backend (Phase 2);
+        # Phase 3 serves downloads via presigned bucket URLs, not through nginx.
+        location ~ ^/(generate|charts|text-to-config)(/|$) {
             proxy_pass http://chartpress-backend:8080;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;

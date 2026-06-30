@@ -1,0 +1,35 @@
+{{- if .Values.backend.rbac.create }}
+# The backend creates/reads ChartpressConfig CRs in its own namespace so the
+# web app can submit specs and browse generated charts.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.backend.serviceAccount.name }}
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: chartpress-backend
+  namespace: {{ .Release.Namespace }}
+rules:
+  # patch is required: /generate uses server-side apply (an apply PATCH), and
+  # create covers the apply-creates-the-object case.
+  - apiGroups: ["chartpress.dev"]
+    resources: ["chartpressconfigs"]
+    verbs: ["create", "get", "list", "patch", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: chartpress-backend
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: chartpress-backend
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.backend.serviceAccount.name }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

@@ -1,0 +1,120 @@
+// internal/server/charts_test.go
+package server
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+)
+
+// fakeLister serves canned CRs.
+type fakeLister struct {
+	items []unstructured.Unstructured
+}
+
+func (f *fakeLister) List(ctx context.Context, namespace string) ([]unstructured.Unstructured, error) {
+	return f.items, nil
+}
+func (f *fakeLister) Get(ctx context.Context, namespace, name string) (*unstructured.Unstructured, error) {
+	for i := range f.items {
+		if f.items[i].GetName() == name {
+			return &f.items[i], nil
+		}
+	}
+	return nil, apierrors.NewNotFound(schema.GroupResource{Group: apiGroup, Resource: "chartpressconfigs"}, name)
+}
+
+func crWith(name, phase, message string, subcharts int, lastGen string) unstructured.Unstructured {
+	subs := make([]interface{}, subcharts)
+	for i := range subs {
+		subs[i] = map[string]interface{}{"name": "s", "workload": "deployment"}
+	}
+	status := map[string]interface{}{}
+	if phase != "" {
+		status["phase"] = phase
+	}
+	if message != "" {
+		status["message"] = message
+	}
+	if lastGen != "" {
+		status["lastGenerated"] = lastGen
+	}
+	return unstructured.Unstructured{Object: map[string]interface{}{
+		"apiVersion": apiVersionV1alpha1,
+		"kind":       kindChartpressConfig,
+		"metadata":   map[string]interface{}{"name": name},
+		"spec":       map[string]interface{}{"umbrellaChartName": name, "subcharts": subs},
+		"status":     status,
+	}}
+}
+
+func TestChartsListMapsFields(t *testing.T) {
+	srv := &Server{Lister: &fakeLister{items: []unstructured.Unstructured{
+		crWith("ready-one", "Ready", "", 3, "2026-06-30T03:10:00Z"),
+		crWith("fresh-one", "", "", 1, ""), // empty status → Pending
+		crWith("bad-one", "Failed", "render blew up", 2, ""),
+	}}, Namespace: "ns"}
+
+	req := httptest.NewRequest(http.MethodGet, "/charts", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var got []chartSummary
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(got) != 3 {
+		t.Fatalf("len = %d, want 3", len(got))
+	}
+	byName := map[string]chartSummary{}
+	for _, c := range got {
+		byName[c.Name] = c
+	}
+	if c := byName["ready-one"]; c.Phase != "Ready" || c.SubchartCount != 3 || c.LastGenerated != "2026-06-30T03:10:00Z" || c.DownloadURL != "" {
+		t.Fatalf("ready-one = %+v (downloadUrl must be empty in Phase 2)", c)
+	}
+	if c := byName["fresh-one"]; c.Phase != "Pending" {
+		t.Fatalf("empty status should map to Pending, got %q", c.Phase)
+	}
+	if c := byName["bad-one"]; c.Phase != "Failed" || c.Message != "render blew up" {
+		t.Fatalf("bad-one = %+v", c)
+	}
+}
+
+func TestChartByNameFound(t *testing.T) {
+	srv := &Server{Lister: &fakeLister{items: []unstructured.Unstructured{
+		crWith("demo", "Generating", "", 2, ""),
+	}}}
+	req := httptest.NewRequest(http.MethodGet, "/charts/demo", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+	var got chartSummary
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if got.Name != "demo" || got.Phase != "Generating" || got.SubchartCount != 2 {
+		t.Fatalf("got = %+v", got)
+	}
+}
+
+func TestChartByNameNotFound(t *testing.T) {
+	srv := &Server{Lister: &fakeLister{}}
+	req := httptest.NewRequest(http.MethodGet, "/charts/missing", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want 404", rec.Code)
+	}
+}
