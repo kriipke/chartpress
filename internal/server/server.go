@@ -152,7 +152,7 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
             log.Println("[INFO] Returning JSON response with download URL")
             w.Header().Set("Content-Type", "application/json")
             response := map[string]string{
-                "downloadUrl": fmt.Sprintf("/chartpress/download/%s", filepath.Base(zipFilePath)),
+                "downloadUrl": fmt.Sprintf("/download/%s", filepath.Base(zipFilePath)),
             }
             json.NewEncoder(w).Encode(response)
         }

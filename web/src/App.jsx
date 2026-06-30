@@ -36,7 +36,7 @@ export default function App() {
 
       // The server returns JSON ({ downloadUrl }) to browser clients; only
       // clients sending `Accept: application/zip` (the CLI) get the raw zip.
-      const response = await fetch("/chartpress/generate", {
+      const response = await fetch("/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -86,7 +86,7 @@ export default function App() {
       <nav className="cp-nav">
         <span className="cp-logo">ChartPress</span>
         <div className="cp-nav-links">
-          <a href="/chartpress/">Home</a>
+          <a href="/">Home</a>
           <a
             href="https://github.com/kriipke/chartpress"
             target="_blank"
