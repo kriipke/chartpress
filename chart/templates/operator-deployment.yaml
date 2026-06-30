@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chartpress-operator
+  labels:
+    app: chartpress-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chartpress-operator
+  template:
+    metadata:
+      labels:
+        app: chartpress-operator
+    spec:
+      serviceAccountName: {{ .Values.operator.serviceAccount.name }}
+      containers:
+        - name: operator
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          command: ["/app/operator"]
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{- include "chartpress.s3env" . | nindent 12 }}
+          # /app/templates is baked into the image; the operator reads it via
+          # CHARTPRESS_TEMPLATES_DIR (default "templates", run from WORKDIR /app).

@@ -1,0 +1,38 @@
+{{- if .Values.operator.rbac.create }}
+# The operator watches ChartpressConfig CRs and writes their status + finalizers.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.operator.serviceAccount.name }}
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: chartpress-operator
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups: ["chartpress.dev"]
+    resources: ["chartpressconfigs"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["chartpress.dev"]
+    resources: ["chartpressconfigs/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["chartpress.dev"]
+    resources: ["chartpressconfigs/finalizers"]
+    verbs: ["update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: chartpress-operator
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: chartpress-operator
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.operator.serviceAccount.name }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
