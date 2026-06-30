@@ -1,3 +1,5 @@
+{{- $path := .Values.ingress.path | default "/" -}}
+{{- $isRoot := eq (trimSuffix "/" $path) "" -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -5,8 +7,11 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     kubernetes.io/ingress.class: {{ .Values.ingress.class }}
+    {{- if not $isRoot }}
+    # Subpath hosting: strip the prefix so the backend still receives "/".
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
+    {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.class }}
   tls:
@@ -17,8 +22,13 @@ spec:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
-          - path: {{ trimSuffix "/" .Values.ingress.path }}(/|$)(.*)
+          {{- if $isRoot }}
+          - path: /
+            pathType: Prefix
+          {{- else }}
+          - path: {{ trimSuffix "/" $path }}(/|$)(.*)
             pathType: ImplementationSpecific
+          {{- end }}
             backend:
               service:
                 name: {{ .Values.ingress.backend.service }}

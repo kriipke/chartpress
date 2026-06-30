@@ -17,9 +17,9 @@ frontend:
 ingress:
   class: nginx
   rewriteTarget: /
-  host: ziinc.dev
+  host: chartpress.dev
   secretName: cert-wcard
-  path: /chartpress/
+  path: /
   backend:
     service: chartpress-frontend
     port: 80
@@ -28,10 +28,10 @@ certificate:
   name: cert-wcard
   secretName: cert-wcard
   issuerName: letsencrypt-wcard
-  commonName: ziinc.dev
+  commonName: chartpress.dev
   dnsNames:
-    - "*.ziinc.dev"
-    - "ziinc.dev"
+    - "*.chartpress.dev"
+    - "chartpress.dev"
 
 issuer:
   name: letsencrypt-wcard
@@ -46,3 +46,12 @@ issuer:
       tokenSecretRef:
         name: dnsimple-dns
         key: token
+      # RBAC granting the DNSimple cert-manager webhook ServiceAccount read
+      # access to the token secret above, in this release namespace. Rendered by
+      # templates/dnsimple-rbac.yaml. Disable if the token is reached another way
+      # (e.g. via a ClusterIssuer resolving the secret in cert-manager's namespace).
+      webhook:
+        createSecretReaderRBAC: true
+        serviceAccount:
+          name: cert-manager-webhook-dnsimple
+          namespace: cert-manager

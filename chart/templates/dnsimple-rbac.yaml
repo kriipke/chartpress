@@ -1,0 +1,32 @@
+{{- if .Values.issuer.acme.dnsimple.webhook.createSecretReaderRBAC }}
+# Allows the DNSimple cert-manager webhook ServiceAccount to read the DNS API
+# token secret in this release namespace. Required because a namespaced Issuer
+# makes the webhook resolve tokenSecretRef in the Issuer's own namespace, where
+# the webhook SA otherwise has no permissions. The token Secret itself is NOT
+# created here (it is a credential) — see the chart README.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cert-manager-webhook-dnsimple-secret-reader
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames:
+      - {{ .Values.issuer.acme.dnsimple.tokenSecretRef.name | quote }}
+    verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cert-manager-webhook-dnsimple-secret-reader
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cert-manager-webhook-dnsimple-secret-reader
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.issuer.acme.dnsimple.webhook.serviceAccount.name }}
+    namespace: {{ .Values.issuer.acme.dnsimple.webhook.serviceAccount.namespace }}
+{{- end }}

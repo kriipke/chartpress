@@ -17,6 +17,17 @@ kubectl create secret generic dnsimple-dns \
 
 If you use a DNSimple user token, also set `issuer.acme.dnsimple.accountID`. Account tokens can usually leave that value empty.
 
+The token used must belong to the DNSimple account that hosts the certificate's
+domain zone, otherwise challenges fail with `403 Permission Denied` on the zone.
+
+This chart creates the RBAC (`Role` + `RoleBinding`
+`cert-manager-webhook-dnsimple-secret-reader`) that lets the webhook
+ServiceAccount read the token secret in the release namespace, so you only need
+to create the secret above. The webhook ServiceAccount defaults to
+`cert-manager/cert-manager-webhook-dnsimple`; override via
+`issuer.acme.dnsimple.webhook.serviceAccount` or disable with
+`issuer.acme.dnsimple.webhook.createSecretReaderRBAC=false`.
+
 == Overview
 
 The ChartPress API is a Go-based HTTP server that allows users to generate Helm charts dynamically based on user-provided configurations. It includes endpoints for handling chart generation and supports JSON-based configuration input.
