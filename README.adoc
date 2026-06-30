@@ -1,8 +1,34 @@
-= Chartpress
+= vaultsync
+:doctype: article
+:description: A README template written in AsciiDoc markup
 :toc: macro
 :toclevels: 3
-:icons: font
 :source-highlighter: highlightjs
+:imagesdir: docs/images
+ifdef::env-github[]
+:tip-caption: :rocket:
+:!showtitle:
+:icons: font
+endif::[]
+
+++++
+<p align="center">
+  <img width="275" height="275" src="docs/chartpress.png">
+</p>
+<p align="center">
+    <h1 align="center">vaultsync</h1>
+
+
+    <!-- REPLACE THE FOLLOWING WITH YOUR REPOSITORY/PROJECT'S SHORT DESCRIPTION -->
+    <h3 align="center">a lightweight secrets vault synchronizer</h3>
+        <p align="center">
+      <img height=20 src="https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white">
+  <img height=20 src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black">
+  <img height=20 src="https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white">
+
+</p>
+<br/>
+++++
 
 image:https://img.shields.io/github/languages/top/kriipke/chartpress[Top Language]
 image:https://img.shields.io/github/repo-size/kriipke/chartpress[Repo Size]
