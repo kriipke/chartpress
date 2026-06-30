@@ -34,6 +34,7 @@ spec:
                   name: {{ .Values.backend.openai.apiKeySecret.name }}
                   key: {{ .Values.backend.openai.apiKeySecret.key }}
             {{- end }}
+            {{- include "chartpress.s3env" . | nindent 12 }}
           volumeMounts:
             - name: chartpress-config
               mountPath: /app/chartpress.yaml
