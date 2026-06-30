@@ -4,6 +4,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -51,5 +52,16 @@ func TestTextToConfigRejectsEmptyPrompt(t *testing.T) {
 	srv.Handler().ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400", rec.Code)
+	}
+}
+
+// A drafter (OpenAI) failure must surface as 502 Bad Gateway, not 500/200.
+func TestTextToConfigReturns502OnDrafterError(t *testing.T) {
+	srv := &Server{Drafter: fakeDrafter{err: errors.New("openai unavailable")}}
+	req := httptest.NewRequest(http.MethodPost, "/text-to-config", strings.NewReader(`{"prompt":"an online shop"}`))
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadGateway {
+		t.Fatalf("status = %d, want 502", rec.Code)
 	}
 }

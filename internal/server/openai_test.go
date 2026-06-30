@@ -14,6 +14,12 @@ import (
 func TestOpenAIDrafterParsesResponsesOutput(t *testing.T) {
 	// Stand in for the OpenAI Responses API: echo a spec back as output_text.
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("method = %q, want POST", r.Method)
+		}
+		if r.URL.Path != "/" {
+			t.Errorf("path = %q, want /", r.URL.Path)
+		}
 		if got := r.Header.Get("Authorization"); got != "Bearer test-key" {
 			t.Errorf("auth header = %q", got)
 		}
@@ -23,6 +29,12 @@ func TestOpenAIDrafterParsesResponsesOutput(t *testing.T) {
 		}
 		if !strings.Contains(string(body), "json_schema") {
 			t.Errorf("request missing structured-output schema: %s", body)
+		}
+		// The structured-output request must stay strict (regression guard).
+		for _, marker := range []string{`"strict":true`, `"additionalProperties":false`, `"deployment"`} {
+			if !strings.Contains(string(body), marker) {
+				t.Errorf("request missing strict-schema marker %q: %s", marker, body)
+			}
 		}
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"output": []interface{}{

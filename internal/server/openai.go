@@ -6,8 +6,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/kriipke/chartpress/internal/engine"
 )
@@ -30,7 +32,7 @@ func newOpenAIDrafter() *openAIDrafter {
 		apiKey:     os.Getenv("OPENAI_API_KEY"),
 		model:      model,
 		endpoint:   "https://api.openai.com/v1/responses",
-		httpClient: http.DefaultClient,
+		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -71,7 +73,8 @@ func (d *openAIDrafter) Draft(ctx context.Context, prompt string) (engine.Spec, 
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return engine.Spec{}, fmt.Errorf("openai responses: status %d", resp.StatusCode)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<10))
+		return engine.Spec{}, fmt.Errorf("openai responses: status %d: %s", resp.StatusCode, bytes.TrimSpace(body))
 	}
 
 	var parsed struct {
