@@ -21,6 +21,8 @@ type Server struct {
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/generate", s.cors(s.handleGenerate))
+	mux.HandleFunc("/charts", s.cors(s.handleCharts))
+	mux.HandleFunc("/charts/", s.cors(s.handleChartByName))
 	return mux
 }
 
