@@ -29,4 +29,10 @@ func TestWorkloadSelection(t *testing.T) {
 	if strings.Count(man, "kind: Deployment") != 1 {
 		t.Fatalf("expected exactly 1 Deployment, got:\n%s", man)
 	}
+	if strings.Count(man, "kind: StatefulSet") != 1 {
+		t.Fatalf("expected exactly 1 StatefulSet, got:\n%s", man)
+	}
+	if strings.Count(man, "kind: DaemonSet") != 1 {
+		t.Fatalf("expected exactly 1 DaemonSet, got:\n%s", man)
+	}
 }

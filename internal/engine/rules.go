@@ -12,7 +12,9 @@ import (
 // workloads we drop it and emit templates/<workload>.yaml including the matching
 // umbrella named template.
 func applyWorkload(sub *chart.Chart, workload string) {
-	if workload == "deployment" {
+	// Only statefulset/daemonset swap the workload template; deployment (and any
+	// other value, which Validate rejects upstream) is a no-op.
+	if workload != "statefulset" && workload != "daemonset" {
 		return
 	}
 	sub.Templates = dropTemplate(sub.Templates, "templates/deployment.yaml")
