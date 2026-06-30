@@ -49,7 +49,16 @@ func TestCRDGroupAndNameMigrated(t *testing.T) {
 func TestCRDSchemaShape(t *testing.T) {
 	m := readYAML(t, crdPath)
 	versions := nested(t, m, "spec", "versions").([]interface{})
-	schema := versions[0].(map[string]interface{})["schema"].(map[string]interface{})
+	var schema map[string]interface{}
+	for _, v := range versions {
+		vm := v.(map[string]interface{})
+		if vm["name"] == "v1alpha1" {
+			schema = vm["schema"].(map[string]interface{})
+		}
+	}
+	if schema == nil {
+		t.Fatal("CRD has no v1alpha1 version")
+	}
 	specProps := nested(t, schema, "openAPIV3Schema", "properties", "spec", "properties").(map[string]interface{})
 
 	// spec.description present
@@ -66,7 +75,7 @@ func TestCRDSchemaShape(t *testing.T) {
 
 	// rules.ingress is a single string enum; possible_ingresses is gone
 	rulesProps := nested(t, specProps, "rules", "properties").(map[string]interface{})
-	if _, gone := rulesProps["possible_ingresses"]; gone {
+	if _, present := rulesProps["possible_ingresses"]; present {
 		t.Fatal("rules.possible_ingresses must be removed")
 	}
 	if typ := nested(t, rulesProps, "ingress", "type"); typ != "string" {

@@ -44,8 +44,7 @@ func TestBackendRBACGrantsChartpressConfigs(t *testing.T) {
 		"kind: ServiceAccount",
 		"chartpress.dev",
 		"chartpressconfigs",
-		"create",
-		"watch",
+		`verbs: ["create", "get", "list", "watch"]`,
 	} {
 		if !strings.Contains(man, want) {
 			t.Fatalf("rendered chart missing %q", want)

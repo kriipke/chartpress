@@ -3,6 +3,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/kriipke/chartpress/internal/engine"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -27,9 +28,17 @@ var chartpressGVR = schema.GroupVersionResource{
 // normalized) spec. metadata.name == spec.UmbrellaChartName; .spec is the spec
 // itself, JSON round-tripped so the persisted CR carries the engine field names.
 func wrapManifest(spec engine.Spec) *unstructured.Unstructured {
-	b, _ := json.Marshal(spec) // engine.Spec has no unmarshalable fields
+	// engine.Spec contains only JSON-native types, so these cannot fail in
+	// practice; a failure means a non-serializable field was added — surface it
+	// loudly rather than persisting a CR with a null spec.
+	b, err := json.Marshal(spec)
+	if err != nil {
+		panic(fmt.Sprintf("wrapManifest: marshal engine.Spec: %v", err))
+	}
 	var specMap map[string]interface{}
-	_ = json.Unmarshal(b, &specMap)
+	if err := json.Unmarshal(b, &specMap); err != nil {
+		panic(fmt.Sprintf("wrapManifest: unmarshal spec to map: %v", err))
+	}
 
 	return &unstructured.Unstructured{Object: map[string]interface{}{
 		"apiVersion": apiVersionV1alpha1,

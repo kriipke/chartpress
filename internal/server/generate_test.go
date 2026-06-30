@@ -4,6 +4,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -75,5 +76,21 @@ func TestGenerateRejectsNonPost(t *testing.T) {
 	srv.Handler().ServeHTTP(rec, req)
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("status = %d, want 405", rec.Code)
+	}
+}
+
+// When the apiserver rejects the apply, the handler must surface a 500 rather
+// than reporting success.
+func TestGenerateReturns500WhenApplyFails(t *testing.T) {
+	app := &recordingApplier{err: errors.New("apiserver rejected apply")}
+	srv := newTestServer(app)
+	body := `{"umbrellaChartName":"demo","subcharts":[{"name":"api","workload":"deployment"}]}`
+	req := httptest.NewRequest(http.MethodPost, "/generate", strings.NewReader(body))
+	rec := httptest.NewRecorder()
+
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500; body = %s", rec.Code, rec.Body.String())
 	}
 }
