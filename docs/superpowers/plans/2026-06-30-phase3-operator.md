@@ -16,7 +16,7 @@
 - **Finalizer:** `chartpress.dev/artifact-cleanup` (`apis.FinalizerArtifactCleanup`).
 - **Object storage (BYO/external, S3-compatible):** `github.com/minio/minio-go/v7`. Config via env/Secret: `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_USE_SSL`. **No bundled MinIO.** Key scheme `charts/<name>.zip`, latest-per-CR (overwrite), no history.
 - **Watch mechanism (locked decision 1):** dynamic `SharedInformerFactory` (event-driven) → client-go rate-limiting workqueue → worker calls `Reconcile`. **30s resync** as the level-based safety net. No controller-runtime; no leader election; **one replica**.
-- **Render path (locked decision 2):** `engine.GenerateChart(spec, templatesDir, tmpRoot)` writes the chart to an `os.MkdirTemp` dir; then zip that directory tree. Temp dir removed on `defer`.
+- **Render path (locked decision 2):** `engine.GenerateChart(spec, templatesDir, tmpRoot)` writes the chart to an `os.MkdirTemp` dir; then zip that directory tree. Temp dir removed on `defer`. NOTE: `chartutil.SaveDir` packs each subchart dependency as `charts/<name>-<ver>.tgz`; the operator **expands those `.tgz` back into editable `charts/<name>/` directories before zipping**, so the downloaded chart has editable subchart sources (design §4 "edit subchart values after download").
 - **Failed-retry semantics (locked decision 3):** stamp `status.observedGeneration = metadata.generation` **only on success** (phase `Ready`). On failure set phase `Failed` + `message` and leave `observedGeneration` stale, so the next reconcile retries; the workqueue rate-limiter backs off. Short-circuit condition: `status.phase == "Ready" && status.observedGeneration == metadata.generation`.
 - **Status writes (locked decision 5):** dynamic client `UpdateStatus` on the status subresource (already present in the CRD). Finalizer edits go through `Update` on the main resource.
 - **Scope/tests (locked decision 4):** one shared `internal/objectstore` for both operator (upload) and backend (presign). The backend `downloadUrl` presign wiring (deferred Phase-2 item) lands **this phase**: `summarize` mints a fresh presigned GET from `status.artifactKey` **only when `phase == "Ready"`**, empty otherwise. All S3 behind interfaces, tested with in-memory fakes — no real bucket, no testcontainer.
@@ -561,11 +561,16 @@ func decodeSpec(obj *unstructured.Unstructured) (engine.Spec, error) {
 package operator
 
 import (
+	"archive/tar"
 	"archive/zip"
 	"bytes"
+	"compress/gzip"
+	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/kriipke/chartpress/internal/engine"
 )
@@ -592,7 +597,91 @@ func (r *chartRenderer) RenderZip(spec engine.Spec) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	// chartutil.SaveDir packs each subchart dependency as charts/<name>-<ver>.tgz.
+	// Expand them to editable charts/<name>/ directories so the downloaded chart
+	// has editable subchart sources (design §4 "edit values after download").
+	if err := expandPackagedSubcharts(chartDir); err != nil {
+		return nil, err
+	}
 	return zipDir(chartDir)
+}
+
+// expandPackagedSubcharts replaces each charts/<name>-<ver>.tgz that
+// chartutil.SaveDir emits for a dependency with an expanded charts/<name>/ tree.
+func expandPackagedSubcharts(chartDir string) error {
+	chartsDir := filepath.Join(chartDir, "charts")
+	entries, err := os.ReadDir(chartsDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".tgz") {
+			continue
+		}
+		tgz := filepath.Join(chartsDir, e.Name())
+		if err := untarInto(tgz, chartsDir); err != nil {
+			return fmt.Errorf("expand %s: %w", e.Name(), err)
+		}
+		if err := os.Remove(tgz); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// untarInto extracts a gzipped tar into destDir, rejecting unsafe (absolute or
+// parent-escaping) member paths.
+func untarInto(tgzPath, destDir string) error {
+	f, err := os.Open(tgzPath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	gz, err := gzip.NewReader(f)
+	if err != nil {
+		return err
+	}
+	defer gz.Close()
+	tr := tar.NewReader(gz)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		clean := filepath.Clean(hdr.Name)
+		if filepath.IsAbs(clean) || clean == ".." || strings.HasPrefix(clean, ".."+string(os.PathSeparator)) {
+			return fmt.Errorf("unsafe path in archive: %q", hdr.Name)
+		}
+		target := filepath.Join(destDir, clean)
+		switch hdr.Typeflag {
+		case tar.TypeDir:
+			if err := os.MkdirAll(target, 0o755); err != nil {
+				return err
+			}
+		case tar.TypeReg:
+			if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+				return err
+			}
+			out, err := os.Create(target)
+			if err != nil {
+				return err
+			}
+			if _, err := io.Copy(out, tr); err != nil {
+				out.Close()
+				return err
+			}
+			if err := out.Close(); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // zipDir walks root and returns a zip whose entries are forward-slash paths
