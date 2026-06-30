@@ -59,7 +59,9 @@ spec:
           env:
             {{- range . }}
             {{- $name := .name }}
-            {{- if .secretKeyRef }}
+            {{- if or (hasKey . "value") .valueFrom }}
+            - {{ toYaml . | nindent 14 | trim }}
+            {{- else if .secretKeyRef }}
               {{- if eq .keys "*" }}
               # All keys in the secret will be mounted as env vars (requires envFrom)
               {{- else }}
