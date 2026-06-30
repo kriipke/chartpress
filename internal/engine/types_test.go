@@ -41,6 +41,7 @@ func TestValidateRejectsBadInput(t *testing.T) {
 		{"bad workload", Spec{UmbrellaChartName: "demo", Subcharts: []Subchart{{Name: "api", Workload: "job"}}, Rules: DefaultRules()}},
 		{"bad ingress", Spec{UmbrellaChartName: "demo", Subcharts: []Subchart{{Name: "api", Workload: "deployment"}}, Rules: Rules{Ingress: "kong"}}},
 		{"bad name chars", Spec{UmbrellaChartName: "Demo_Platform", Subcharts: []Subchart{{Name: "api", Workload: "deployment"}}, Rules: DefaultRules()}},
+		{"bad subchart name", Spec{UmbrellaChartName: "demo", Subcharts: []Subchart{{Name: "Bad_api", Workload: "deployment"}}, Rules: DefaultRules()}},
 	}
 	for _, c := range cases {
 		if err := Validate(c.spec); err == nil {
