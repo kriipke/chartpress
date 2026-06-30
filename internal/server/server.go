@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/kriipke/chartpress/internal/objectstore"
 )
 
 // Server is the chartpress backend HTTP layer. Its dependencies are interfaces
@@ -13,6 +15,7 @@ type Server struct {
 	Applier   Applier
 	Lister    ChartLister
 	Drafter   Drafter
+	Presigner Presigner
 	Namespace string
 }
 
@@ -54,6 +57,11 @@ func Start() {
 		Lister:    &dynamicLister{client: client},
 		Drafter:   newOpenAIDrafter(),
 		Namespace: resolveNamespace(),
+	}
+	if store, err := objectstore.New(objectstore.ConfigFromEnv()); err != nil {
+		log.Printf("[WARN] object storage not configured, downloads disabled: %v", err)
+	} else {
+		srv.Presigner = store
 	}
 	port := getPort()
 	log.Printf("[INFO] listening on :%s", port)

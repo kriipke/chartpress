@@ -4,6 +4,7 @@ package server
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/kriipke/chartpress/internal/engine"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,6 +27,12 @@ type ChartLister interface {
 // Drafter turns a natural-language prompt into a Spec (implemented in openai.go).
 type Drafter interface {
 	Draft(ctx context.Context, prompt string) (engine.Spec, error)
+}
+
+// Presigner mints a presigned GET URL for a stored chart archive (S3/R2/MinIO).
+// Implemented by *objectstore.Client; injected so handlers test against a fake.
+type Presigner interface {
+	PresignGet(ctx context.Context, key string, expiry time.Duration) (string, error)
 }
 
 type dynamicApplier struct{ client dynamic.Interface }
