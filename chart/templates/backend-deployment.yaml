@@ -33,6 +33,25 @@ spec:
                   name: {{ required "backend.openai.apiKeySecret.name is required: create a Secret holding your OpenAI API key and set backend.openai.apiKeySecret.name to it (see chart/README.adoc)." .Values.backend.openai.apiKeySecret.name }}
                   key: {{ .Values.backend.openai.apiKeySecret.key }}
             {{- include "chartpress.s3env" . | nindent 12 }}
+            {{- if .Values.backend.github.clientID }}
+            - name: GITHUB_OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: chartpress-github
+                  key: client-id
+            - name: GITHUB_OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: chartpress-github
+                  key: client-secret
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: chartpress-github
+                  key: session-secret
+            - name: GITHUB_OAUTH_REDIRECT_URL
+              value: {{ .Values.backend.github.redirectURL | default (printf "https://%s/auth/github/callback" .Values.ingress.host) | quote }}
+            {{- end }}
           volumeMounts:
             - name: chartpress-config
               mountPath: /app/chartpress.yaml

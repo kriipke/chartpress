@@ -15,7 +15,7 @@ export function Badge({
 }) {
   const palettes = {
     neutral: { fg: "var(--slate-11)", bg: "var(--slate-3)", border: "var(--slate-6)", solid: "var(--slate-9)" },
-    accent: { fg: "var(--violet-11)", bg: "var(--violet-3)", border: "var(--violet-6)", solid: "var(--violet-9)" },
+    accent: { fg: "var(--accent-11)", bg: "var(--accent-3)", border: "var(--accent-6)", solid: "var(--accent-9)" },
     green: { fg: "var(--green-11)", bg: "var(--green-3)", border: "var(--green-6)", solid: "var(--green-9)" },
     red: { fg: "var(--red-11)", bg: "var(--red-3)", border: "var(--red-6)", solid: "var(--red-9)" },
     amber: { fg: "var(--amber-11)", bg: "var(--amber-3)", border: "var(--amber-6)", solid: "var(--amber-9)" },

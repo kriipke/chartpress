@@ -27,8 +27,8 @@ export function EmptyState({ icon, title, description, action, style = {} }) {
             height: 48,
             marginBottom: 8,
             borderRadius: "var(--radius-5)",
-            background: "var(--violet-3)",
-            color: "var(--violet-11)",
+            background: "var(--accent-3)",
+            color: "var(--accent-11)",
           }}
         >
           {icon}

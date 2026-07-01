@@ -12,11 +12,13 @@ import (
 // Server is the chartpress backend HTTP layer. Its dependencies are interfaces
 // so handlers can be tested with in-memory fakes (no apiserver, no OpenAI).
 type Server struct {
-	Applier   Applier
-	Lister    ChartLister
-	Drafter   Drafter
-	Presigner Presigner
-	Namespace string
+	Applier    Applier
+	Lister     ChartLister
+	Drafter    Drafter
+	Presigner  Presigner
+	Downloader objectstore.Downloader
+	Auth       *GitHubAuth
+	Namespace  string
 }
 
 // Handler builds the HTTP mux. Routes are registered by their owning task:
@@ -25,8 +27,16 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/generate", s.cors(s.handleGenerate))
 	mux.HandleFunc("/charts", s.cors(s.handleCharts))
+	// /charts/ covers both /charts/{name} and /charts/{name}/files; the handler
+	// dispatches on the sub-path.
 	mux.HandleFunc("/charts/", s.cors(s.handleChartByName))
 	mux.HandleFunc("/text-to-config", s.cors(s.handleTextToConfig))
+	// Optional GitHub sign-in (identity only; non-gating). Disabled endpoints
+	// return 503 when unconfigured — see auth.go.
+	mux.HandleFunc("/auth/github/login", s.cors(s.handleAuthLogin))
+	mux.HandleFunc("/auth/github/callback", s.cors(s.handleAuthCallback))
+	mux.HandleFunc("/auth/logout", s.cors(s.handleAuthLogout))
+	mux.HandleFunc("/auth/me", s.cors(s.handleAuthMe))
 	return mux
 }
 
@@ -56,12 +66,17 @@ func Start() {
 		Applier:   &dynamicApplier{client: client},
 		Lister:    &dynamicLister{client: client},
 		Drafter:   newOpenAIDrafter(),
+		Auth:      NewGitHubAuth(),
 		Namespace: resolveNamespace(),
 	}
+	if srv.Auth.configured() {
+		log.Println("[INFO] GitHub sign-in enabled (identity only)")
+	}
 	if store, err := objectstore.New(objectstore.ConfigFromEnv()); err != nil {
-		log.Printf("[WARN] object storage not configured, downloads disabled: %v", err)
+		log.Printf("[WARN] object storage not configured, downloads and file browsing disabled: %v", err)
 	} else {
 		srv.Presigner = store
+		srv.Downloader = store
 	}
 	port := getPort()
 	log.Printf("[INFO] listening on :%s", port)

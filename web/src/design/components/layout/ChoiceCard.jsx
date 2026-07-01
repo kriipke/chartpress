@@ -49,8 +49,8 @@ export function ChoiceCard({
             style={{
               display: "inline-flex", alignItems: "center", justifyContent: "center",
               width: 44, height: 44, borderRadius: "var(--radius-5)",
-              background: active ? "var(--violet-9)" : "var(--violet-3)",
-              color: active ? "#fff" : "var(--violet-11)",
+              background: active ? "var(--accent-9)" : "var(--accent-3)",
+              color: active ? "#fff" : "var(--accent-11)",
               transition: "background-color .18s var(--ease-standard), color .18s var(--ease-standard)",
             }}
           >

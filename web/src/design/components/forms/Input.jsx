@@ -1,7 +1,7 @@
 import React from "react";
 
 /**
- * chartpress Input — single-line text field. Brand focus ring (violet halo +
+ * chartpress Input — single-line text field. Brand focus ring (azure halo +
  * accent border). Set invalid for kebab-case / validation errors. Optional
  * leading/trailing adornments and monospace mode for chart names.
  */

@@ -54,7 +54,7 @@ export function PromptScreen({ onBack, onDrafted }) {
 
           {drafting && (
             <div style={draftingBox}>
-              <Spinner size={16} color="var(--violet-9)" />
+              <Spinner size={16} color="var(--accent-9)" />
               <span>Drafting your chart…</span>
             </div>
           )}
@@ -77,6 +77,6 @@ const backBtn = {
 };
 const draftingBox = {
   display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
-  background: "var(--violet-3)", border: "1px solid var(--violet-6)", borderRadius: "var(--radius-input)",
-  color: "var(--violet-11)", fontSize: 13, fontWeight: 500,
+  background: "var(--accent-3)", border: "1px solid var(--accent-6)", borderRadius: "var(--radius-input)",
+  color: "var(--accent-11)", fontSize: 13, fontWeight: 500,
 };

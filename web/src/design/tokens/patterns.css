@@ -1,0 +1,19 @@
+/* chartpress — dotted background pattern
+ * The signature dotted grid, promoted to an official surface treatment.
+ * Apply `.cp-dots` to any element for the default azure-tinted dots on the
+ * page surface; `.cp-dots--card` sits on the white card surface; `.cp-dots--dark`
+ * paints faint light dots on the dark code/terminal surface.
+ * Tune per-instance with the --pattern-dot-* custom properties (see colors.css).
+ */
+.cp-dots {
+  background-color: var(--surface-page);
+  background-image: var(--pattern-dots);
+  background-size: var(--pattern-dot-size) var(--pattern-dot-size);
+}
+.cp-dots--card {
+  background-color: var(--surface-card);
+}
+.cp-dots--dark {
+  background-color: var(--surface-code);
+  background-image: var(--pattern-dots-dark);
+}

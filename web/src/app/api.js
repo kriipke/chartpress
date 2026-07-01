@@ -55,3 +55,28 @@ export function getChart(name) {
 export function draftFromPrompt(prompt) {
   return jsonPost("/text-to-config", { prompt });
 }
+
+// --- v0.2.0: optional GitHub sign-in (identity only) + read-only file explorer ---
+
+// Current auth status: {configured, authenticated, user?}. `configured` is false
+// when the server has no GitHub OAuth app set — the UI then hides sign-in and the
+// app stays fully usable (sign-in is non-gating). Cookies ride along same-origin.
+export function getMe() {
+  return request("/auth/me", { method: "GET" });
+}
+
+// Full-page redirect that begins the GitHub OAuth flow (server sets the session
+// cookie on callback and redirects back to /).
+export const githubLoginUrl = `${BASE}/auth/github/login`;
+
+// Clear the session cookie.
+export function logout() {
+  return request("/auth/logout", { method: "POST" });
+}
+
+// A Ready chart's rendered file tree + contents: {name, phase, nodes, files}.
+// Read-only — the operator regenerates each chart from its spec, so edits would
+// not survive a reconcile; the explorer browses, it doesn't save.
+export function getChartFiles(name) {
+  return request(`/charts/${encodeURIComponent(name)}/files`, { method: "GET" });
+}

@@ -87,9 +87,19 @@ func (s *Server) handleChartByName(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "only GET is allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	name := strings.TrimPrefix(r.URL.Path, "/charts/")
-	if name == "" {
+	rest := strings.TrimPrefix(r.URL.Path, "/charts/")
+	if rest == "" {
 		http.Error(w, "missing chart name", http.StatusBadRequest)
+		return
+	}
+	// /charts/{name}/files → the read-only file explorer (see files.go).
+	name, sub, hasSub := strings.Cut(rest, "/")
+	if hasSub {
+		if sub == "files" {
+			s.handleChartFiles(w, r, name)
+			return
+		}
+		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
 	obj, err := s.Lister.Get(r.Context(), s.Namespace, name)

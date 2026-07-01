@@ -7,7 +7,7 @@ import { Button } from "../forms/Button.jsx";
  * name · phase badge · subchart count · last generated · action (Download when
  * Ready, error message when Failed). Header + hairline row separators.
  */
-export function ChartsTable({ charts = [], onDownload, style = {} }) {
+export function ChartsTable({ charts = [], onDownload, onOpen, style = {} }) {
   const cell = { padding: "14px 16px", fontFamily: "var(--font-sans)", fontSize: "var(--font-size-2)", color: "var(--text-2)", verticalAlign: "middle" };
   const head = { ...cell, fontSize: 12, fontWeight: "var(--font-weight-semibold)", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", padding: "10px 16px" };
 
@@ -26,27 +26,46 @@ export function ChartsTable({ charts = [], onDownload, style = {} }) {
         {charts.map((c, i) => {
           const phase = String(c.phase || "Pending").toLowerCase();
           return (
-            <tr key={c.name + i} style={{ borderBottom: "1px solid var(--slate-4)", animation: c.isNew ? "cp-row-in .35s var(--ease-standard)" : "none" }}>
-              <td style={{ ...cell }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 500, color: "var(--text-1)" }}>{c.name}</span>
-              </td>
-              <td style={cell}><StatusBadge phase={c.phase} /></td>
-              <td style={{ ...cell, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{c.subchartCount ?? "—"}</td>
-              <td style={{ ...cell, color: "var(--text-muted)", whiteSpace: "nowrap" }}>{formatTime(c.lastGenerated)}</td>
-              <td style={{ ...cell, textAlign: "right" }}>
-                {phase === "ready" ? (
-                  <Button size="1" variant="soft" onClick={() => onDownload?.(c)} leadingIcon={<DownloadGlyph />}>Download</Button>
-                ) : phase === "failed" ? (
-                  <span style={{ fontSize: "var(--font-size-1)", color: "var(--red-11)", whiteSpace: "normal" }}>{c.message || "Generation failed"}</span>
-                ) : (
-                  <span style={{ fontSize: "var(--font-size-1)", color: "var(--text-muted)" }}>—</span>
-                )}
-              </td>
-            </tr>
+            <Row key={c.name + i} chart={c} phase={phase} cell={cell} onOpen={onOpen} onDownload={onDownload} />
           );
         })}
       </tbody>
     </table>
+  );
+}
+
+function Row({ chart: c, phase, cell, onOpen, onDownload }) {
+  const [hover, setHover] = React.useState(false);
+  const clickable = !!onOpen;
+  return (
+    <tr
+      onClick={clickable ? () => onOpen(c) : undefined}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        borderBottom: "1px solid var(--slate-4)",
+        animation: c.isNew ? "cp-row-in .35s var(--ease-standard)" : "none",
+        cursor: clickable ? "pointer" : "default",
+        background: clickable && hover ? "var(--slate-2)" : "transparent",
+        transition: "background-color .12s",
+      }}
+    >
+      <td style={{ ...cell }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 500, color: "var(--text-1)" }}>{c.name}</span>
+      </td>
+      <td style={cell}><StatusBadge phase={c.phase} /></td>
+      <td style={{ ...cell, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{c.subchartCount ?? "—"}</td>
+      <td style={{ ...cell, color: "var(--text-muted)", whiteSpace: "nowrap" }}>{formatTime(c.lastGenerated)}</td>
+      <td style={{ ...cell, textAlign: "right" }}>
+        {phase === "ready" ? (
+          <Button size="1" variant="soft" onClick={(e) => { e.stopPropagation(); onDownload?.(c); }} leadingIcon={<DownloadGlyph />}>Download</Button>
+        ) : phase === "failed" ? (
+          <span style={{ fontSize: "var(--font-size-1)", color: "var(--red-11)", whiteSpace: "normal" }}>{c.message || "Generation failed"}</span>
+        ) : (
+          <span style={{ fontSize: "var(--font-size-1)", color: "var(--text-muted)" }}>—</span>
+        )}
+      </td>
+    </tr>
   );
 }
 

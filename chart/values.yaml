@@ -14,6 +14,20 @@ backend:
     apiKeySecret:
       name: ""   # REQUIRED: Secret name holding the OpenAI API key; empty fails the deploy
       key: api-key
+  # GitHub OAuth sign-in (OPTIONAL, identity-only and non-gating). Leave clientID
+  # empty to disable sign-in entirely — the app stays fully usable without it.
+  # To enable: register a GitHub OAuth App, set its "Authorization callback URL"
+  # to https://<ingress.host>/auth/github/callback, and fill in the values below.
+  # The chart renders a chartpress-github Secret from them (see github-secret.yaml).
+  github:
+    clientID: ""
+    clientSecret: ""
+    # Full callback URL registered on the OAuth App. Defaults to
+    # https://<ingress.host>/auth/github/callback when left empty.
+    redirectURL: ""
+  # Signs the stateless session cookie. REQUIRED when github.clientID is set;
+  # use a random 32+ character string.
+  sessionSecret: ""
 
 operator:
   serviceAccount:

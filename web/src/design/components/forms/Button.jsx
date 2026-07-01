@@ -2,7 +2,7 @@ import React from "react";
 
 /**
  * chartpress Button — the primary action control.
- * Variants: solid (brand violet fill), outline (accent border), ghost (text),
+ * Variants: solid (brand azure fill), outline (accent border), ghost (text),
  * soft (tinted fill). Sizes 1–3. Supports loading and full-width.
  */
 export function Button({

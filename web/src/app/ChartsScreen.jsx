@@ -4,7 +4,7 @@ import React from "react";
 import { Card, ChartsTable, EmptyState, Button, Badge } from "../design/components";
 import { Package, Plus } from "./Icons.jsx";
 
-export function ChartsScreen({ charts, polling, error, onDownload, onGenerate }) {
+export function ChartsScreen({ charts, polling, error, onDownload, onGenerate, onOpen }) {
   const active = charts.filter((c) => ["pending", "generating"].includes(String(c.phase).toLowerCase())).length;
 
   if (charts.length === 0) {
@@ -29,7 +29,7 @@ export function ChartsScreen({ charts, polling, error, onDownload, onGenerate })
       <ChartsHeader active={active} onGenerate={onGenerate} />
       {error && <ListError error={error} />}
       <Card padding={0} style={{ overflow: "hidden" }}>
-        <ChartsTable charts={charts} onDownload={onDownload} />
+        <ChartsTable charts={charts} onDownload={onDownload} onOpen={onOpen} />
       </Card>
       <p style={{ margin: "12px 2px 0", fontSize: 12, color: "var(--text-muted)" }}>
         {active > 0

@@ -1,7 +1,8 @@
 /* chartpress — color tokens
  * Neutral ramp: Radix "slate" (cool gray, matches the app's blue-tinted grays).
- * Accent ramp: a violet anchored on the brand accent #5c4cff at step 9
- *   (Radix-iris family, retuned to chartpress's punchier brand violet).
+ * Accent ramp: azure anchored on the brand accent #2f6bff at step 9 (from the
+ *   chosen logo mark). Named --accent-1…12 (+ a3/a4 alphas) — renamed from
+ *   --violet-* when azure was adopted as the single brand accent.
  * Semantic ramps: red / green / amber for failed / ready / in-progress.
  * Steps follow the Radix 1–12 model: 1–2 app/subtle backgrounds, 3–5 component
  * backgrounds, 6–8 borders, 9 solid, 10 solid-hover, 11 low-contrast text,
@@ -22,22 +23,24 @@
   --slate-11: #60646c;
   --slate-12: #1c2024;
 
-  /* ---- Accent (brand violet, 9 = #5c4cff) ---- */
-  --violet-1: #fdfcff;
-  --violet-2: #f7f5ff;
-  --violet-3: #efeaff;
-  --violet-4: #e5dcff;
-  --violet-5: #d9ccff;
-  --violet-6: #c9b9ff;
-  --violet-7: #b39ffb;
-  --violet-8: #9a7ff5;
-  --violet-9: #5c4cff; /* brand accent */
-  --violet-10: #4d3aef; /* brand accent hover (--cp-accent-dark family) */
-  --violet-11: #5546e0;
-  --violet-12: #1f1a4d;
+  /* ---- Accent (brand azure, 9 = #2f6bff) ----
+   * From the chosen logo mark. Named --accent-* (renamed from --violet-* when
+   * azure became the single brand accent). Step 9 is the solid brand color. */
+  --accent-1: #fcfdff;
+  --accent-2: #f4f7ff;
+  --accent-3: #e9eeff;
+  --accent-4: #d7e1ff;
+  --accent-5: #c4d3ff;
+  --accent-6: #b3c6ff;
+  --accent-7: #93adff;
+  --accent-8: #6f92ff;
+  --accent-9: #2f6bff; /* brand accent */
+  --accent-10: #1f56ec; /* brand accent hover */
+  --accent-11: #2f59d6;
+  --accent-12: #10225e;
   /* soft tinted focus ring, from the app's box-shadow */
-  --violet-a4: rgba(92, 76, 255, 0.15);
-  --violet-a3: rgba(92, 76, 255, 0.08);
+  --accent-a4: rgba(47, 107, 255, 0.15);
+  --accent-a3: rgba(47, 107, 255, 0.08);
 
   /* ---- Red (failed / destructive) ---- */
   --red-1: #fffcfc;
@@ -78,7 +81,7 @@
   --text-2: var(--slate-11); /* body / secondary */
   --text-muted: var(--slate-10); /* placeholder / captions */
   --text-on-accent: #ffffff; /* text on a solid accent fill */
-  --text-accent: var(--violet-11); /* links, accent text */
+  --text-accent: var(--accent-11); /* links, accent text */
 
   /* Surfaces */
   --surface-page: var(--slate-2); /* app background (--cp-bg) */
@@ -94,21 +97,21 @@
   --border-input: #d2d2dc; /* exact app input border */
 
   /* Accent */
-  --accent-solid: var(--violet-9);
-  --accent-solid-hover: var(--violet-10);
-  --accent-tint: var(--violet-3); /* light accent fill */
-  --accent-tint-hover: var(--violet-4);
-  --accent-border: var(--violet-7);
-  --focus-ring: var(--violet-a4); /* 0 0 0 3px focus halo */
+  --accent-solid: var(--accent-9);
+  --accent-solid-hover: var(--accent-10);
+  --accent-tint: var(--accent-3); /* light accent fill */
+  --accent-tint-hover: var(--accent-4);
+  --accent-border: var(--accent-7);
+  --focus-ring: var(--accent-a4); /* 0 0 0 3px focus halo */
 
   /* Status — chart generation phases */
   --status-pending-fg: var(--slate-11);
   --status-pending-bg: var(--slate-3);
   --status-pending-border: var(--slate-6);
 
-  --status-generating-fg: var(--violet-11);
-  --status-generating-bg: var(--violet-3);
-  --status-generating-border: var(--violet-6);
+  --status-generating-fg: var(--accent-11);
+  --status-generating-bg: var(--accent-3);
+  --status-generating-border: var(--accent-6);
 
   --status-ready-fg: var(--green-11);
   --status-ready-bg: var(--green-3);
@@ -117,4 +120,15 @@
   --status-failed-fg: var(--red-11);
   --status-failed-bg: var(--red-3);
   --status-failed-border: var(--red-6);
+
+  /* Dotted background pattern — an official surface treatment (v0.2.0).
+   * Use the .cp-dots utility (patterns.css) or paint it inline via
+   * background-image: var(--pattern-dots). Override --pattern-dot-color per
+   * surface (e.g. a light tint on dark). */
+  --pattern-dot-color: var(--accent-6); /* dot color on light surfaces */
+  --pattern-dot-color-dark: rgba(255, 255, 255, 0.06); /* dots on dark surfaces */
+  --pattern-dot-size: 20px; /* grid cell */
+  --pattern-dot-radius: 1px; /* dot radius */
+  --pattern-dots: radial-gradient(var(--pattern-dot-color) var(--pattern-dot-radius), transparent var(--pattern-dot-radius));
+  --pattern-dots-dark: radial-gradient(var(--pattern-dot-color-dark) var(--pattern-dot-radius), transparent var(--pattern-dot-radius));
 }

@@ -51,6 +51,12 @@ type Presigner interface {
 	PresignGet(ctx context.Context, key string, expiry time.Duration) (string, error)
 }
 
+// Downloader streams a stored object's bytes. Used by the backend to read a
+// chart archive's individual files for the read-only file explorer.
+type Downloader interface {
+	Get(ctx context.Context, key string) (io.ReadCloser, error)
+}
+
 // Client is the minio-backed implementation of both Uploader and Presigner.
 type Client struct {
 	mc     *minio.Client
@@ -84,6 +90,11 @@ func (c *Client) Upload(ctx context.Context, key string, r io.Reader, size int64
 
 func (c *Client) Remove(ctx context.Context, key string) error {
 	return c.mc.RemoveObject(ctx, c.bucket, key, minio.RemoveObjectOptions{})
+}
+
+func (c *Client) Get(ctx context.Context, key string) (io.ReadCloser, error) {
+	// minio's GetObject is lazy; a missing key surfaces on the first Read.
+	return c.mc.GetObject(ctx, c.bucket, key, minio.GetObjectOptions{})
 }
 
 func (c *Client) PresignGet(ctx context.Context, key string, expiry time.Duration) (string, error) {

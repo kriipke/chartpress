@@ -3,7 +3,7 @@ import React from "react";
 /**
  * chartpress StatusBadge — the signature 4-phase chart-generation indicator.
  *   Pending     → neutral slate, static dot (queued)
- *   Generating  → brand violet, pulsing dot (alive / in-progress)
+ *   Generating  → brand azure, pulsing dot (alive / in-progress)
  *   Ready       → green, check (success)
  *   Failed      → red, cross (error)
  * Phase strings are case-insensitive.
@@ -12,7 +12,7 @@ export function StatusBadge({ phase = "Pending", size = "2", style = {}, ...prop
   const key = String(phase).toLowerCase();
   const config = {
     pending: { label: "Pending", fg: "var(--status-pending-fg)", bg: "var(--status-pending-bg)", border: "var(--status-pending-border)", dot: "var(--slate-9)", pulse: false, icon: null },
-    generating: { label: "Generating", fg: "var(--status-generating-fg)", bg: "var(--status-generating-bg)", border: "var(--status-generating-border)", dot: "var(--violet-9)", pulse: true, icon: null },
+    generating: { label: "Generating", fg: "var(--status-generating-fg)", bg: "var(--status-generating-bg)", border: "var(--status-generating-border)", dot: "var(--accent-9)", pulse: true, icon: null },
     ready: { label: "Ready", fg: "var(--status-ready-fg)", bg: "var(--status-ready-bg)", border: "var(--status-ready-border)", dot: "var(--green-9)", pulse: false, icon: "check" },
     failed: { label: "Failed", fg: "var(--status-failed-fg)", bg: "var(--status-failed-bg)", border: "var(--status-failed-border)", dot: "var(--red-9)", pulse: false, icon: "cross" },
   };
@@ -32,7 +32,7 @@ export function StatusBadge({ phase = "Pending", size = "2", style = {}, ...prop
         style={{
           width: s.dot, height: s.dot, borderRadius: "50%", background: c.dot, flexShrink: 0,
           animation: c.pulse ? "cp-pulse 1.2s var(--ease-standard) infinite" : "none",
-          boxShadow: c.pulse ? "0 0 0 3px var(--violet-a4)" : "none",
+          boxShadow: c.pulse ? "0 0 0 3px var(--accent-a4)" : "none",
         }}
       />
     );

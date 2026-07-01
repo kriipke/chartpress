@@ -17,6 +17,16 @@ export { EmptyState } from "./feedback/EmptyState.jsx";
 
 export { Card } from "./layout/Card.jsx";
 export { ChoiceCard } from "./layout/ChoiceCard.jsx";
+export { ChartExplorer } from "./layout/ChartExplorer.jsx";
 
 export { StructurePreview } from "./data/StructurePreview.jsx";
 export { ChartsTable } from "./data/ChartsTable.jsx";
+export { FileTree } from "./data/FileTree.jsx";
+export { CodeEditor } from "./data/CodeEditor.jsx";
+
+export { SignInButton, GithubMark } from "./auth/SignInButton.jsx";
+export { UserMenu } from "./auth/UserMenu.jsx";
+
+export { Dialog } from "./overlays/Dialog.jsx";
+export { Popover } from "./overlays/Popover.jsx";
+export { Tooltip } from "./overlays/Tooltip.jsx";

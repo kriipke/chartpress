@@ -3,3 +3,9 @@ output/*
 !output/.gitkeep
 .claude
 skills-lock.json
+
+# Local production values — may contain real secrets; never commit
+/chart/values-prod.yaml
+
+# macOS
+.DS_Store

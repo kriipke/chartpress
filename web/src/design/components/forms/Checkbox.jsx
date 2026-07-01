@@ -2,7 +2,7 @@ import React from "react";
 
 /**
  * chartpress Checkbox — used for the 8 rule toggles. A controlled box with a
- * label and optional helper/tooltip description. Brand violet when checked.
+ * label and optional helper/tooltip description. Brand azure when checked.
  */
 export function Checkbox({
   checked = false,
