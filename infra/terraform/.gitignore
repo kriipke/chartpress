@@ -1,0 +1,15 @@
+# Local plugin + module cache (rebuilt by `terraform init`).
+.terraform/
+.terraform.lock.hcl
+
+# State files — local + gitignored. State holds the app key's secret_key in
+# plaintext, so never commit it.
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# tfvars commonly carry secrets (the DO API token). Commit only
+# *.tfvars.example templates if any.
+*.tfvars
+!*.tfvars.example
