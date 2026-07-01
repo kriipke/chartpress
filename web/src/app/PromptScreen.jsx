@@ -52,6 +52,16 @@ export function PromptScreen({ onBack, onDrafted }) {
               value={desc} onChange={(e) => setDesc(e.target.value)} />
           </Field>
 
+          <div>
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text-muted)", marginBottom: 9 }}>Need inspiration? Start from an example</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {EXAMPLES.map((ex) => (
+                <ExampleCard key={ex.name} example={ex} disabled={drafting}
+                  onPick={() => { setName(ex.name); setDesc(ex.desc); }} />
+              ))}
+            </div>
+          </div>
+
           {drafting && (
             <div style={draftingBox}>
               <Spinner size={16} color="var(--accent-9)" />
@@ -67,6 +77,46 @@ export function PromptScreen({ onBack, onDrafted }) {
         </div>
       </Card>
     </div>
+  );
+}
+
+const EXAMPLES = [
+  {
+    name: "saas-platform",
+    label: "SaaS platform",
+    desc: "A multi-tenant SaaS platform with a REST API, a React web frontend, a background job worker, a Redis cache, and a Postgres database. Use nginx ingress.",
+  },
+  {
+    name: "online-store",
+    label: "E-commerce store",
+    desc: "An online store with a storefront web app, a checkout & payments API, an inventory service, and a Postgres database. Add a shared secret for API keys.",
+  },
+  {
+    name: "realtime-chat",
+    label: "Realtime chat",
+    desc: "A realtime chat app with a websocket gateway, a message API, a Redis pub/sub cache, and a MongoDB database. Use istio service mesh.",
+  },
+  {
+    name: "data-pipeline",
+    label: "Data pipeline",
+    desc: "A streaming data pipeline with an ingestion API, a Kafka consumer worker, a transform service, and a Postgres warehouse. Wire in shared New Relic observability.",
+  },
+];
+
+function ExampleCard({ example, onPick, disabled }) {
+  const [hover, setHover] = React.useState(false);
+  return (
+    <button type="button" onClick={onPick} disabled={disabled}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{
+        textAlign: "left", padding: "10px 12px", borderRadius: "var(--radius-input)", cursor: disabled ? "not-allowed" : "pointer",
+        border: "1px solid " + (hover && !disabled ? "var(--accent-7)" : "var(--border-default)"),
+        background: hover && !disabled ? "var(--accent-3)" : "var(--surface-card)",
+        opacity: disabled ? 0.6 : 1, transition: "background-color .13s, border-color .13s",
+      }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: hover && !disabled ? "var(--accent-11)" : "var(--text-1)", marginBottom: 3 }}>{example.label}</div>
+      <div style={{ fontSize: 12, color: "var(--text-2)", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{example.desc}</div>
+    </button>
   );
 }
 
