@@ -55,23 +55,59 @@ later if this becomes a multi-person deploy.
 
 ## Wire into the cluster
 
-`make wire-do` (from the repo root) reads the outputs and creates/updates the
-`chartpress-s3` Secret in your release namespace:
+`make wire-do` (from the repo root) reads the outputs, creates/updates the
+`chartpress-s3` Secret in your release namespace, and writes
+`chart/values-do.generated.yaml` (bucket/region/endpoint from the outputs):
 
 ```bash
 make wire-do NAMESPACE=chartpress
 ```
 
-Then deploy with the DO override values, which point `s3.existingSecret` at that
-Secret and carry the DO endpoint/region/bucket:
+Then deploy with the DO override values plus that generated overlay layered
+last, so the release always targets the bucket that was actually provisioned —
+even for `env=staging` or a non-`nyc3` region. `values-do.yaml` carries the prod
+defaults for `s3.bucket/region/endpoint`; `values-do.generated.yaml` overrides
+them with the current terraform env:
 
 ```bash
 helm upgrade --install chartpress ./chart \
-  -n chartpress -f chart/values-do.yaml \
+  -n chartpress -f chart/values-do.yaml -f chart/values-do.generated.yaml \
   --set backend.openai.apiKeySecret.name=chartpress-openai
 ```
 
 To read a credential by hand: `terraform output -raw access_key`.
+
+## Troubleshooting
+
+**`Error creating bucket: Spaces credentials not configured`** (during `apply`)
+The DO API token can't create a Spaces *bucket* — that needs S3-style Spaces
+credentials. Export `SPACES_ACCESS_KEY_ID` / `SPACES_SECRET_ACCESS_KEY` (the
+bootstrap key from [Bootstrap](#bootstrap-one-time)) and re-apply.
+
+**`apply` prompts `var.do_token Enter a value:`**
+`TF_VAR_do_token` isn't exported in this shell. Set it (or paste the token at
+the prompt).
+
+**`make wire-do` says `Output "access_key" not found`, or aborts with
+"outputs missing/empty"**
+`terraform apply` never completed, so `digitalocean_spaces_key.charts` — and its
+`access_key`/`secret_key` outputs — don't exist. Confirm with:
+
+```bash
+terraform state list
+# a successful apply shows BOTH:
+#   digitalocean_spaces_bucket.charts
+#   digitalocean_spaces_key.charts
+```
+
+The trap: a **failed** apply still records `bucket_name`, `region`, and
+`endpoint` — they're derived from your config and `var.region`, not from a
+created resource — so a non-empty `terraform output bucket_name` does *not*
+prove the bucket exists. Only `access_key`/`secret_key`, which require the real
+key resource, do. `make wire-do` guards on all five outputs and refuses to write
+an empty `chartpress-s3` Secret, so if it aborts, finish `terraform apply`
+first, then re-run it. (If an earlier jumped-ahead run already left an empty
+Secret behind, delete it: `kubectl delete secret chartpress-s3 -n <ns>`.)
 
 ## Not managed here
 

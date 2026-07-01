@@ -5,15 +5,21 @@
 # chartpress-charts-prod); `make wire-do` turns the terraform outputs into the
 # chartpress-s3 Secret that s3.existingSecret points at below.
 #
+# The bucket/region/endpoint here are the *prod* defaults. `make wire-do` also
+# writes chart/values-do.generated.yaml from the terraform outputs; layer it
+# LAST so a non-prod env (env=staging, a different region) targets the bucket
+# that was actually provisioned instead of prod:
+#
 #   make wire-do NAMESPACE=chartpress
 #   helm upgrade --install chartpress ./chart \
-#     -n chartpress -f chart/values-do.yaml \
+#     -n chartpress -f chart/values-do.yaml -f chart/values-do.generated.yaml \
 #     --set backend.openai.apiKeySecret.name=chartpress-openai
 #
 # Credentials never live in this file — they ride in the chartpress-s3 Secret.
 s3:
   create: false                  # don't render an (empty) Secret from the chart
   existingSecret: chartpress-s3  # created by `make wire-do` from terraform outputs
+  # prod defaults — overridden per-env by chart/values-do.generated.yaml (wire-do)
   endpoint: nyc3.digitaloceanspaces.com
   region: nyc3
   bucket: chartpress-charts-prod
