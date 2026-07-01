@@ -61,9 +61,15 @@ wire-do:
 	@command -v terraform >/dev/null || { echo "terraform not found"; exit 1; }
 	@command -v kubectl   >/dev/null || { echo "kubectl not found"; exit 1; }
 	@echo "Reading Spaces credentials from $(TF_DIR) outputs..."
-	@ACCESS_KEY=$$(terraform -chdir=$(TF_DIR) output -raw access_key) ; \
-	 SECRET_KEY=$$(terraform -chdir=$(TF_DIR) output -raw secret_key) ; \
-	 BUCKET=$$(terraform -chdir=$(TF_DIR) output -raw bucket_name) ; \
+	@ACCESS_KEY=$$(terraform -chdir=$(TF_DIR) output -raw access_key 2>/dev/null) || true ; \
+	 SECRET_KEY=$$(terraform -chdir=$(TF_DIR) output -raw secret_key 2>/dev/null) || true ; \
+	 BUCKET=$$(terraform -chdir=$(TF_DIR) output -raw bucket_name 2>/dev/null) || true ; \
+	 if [ -z "$$ACCESS_KEY" ] || [ -z "$$SECRET_KEY" ] || [ -z "$$BUCKET" ]; then \
+	   echo "ERROR: terraform outputs missing/empty (need access_key + secret_key + bucket_name)." ; \
+	   echo "       Run 'terraform apply' in $(TF_DIR) first — the Spaces bucket AND scoped key must exist." ; \
+	   echo "       (bucket_name/region/endpoint can resolve from a FAILED apply; the key outputs cannot.)" ; \
+	   exit 1 ; \
+	 fi ; \
 	 echo "Creating Secret chartpress-s3 in namespace $(NAMESPACE) (bucket: $$BUCKET)" ; \
 	 kubectl create secret generic chartpress-s3 \
 	   --namespace $(NAMESPACE) \
