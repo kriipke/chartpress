@@ -3,13 +3,15 @@ OUTPUT_DIR := ./output
 FRONTEND_DIR := ./web
 DOCKER_IMAGE := chartpress-server:0.1
 
-.PHONY: all clean build-api build-web chart
+.PHONY: all clean build-api build-web chart wire-do
 
 # Default target
 all: clean build-api
 
 CHART_DIR := ./chart
 TESTS_DIR := ./tests
+TF_DIR := ./infra/terraform
+NAMESPACE ?= chartpress
 
 
 # Clean target: removes output directories and npm artifacts
@@ -50,3 +52,22 @@ tests:
 	@echo "Running Makefile in $(TESTS_DIR)..."
 	@$(MAKE) -C $(TESTS_DIR)
 	@echo "Makefile in $(TESTS_DIR) executed successfully."
+
+# wire-do: bridge the terraform outputs (infra/terraform) into the cluster by
+# creating/updating the chartpress-s3 Secret the chart's s3.existingSecret
+# consumes. Idempotent (apply-from-dry-run). Override the target namespace with
+# NAMESPACE=<ns>. Deploy afterward with: -f chart/values-do.yaml
+wire-do:
+	@command -v terraform >/dev/null || { echo "terraform not found"; exit 1; }
+	@command -v kubectl   >/dev/null || { echo "kubectl not found"; exit 1; }
+	@echo "Reading Spaces credentials from $(TF_DIR) outputs..."
+	@ACCESS_KEY=$$(terraform -chdir=$(TF_DIR) output -raw access_key) ; \
+	 SECRET_KEY=$$(terraform -chdir=$(TF_DIR) output -raw secret_key) ; \
+	 BUCKET=$$(terraform -chdir=$(TF_DIR) output -raw bucket_name) ; \
+	 echo "Creating Secret chartpress-s3 in namespace $(NAMESPACE) (bucket: $$BUCKET)" ; \
+	 kubectl create secret generic chartpress-s3 \
+	   --namespace $(NAMESPACE) \
+	   --from-literal=access-key=$$ACCESS_KEY \
+	   --from-literal=secret-key=$$SECRET_KEY \
+	   --dry-run=client -o yaml | kubectl apply -f -
+	@echo "Done. Deploy: helm upgrade --install chartpress ./chart -n $(NAMESPACE) -f chart/values-do.yaml"
