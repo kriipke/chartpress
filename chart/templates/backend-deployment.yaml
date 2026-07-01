@@ -27,13 +27,11 @@ spec:
                   fieldPath: metadata.namespace
             - name: OPENAI_MODEL
               value: {{ .Values.backend.openai.model | quote }}
-            {{- if .Values.backend.openai.apiKeySecret.name }}
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.backend.openai.apiKeySecret.name }}
+                  name: {{ required "backend.openai.apiKeySecret.name is required: create a Secret holding your OpenAI API key and set backend.openai.apiKeySecret.name to it (see chart/README.adoc)." .Values.backend.openai.apiKeySecret.name }}
                   key: {{ .Values.backend.openai.apiKeySecret.key }}
-            {{- end }}
             {{- include "chartpress.s3env" . | nindent 12 }}
           volumeMounts:
             - name: chartpress-config

@@ -28,6 +28,32 @@ to create the secret above. The webhook ServiceAccount defaults to
 `issuer.acme.dnsimple.webhook.serviceAccount` or disable with
 `issuer.acme.dnsimple.webhook.createSecretReaderRBAC=false`.
 
+== OpenAI API key
+
+The backend drafts a chart spec from a natural-language description (the web
+wizard's "Draft my chart" step) via the OpenAI API. Create a Secret holding your
+API key in the release namespace before installing:
+
+[source,bash]
+----
+kubectl create secret generic chartpress-openai \
+  --from-literal=api-key='<OPENAI_API_KEY>' \
+  -n <release-namespace>
+----
+
+Then point the chart at it via `backend.openai.apiKeySecret.name`:
+
+[source,bash]
+----
+helm upgrade --install chartpress ./chart \
+  --set backend.openai.apiKeySecret.name=chartpress-openai
+----
+
+This value is required: the backend Deployment fails to render if it is unset,
+so the release cannot be installed without an API key wired in. The Secret key
+defaults to `api-key` (override with `backend.openai.apiKeySecret.key`) and the
+model defaults to `gpt-4.1` (`backend.openai.model`).
+
 == Overview
 
 The ChartPress API is a Go-based HTTP server that allows users to generate Helm charts dynamically based on user-provided configurations. It includes endpoints for handling chart generation and supports JSON-based configuration input.

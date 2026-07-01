@@ -12,7 +12,7 @@ backend:
   openai:
     model: gpt-4.1
     apiKeySecret:
-      name: ""   # set to a Secret name to inject OPENAI_API_KEY; empty omits the env
+      name: ""   # REQUIRED: Secret name holding the OpenAI API key; empty fails the deploy
       key: api-key
 
 operator:
