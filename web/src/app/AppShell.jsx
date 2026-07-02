@@ -11,6 +11,7 @@
 import React from "react";
 import { ChooseScreen } from "./ChooseScreen.jsx";
 import { PromptScreen } from "./PromptScreen.jsx";
+import { ComposeScreen } from "./ComposeScreen.jsx";
 import { RichFormScreen } from "./RichFormScreen.jsx";
 import { ChartsScreen } from "./ChartsScreen.jsx";
 import { ProfileScreen } from "./ProfileScreen.jsx";
@@ -32,8 +33,9 @@ function sortCharts(list) {
 
 export function AppShell() {
   const [nav, setNav] = React.useState("charts"); // generate | charts | profile | explorer
-  const [step, setStep] = React.useState("choose"); // choose | prompt | form
+  const [step, setStep] = React.useState("choose"); // choose | prompt | compose | form
   const [draftSpec, setDraftSpec] = React.useState(null);
+  const [draftFrom, setDraftFrom] = React.useState("choose"); // which step the form's Back returns to
   const [charts, setCharts] = React.useState([]);
   const [listError, setListError] = React.useState("");
   const [refreshing, setRefreshing] = React.useState(false);
@@ -105,7 +107,7 @@ export function AppShell() {
     }
   };
 
-  const goGenerate = () => { setNav("generate"); setStep("choose"); setDraftSpec(null); setOpenChart(null); };
+  const goGenerate = () => { setNav("generate"); setStep("choose"); setDraftSpec(null); setDraftFrom("choose"); setOpenChart(null); };
   const goCharts = () => { setNav("charts"); setOpenChart(null); refreshCharts(); };
   const openChartView = (chart) => { setOpenChart(chart); setNav("explorer"); };
 
@@ -164,13 +166,20 @@ export function AppShell() {
             <ChartsScreen charts={charts} polling={refreshing} error={listError} onDownload={onDownload} onGenerate={goGenerate} onOpen={openChartView} />
           )}
           {nav === "generate" && step === "choose" && (
-            <ChooseScreen onManual={() => { setDraftSpec(null); setStep("form"); }} onPrompt={() => setStep("prompt")} />
+            <ChooseScreen
+              onManual={() => { setDraftSpec(null); setDraftFrom("choose"); setStep("form"); }}
+              onPrompt={() => setStep("prompt")}
+              onCompose={() => setStep("compose")}
+            />
           )}
           {nav === "generate" && step === "prompt" && (
-            <PromptScreen onBack={() => setStep("choose")} onDrafted={(spec) => { setDraftSpec(spec); setStep("form"); }} />
+            <PromptScreen onBack={() => setStep("choose")} onDrafted={(spec) => { setDraftSpec(spec); setDraftFrom("prompt"); setStep("form"); }} />
+          )}
+          {nav === "generate" && step === "compose" && (
+            <ComposeScreen onBack={() => setStep("choose")} onDrafted={(spec) => { setDraftSpec(spec); setDraftFrom("compose"); setStep("form"); }} />
           )}
           {nav === "generate" && step === "form" && (
-            <RichFormScreen initialSpec={draftSpec} onBack={() => setStep(draftSpec ? "prompt" : "choose")} onSubmit={handleSubmit} />
+            <RichFormScreen initialSpec={draftSpec} onBack={() => setStep(draftFrom)} onSubmit={handleSubmit} />
           )}
         </main>
       )}

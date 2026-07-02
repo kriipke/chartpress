@@ -139,7 +139,7 @@ export function RichFormScreen({ initialSpec, onBack, onSubmit }) {
           <Card padding={28}>
             <h1 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 700, color: "var(--text-1)", letterSpacing: "-0.01em" }}>Chart specification</h1>
             <p style={{ margin: "0 0 22px", fontSize: 14, color: "var(--text-2)" }}>
-              {initialSpec ? "Drafted from your prompt — review and edit before generating." : "Define your umbrella chart and its subcharts."}
+              {initialSpec ? "Drafted from your input — review and edit before generating." : "Define your umbrella chart and its subcharts."}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               <Field label="Umbrella chart name" required error={nameError} hint="Lowercase, kebab-case.">

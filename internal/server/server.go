@@ -31,6 +31,7 @@ func (s *Server) Handler() http.Handler {
 	// dispatches on the sub-path.
 	mux.HandleFunc("/charts/", s.cors(s.handleChartByName))
 	mux.HandleFunc("/text-to-config", s.cors(s.handleTextToConfig))
+	mux.HandleFunc("/compose-to-config", s.cors(s.handleComposeToConfig))
 	// Optional GitHub sign-in (identity only; non-gating). Disabled endpoints
 	// return 503 when unconfigured — see auth.go.
 	mux.HandleFunc("/auth/github/login", s.cors(s.handleAuthLogin))
