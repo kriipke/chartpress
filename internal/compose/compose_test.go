@@ -151,6 +151,27 @@ services:
 	}
 }
 
+func TestDroppedConfigNotedWithoutInlineEnv(t *testing.T) {
+	// A service with volumes/env_file but no inline `environment:` still drops
+	// config that the Spec can't carry — the user must be told.
+	spec, notes := mustSpec(t, `
+services:
+  api:
+    build: .
+    ports: ["80:80"]
+    volumes:
+      - ./data:/var/lib/data
+    env_file:
+      - .env
+`)
+	if _, ok := findSub(spec, "api"); !ok {
+		t.Fatalf("expected subchart 'api', got %+v", spec.Subcharts)
+	}
+	if !notesContain(notes, "isn't imported") {
+		t.Errorf("expected a dropped-config note for volumes/env_file, notes=%v", notes)
+	}
+}
+
 func TestDeployGlobalIsDaemonset(t *testing.T) {
 	spec, _ := mustSpec(t, `
 services:

@@ -95,12 +95,16 @@ func ToSpec(data []byte) (engine.Spec, []string, error) {
 
 	depSet := map[string]bool{}
 	seen := map[string]bool{}
-	sawEnv := false
+	sawDropped := false
 
 	for _, key := range names {
 		svc := proj.Services[key]
-		if len(svc.Environment) > 0 {
-			sawEnv = true
+		// Compose config that has no place in the Spec — inline env, env_file,
+		// volumes, secrets, custom networks — is silently not carried over, so
+		// flag it for the user rather than let a service look fully imported.
+		if len(svc.Environment) > 0 || len(svc.EnvFiles) > 0 || len(svc.Volumes) > 0 ||
+			len(svc.Secrets) > 0 || len(svc.Networks) > 0 {
+			sawDropped = true
 		}
 
 		// Classification (Q4): built-from-source ⇒ subchart; a recognized infra
@@ -174,8 +178,8 @@ func ToSpec(data []byte) (engine.Spec, []string, error) {
 	if len(spec.Subcharts) == 0 {
 		notes = append(notes, "No application services detected (every service mapped to infrastructure). Add at least one subchart before generating.")
 	}
-	if sawEnv {
-		notes = append(notes, "Environment variables (and any volumes, networks, or secrets) aren't imported — resolve them in the generated HANDOFF.md and each subchart's values.")
+	if sawDropped {
+		notes = append(notes, "Compose config that doesn't map to a chart — environment variables, env_file, volumes, secrets, and custom networks — isn't imported. Recreate what's needed in the generated HANDOFF.md and each subchart's values.")
 	}
 
 	return engine.Normalize(spec), notes, nil
@@ -197,6 +201,10 @@ func parse(data []byte) (*types.Project, error) {
 		o.SkipNormalization = true
 		o.SkipConsistencyCheck = true
 		o.ResolvePaths = false
+		// Don't read env_file entries off disk — the server has neither the
+		// working dir nor the .env files, and a missing one would otherwise fail
+		// the whole parse. We only need structure, and env values aren't mapped.
+		o.SkipResolveEnvironment = true
 		o.SetProjectName("compose", true)
 	})
 }
