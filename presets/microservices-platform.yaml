@@ -1,12 +1,16 @@
+# Classic microservices platform: one public edge, internal APIs behind it.
+# Databases/caches belong in the umbrella's Chart.yaml dependencies: block
+# (mature upstream charts), not as generated subcharts.
+umbrellaChartName: microservices-platform
 subcharts:
 - name: api-gateway
-  workload: deployment
+  pattern: edge-gateway
 - name: auth-service
-  workload: deployment
+  pattern: api-microservice
+  ingress: false
 - name: user-service
-  workload: deployment
+  pattern: api-microservice
+  ingress: false
 - name: order-service
-  workload: deployment
-- name: database
-  workload: statefulset
-umbrellaChartName: microservices-platform
+  pattern: api-microservice
+  ingress: false

@@ -1,8 +1,14 @@
-subcharts:
-- name: event-producer
-  workload: deployment
-- name: event-broker
-  workload: statefulset
-- name: event-consumer
-  workload: deployment
+# Event-driven platform: the showcase of patterns + the dependency rule.
+# One public edge, an API, a queue worker, a singleton dispatcher; Kafka
+# itself belongs in the umbrella's Chart.yaml dependencies: block.
 umbrellaChartName: event-driven-platform
+subcharts:
+- name: gateway
+  pattern: edge-gateway
+- name: orders-api
+  pattern: api-microservice
+  ingress: false
+- name: event-consumer
+  pattern: stream-processor
+- name: dispatcher
+  pattern: scheduler

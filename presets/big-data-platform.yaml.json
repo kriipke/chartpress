@@ -1,17 +1,7 @@
 {
+  "umbrellaChartName": "big-data-platform",
   "subcharts": [
-    {
-      "name": "data-ingestion",
-      "workload": "daemonset"
-    },
-    {
-      "name": "data-processing",
-      "workload": "deployment"
-    },
-    {
-      "name": "data-storage",
-      "workload": "statefulset"
-    }
-  ],
-  "umbrellaChartName": "big-data-platform"
+    {"name": "data-ingestion", "pattern": "node-agent"},
+    {"name": "data-processing", "pattern": "stream-processor"}
+  ]
 }

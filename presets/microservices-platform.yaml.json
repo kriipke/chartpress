@@ -1,25 +1,9 @@
 {
+  "umbrellaChartName": "microservices-platform",
   "subcharts": [
-    {
-      "name": "api-gateway",
-      "workload": "deployment"
-    },
-    {
-      "name": "auth-service",
-      "workload": "deployment"
-    },
-    {
-      "name": "user-service",
-      "workload": "deployment"
-    },
-    {
-      "name": "order-service",
-      "workload": "deployment"
-    },
-    {
-      "name": "database",
-      "workload": "statefulset"
-    }
-  ],
-  "umbrellaChartName": "microservices-platform"
+    {"name": "api-gateway", "pattern": "edge-gateway"},
+    {"name": "auth-service", "pattern": "api-microservice", "ingress": false},
+    {"name": "user-service", "pattern": "api-microservice", "ingress": false},
+    {"name": "order-service", "pattern": "api-microservice", "ingress": false}
+  ]
 }

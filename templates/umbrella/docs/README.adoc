@@ -1,2 +1,16 @@
 = Helm Chart Conventions
 
+Documentation for the practices this chart carries.
+
+* link:best-practices.adoc[*Best practices*] — **start here.** What this
+  chart implements (load-bearing, do not remove), what is scaffolded but off
+  by default, and what is deliberately out of scope. The contract referenced
+  by `HANDOFF.md`, `AGENTS.md`, and the chart README.
+
+Topic deep-dives:
+
+* link:probes.adoc[Probes] — liveness, readiness, and startup probes
+* link:hpa.adoc[Autoscaling] — HPA configuration and when not to use one
+* link:ingress.adoc[Ingress] — controller-specific configuration
+* link:networkPolicies.adoc[Network policies] — ingress allowlisting
+* link:images.adoc[Images] — registry, naming, and tag pinning

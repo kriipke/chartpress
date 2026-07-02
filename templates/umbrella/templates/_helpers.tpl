@@ -51,6 +51,9 @@ imagePullSecrets:
 {{- with .Values.serviceAccountName }}
 serviceAccountName: {{ . }}
 {{- end }}
+{{- with .Values.terminationGracePeriodSeconds }}
+terminationGracePeriodSeconds: {{ . }}
+{{- end }}
 {{- if .Values.troubleshootingContainer }}
 shareProcessNamespace: true
 {{- end }}

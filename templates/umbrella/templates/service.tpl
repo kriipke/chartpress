@@ -14,6 +14,9 @@ spec:
       port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort | default .Values.service.port }}
       protocol: TCP
+      {{- with .Values.service.appProtocol }}
+      appProtocol: {{ . }}
+      {{- end }}
   selector:
     {{- include (print .Chart.Name ".selectorLabels") . | nindent 4 }}
 {{- end }}

@@ -14,12 +14,29 @@ type Spec struct {
 	Description       string     `json:"description,omitempty" yaml:"description,omitempty"`
 	Subcharts         []Subchart `json:"subcharts" yaml:"subcharts"`
 	Rules             Rules      `json:"rules" yaml:"rules"`
+	// Dependencies are self-hosted infrastructure (databases, caches, brokers)
+	// emitted as umbrella Chart.yaml dependencies: entries from the curated
+	// registry — never as generated subcharts. Each is a registry key
+	// (see dependencies.json); unknown keys become TODO stubs.
+	Dependencies []string `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
 }
 
 type Subchart struct {
 	Name        string `json:"name" yaml:"name"`
-	Workload    string `json:"workload" yaml:"workload"`
+	Workload    string `json:"workload,omitempty" yaml:"workload,omitempty"`
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+
+	// Pattern + traits. The spec stores INTENT: zero values mean "unset —
+	// resolve from the pattern" (bools use pointers because false is a valid
+	// explicit choice; ""/0 are never valid enum/port values, so plain types
+	// suffice for the rest). ResolveTraits applies the pattern's defaults
+	// dependently; see resolve.go.
+	Pattern   string `json:"pattern,omitempty" yaml:"pattern,omitempty"`
+	Exposure  string `json:"exposure,omitempty" yaml:"exposure,omitempty"`
+	Port      int    `json:"port,omitempty" yaml:"port,omitempty"`
+	Ingress   *bool  `json:"ingress,omitempty" yaml:"ingress,omitempty"`
+	Scaling   string `json:"scaling,omitempty" yaml:"scaling,omitempty"`
+	SharedEnv *bool  `json:"shared_env,omitempty" yaml:"shared_env,omitempty"`
 }
 
 type Rules struct {
@@ -32,11 +49,23 @@ type Rules struct {
 	GenerateUmbrellaReadme      bool   `json:"generate_umbrella_readme" yaml:"generate_umbrella_readme"`
 	GenerateSubchartReadme      bool   `json:"generate_subchart_readme" yaml:"generate_subchart_readme"`
 	IncludeDocs                 bool   `json:"include_docs" yaml:"include_docs"`
+	// GenerateHandoff gates the generated HANDOFF.md. Pointer so every decode
+	// path (JSON body, CLI YAML, CRD) treats an *omitted* field as true
+	// without special-casing: nil means enabled.
+	GenerateHandoff *bool `json:"generate_handoff,omitempty" yaml:"generate_handoff,omitempty"`
+}
+
+// HandoffEnabled reports whether the HANDOFF.md should be generated; an unset
+// generate_handoff means yes (it's the product thesis).
+func (r Rules) HandoffEnabled() bool {
+	return r.GenerateHandoff == nil || *r.GenerateHandoff
 }
 
 var (
 	AllowedWorkloads = []string{"deployment", "statefulset", "daemonset"}
 	AllowedIngress   = []string{"alb", "nginx", "traefik", "istio", "gce", "none"}
+	AllowedExposures = []string{"http", "grpc", "tcp", "none"}
+	AllowedScalings  = []string{"auto", "fixed", "singleton"}
 	nameRE           = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`)
 )
 
@@ -55,9 +84,9 @@ func sanitizeName(s string) string {
 	return strings.ToLower(strings.TrimSpace(s))
 }
 
-// Normalize trims/lowercases names and workloads and fills an empty ingress with
-// the default. It does NOT fill omitted booleans (that is the decode layer's job
-// in Phase 2); the engine receives explicit rules.
+// Normalize trims/lowercases names, workloads, and trait enums, and fills an
+// empty ingress with the default. It does NOT fill omitted booleans (that is
+// the decode layer's job) and does NOT resolve traits (see ResolveTraits).
 func Normalize(s Spec) Spec {
 	s.UmbrellaChartName = sanitizeName(s.UmbrellaChartName)
 	s.Description = strings.TrimSpace(s.Description)
@@ -65,6 +94,12 @@ func Normalize(s Spec) Spec {
 		s.Subcharts[i].Name = sanitizeName(s.Subcharts[i].Name)
 		s.Subcharts[i].Workload = sanitizeName(s.Subcharts[i].Workload)
 		s.Subcharts[i].Description = strings.TrimSpace(s.Subcharts[i].Description)
+		s.Subcharts[i].Pattern = sanitizeName(s.Subcharts[i].Pattern)
+		s.Subcharts[i].Exposure = sanitizeName(s.Subcharts[i].Exposure)
+		s.Subcharts[i].Scaling = sanitizeName(s.Subcharts[i].Scaling)
+	}
+	for i := range s.Dependencies {
+		s.Dependencies[i] = sanitizeName(s.Dependencies[i])
 	}
 	s.Rules.Ingress = strings.ToLower(strings.TrimSpace(s.Rules.Ingress))
 	if s.Rules.Ingress == "" {
@@ -82,14 +117,19 @@ func contains(set []string, v string) bool {
 	return false
 }
 
-// Validate enforces the spec-level invariants (name regex, >=1 subchart, workload
-// and ingress enums).
+// Validate enforces the spec-level invariants: name regex, >=1 subchart, the
+// ingress enum, and — via ResolveTraits — the pattern/trait invariants. By
+// construction of dependent defaulting, only keys the user actually wrote can
+// fail trait validation.
 func Validate(s Spec) error {
 	if !nameRE.MatchString(s.UmbrellaChartName) {
 		return fmt.Errorf("umbrellaChartName %q must match %s", s.UmbrellaChartName, nameRE.String())
 	}
 	if len(s.Subcharts) == 0 {
 		return fmt.Errorf("at least one subchart is required")
+	}
+	if !contains(AllowedIngress, s.Rules.Ingress) {
+		return fmt.Errorf("rules.ingress %q invalid (allowed: %v)", s.Rules.Ingress, AllowedIngress)
 	}
 	seen := map[string]bool{}
 	for _, sc := range s.Subcharts {
@@ -105,12 +145,9 @@ func Validate(s Spec) error {
 			return fmt.Errorf("duplicate subchart name %q", sc.Name)
 		}
 		seen[sc.Name] = true
-		if !contains(AllowedWorkloads, sc.Workload) {
-			return fmt.Errorf("subchart %q has invalid workload %q (allowed: %v)", sc.Name, sc.Workload, AllowedWorkloads)
+		if _, err := ResolveTraits(sc, s.Rules); err != nil {
+			return fmt.Errorf("subchart %q: %w", sc.Name, err)
 		}
-	}
-	if !contains(AllowedIngress, s.Rules.Ingress) {
-		return fmt.Errorf("rules.ingress %q invalid (allowed: %v)", s.Rules.Ingress, AllowedIngress)
 	}
 	return nil
 }

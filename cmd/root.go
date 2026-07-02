@@ -23,6 +23,7 @@ type cliConfig struct {
 	UmbrellaChartName string            `yaml:"umbrellaChartName"`
 	Description       string            `yaml:"description"`
 	Subcharts         []engine.Subchart `yaml:"subcharts"`
+	Dependencies      []string          `yaml:"dependencies"`
 	Rules             *engine.Rules     `yaml:"rules"`
 }
 
@@ -43,6 +44,7 @@ func loadSpec(path string) (engine.Spec, error) {
 		UmbrellaChartName: cfg.UmbrellaChartName,
 		Description:       cfg.Description,
 		Subcharts:         cfg.Subcharts,
+		Dependencies:      cfg.Dependencies,
 		Rules:             rules,
 	}), nil
 }
@@ -65,6 +67,7 @@ var createCmd = &cobra.Command{
 				UmbrellaChartName: args[0],
 				Description:       spec.Description,
 				Subcharts:         spec.Subcharts,
+				Dependencies:      spec.Dependencies,
 				Rules:             spec.Rules,
 			})
 		}
@@ -82,6 +85,9 @@ func runCreate(spec engine.Spec) error {
 	}
 	if err := engine.ExpandSubcharts(chartDir); err != nil {
 		return err
+	}
+	for _, w := range engine.Warnings(spec) {
+		fmt.Printf("⚠️  %s\n", w)
 	}
 	fmt.Printf("✅ Generated chart at: %s\n", chartDir)
 	return nil

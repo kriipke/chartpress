@@ -1,8 +1,8 @@
+# Big-data pipeline: per-node collection, partition-coupled processing.
+# Storage (object store, warehouse) belongs in dependencies:, not here.
+umbrellaChartName: big-data-platform
 subcharts:
 - name: data-ingestion
-  workload: daemonset
+  pattern: node-agent
 - name: data-processing
-  workload: deployment
-- name: data-storage
-  workload: statefulset
-umbrellaChartName: big-data-platform
+  pattern: stream-processor

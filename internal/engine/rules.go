@@ -55,7 +55,12 @@ func applyUmbrellaFileToggles(ch *chart.Chart, r Rules) {
 		ch.Files = dropFile(ch.Files, func(n string) bool { return n == "README.adoc" })
 	}
 	if !r.IncludeDocs {
-		ch.Files = dropFile(ch.Files, func(n string) bool { return strings.HasPrefix(n, "docs/") })
+		// The topic docs are optional reading; the best-practices contract is not —
+		// HANDOFF.md/AGENTS.md/CLAUDE.md (never toggled) point to it, so it must
+		// survive every rule combination.
+		ch.Files = dropFile(ch.Files, func(n string) bool {
+			return strings.HasPrefix(n, "docs/") && n != "docs/best-practices.adoc"
+		})
 	}
 }
 

@@ -21,9 +21,20 @@ Values under a subchart's name in `values.yaml` override that subchart's own
 
 == Finishing this chart
 
-This is a starter: search the chart for `TODO(chartpress)` markers and review
+This is a starter: the structure and best practices are in place, the
+app-specific values are not. `HANDOFF.md` at the chart root is the finishing
+checklist — hand it, together with the application code, to a developer or a
+coding agent (`AGENTS.md`/`CLAUDE.md` orient agents automatically). Delete
+`HANDOFF.md` when the chart is finished.
+
+The quick version: search the chart for `TODO(chartpress)` markers and review
 each one — image registry/tags, resource sizing, probe endpoints, ingress
 hosts, and replica/autoscaling settings.
+
+The practices this chart implements (and deliberately doesn't) are documented
+in link:docs/best-practices.adoc[docs/best-practices.adoc] — they are to be
+respected when finishing or extending the chart: placeholders are replaced,
+never deleted; disabled practices are enabled, never removed.
 
 == Development
 

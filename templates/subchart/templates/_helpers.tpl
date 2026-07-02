@@ -75,9 +75,13 @@ httpGet:
   path: {{ .path }}
   port: {{ .port | default $defaultPort }}
 {{- end }}
-{{- with $probe.tcpSocket }}
+{{- if hasKey $probe "tcpSocket" }}
 tcpSocket:
-  port: {{ .port | default $defaultPort }}
+  port: {{ $probe.tcpSocket.port | default $defaultPort }}
+{{- end }}
+{{- if hasKey $probe "grpc" }}
+grpc:
+  port: {{ $probe.grpc.port | default $defaultPort }}
 {{- end }}
 {{- with $probe.exec }}
 exec:

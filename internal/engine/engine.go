@@ -48,12 +48,19 @@ func BuildChart(spec Spec, templatesDir string) (*chart.Chart, error) {
 		inlineDefines = collectUmbrellaDefines(umbrella)
 	}
 
-	for _, sc := range spec.Subcharts {
+	// Traits are resolved once (pattern defaults + explicit overrides, applied
+	// dependently); Validate already vetted every explicit key.
+	resolved, err := resolveAll(spec)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, sc := range spec.Subcharts {
 		sub, err := loader.Load(subchartPath)
 		if err != nil {
 			return nil, fmt.Errorf("load subchart template: %w", err)
 		}
-		if err := buildSubchart(sub, sc, spec, inlineDefines); err != nil {
+		if err := buildSubchart(sub, sc, resolved[i], spec, inlineDefines); err != nil {
 			return nil, fmt.Errorf("subchart %q: %w", sc.Name, err)
 		}
 		umbrella.AddDependency(sub)
@@ -67,6 +74,10 @@ func BuildChart(spec Spec, templatesDir string) (*chart.Chart, error) {
 	if err := applyUmbrellaRules(umbrella, spec); err != nil {
 		return nil, err
 	}
+	if err := applyDependencies(umbrella, spec); err != nil {
+		return nil, err
+	}
+	applyHandoff(umbrella, spec, resolved)
 	return umbrella, nil
 }
 
@@ -103,23 +114,26 @@ func renameChart(ch *chart.Chart, newName string) {
 	}
 }
 
-// buildSubchart renames the subchart and applies per-subchart rules. The
-// templates/tests/ guards ship with the chart: defaults render cleanly, and the
-// guards fail fast on invalid user edits.
-func buildSubchart(sub *chart.Chart, sc Subchart, spec Spec, inlineDefines string) error {
+// buildSubchart renames the subchart and applies per-subchart rules and trait
+// tailoring. The templates/tests/ guards ship with the chart: defaults render
+// cleanly, and the guards fail fast on invalid user edits.
+func buildSubchart(sub *chart.Chart, sc Subchart, rt ResolvedTraits, spec Spec, inlineDefines string) error {
 	sub.Metadata.Name = sc.Name
 	sub.Metadata.Description = chartDescription(sc.Description, sc.Name)
-	applyWorkload(sub, sc.Workload)
+	applyWorkload(sub, rt.Workload)
 	replacePlaceholders(sub, placeholderName, spec.UmbrellaChartName, "component", sc.Name)
 	applyCommonAnnotationsSubchart(sub, spec)
 	applyResourceNaming(sub, spec.Rules.ResourceNamesMatchChartName)
 	applySubchartFileToggles(sub, spec.Rules)
-	if block := generatedSubchartValues(sc, spec); block != "" {
+	if err := applyTraits(sub, rt, spec); err != nil {
+		return err
+	}
+	if block := generatedSubchartValues(sc, rt, spec); block != "" {
 		if err := appendValues(sub, block); err != nil {
 			return err
 		}
 	}
-	applyIngress(sub, spec.Rules.Ingress)
+	applyIngress(sub, effectiveIngressController(rt, spec.Rules))
 	if !spec.Rules.LinkedTemplates {
 		applyInlining(sub, inlineDefines)
 	}

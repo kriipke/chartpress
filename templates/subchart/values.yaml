@@ -18,12 +18,15 @@ image:
 # imagePullSecrets:
 #   - name: regcred
 
+# chartpress:section service
 service:
   port: 8080 # TODO(chartpress): the port your app listens on
   # targetPort: 8080  # defaults to port
   # portName: http
   # type: ClusterIP
+# chartpress:end
 
+# chartpress:section podCount
 podCount:
   # "static" pins a replica count; "dynamic" manages replicas with an HPA.
   type: static
@@ -35,6 +38,7 @@ podCount:
     # targetMemoryUtilizationPercentage: 75
     # metrics: []    # full autoscaling/v2 metrics override
     # behavior: {}
+# chartpress:end
 
 resources:
   # TODO(chartpress): size these for your application. A memory limit without a
@@ -45,6 +49,7 @@ resources:
   limits:
     memory: 512Mi
 
+# chartpress:section probes
 # Probe httpGet/tcpSocket ports default to service.port. Remove a probe block
 # to disable that probe entirely.
 livenessProbe:
@@ -69,7 +74,9 @@ readinessProbe:
 #     path: /startup
 #   periodSeconds: 10
 #   failureThreshold: 30
+# chartpress:end
 
+# chartpress:section ingress
 ingress:
   # Set host to expose this chart; empty means no Ingress is rendered.
   host: "" # TODO(chartpress): e.g. api.example.com
@@ -78,13 +85,17 @@ ingress:
   # tls:
   #   - secretName: api-tls
   #     hosts: [api.example.com]
+# chartpress:end
 
+# chartpress:section pdb
 pdb:
   # Enable once you run 2+ replicas; with a single replica a PDB blocks node drains.
   enabled: false
   minAvailable: 1
   # maxUnavailable: 1
+# chartpress:end
 
+# chartpress:section networkPolicy
 networkPolicy:
   # When enabled, only traffic matching ingressFrom may reach these pods.
   # Remember sibling subcharts and your ingress controller.
@@ -93,6 +104,7 @@ networkPolicy:
   #   - podSelector:
   #       matchLabels:
   #         app.kubernetes.io/name: ingress-nginx
+# chartpress:end
 
 # One schema for all workload kinds; see templates/_helpers.tpl for details.
 volumes: []
