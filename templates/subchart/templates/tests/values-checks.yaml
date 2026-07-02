@@ -1,3 +1,10 @@
+{{- /*
+Fail-fast guards for values this chart cannot render sensibly without.
+This file emits no manifests; it only validates.
+*/ -}}
 {{- if not (has .Values.podCount.type (list "static" "dynamic")) }}
 {{- fail "Valid values for .Values.podCount.type include: static, dynamic" }}
+{{- end }}
+{{- if and (eq .Values.podCount.type "static") (lt (int .Values.podCount.static) 1) }}
+{{- fail ".Values.podCount.static must be >= 1" }}
 {{- end }}

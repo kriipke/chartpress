@@ -1,10 +1,10 @@
+# IoT platform: device API, per-node collectors, async analytics.
+# The MQTT broker and time-series DB belong in dependencies:, not here.
+umbrellaChartName: iot-platform
 subcharts:
 - name: device-manager
-  workload: deployment
+  pattern: api-microservice
 - name: data-collector
-  workload: daemonset
+  pattern: node-agent
 - name: analytics-engine
-  workload: deployment
-- name: time-series-db
-  workload: statefulset
-umbrellaChartName: iot-platform
+  pattern: worker

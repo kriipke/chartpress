@@ -30,9 +30,12 @@ func BuildChart(spec Spec, templatesDir string) (*chart.Chart, error) {
 	}
 	renameChart(umbrella, spec.UmbrellaChartName)
 	umbrella.Metadata.Description = chartDescription(spec.Description, spec.UmbrellaChartName)
-	// Clear the umbrella's example values — the generated chart starts with
-	// clean values; subchart defaults come from each subchart's own values.yaml.
-	umbrella.Values = map[string]interface{}{}
+	// Replace the template repo's placeholder values with a values.yaml derived
+	// from the spec. setValues keeps Raw (what SaveDir writes) and Values (what
+	// rendering uses) in sync — see values.go.
+	if err := setValues(umbrella, umbrellaValuesText(spec)); err != nil {
+		return nil, err
+	}
 
 	// For linked_templates: false, collect the umbrella's named-template bodies
 	// AFTER rename so the inlined defines carry the umbrella-name prefix that the
@@ -45,12 +48,19 @@ func BuildChart(spec Spec, templatesDir string) (*chart.Chart, error) {
 		inlineDefines = collectUmbrellaDefines(umbrella)
 	}
 
-	for _, sc := range spec.Subcharts {
+	// Traits are resolved once (pattern defaults + explicit overrides, applied
+	// dependently); Validate already vetted every explicit key.
+	resolved, err := resolveAll(spec)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, sc := range spec.Subcharts {
 		sub, err := loader.Load(subchartPath)
 		if err != nil {
 			return nil, fmt.Errorf("load subchart template: %w", err)
 		}
-		if err := buildSubchart(sub, sc, spec, inlineDefines); err != nil {
+		if err := buildSubchart(sub, sc, resolved[i], spec, inlineDefines); err != nil {
 			return nil, fmt.Errorf("subchart %q: %w", sc.Name, err)
 		}
 		umbrella.AddDependency(sub)
@@ -64,6 +74,10 @@ func BuildChart(spec Spec, templatesDir string) (*chart.Chart, error) {
 	if err := applyUmbrellaRules(umbrella, spec); err != nil {
 		return nil, err
 	}
+	if err := applyDependencies(umbrella, spec); err != nil {
+		return nil, err
+	}
+	applyHandoff(umbrella, spec, resolved)
 	return umbrella, nil
 }
 
@@ -100,28 +114,26 @@ func renameChart(ch *chart.Chart, newName string) {
 	}
 }
 
-// buildSubchart renames the subchart and applies per-subchart rules. Rule-specific
-// behavior is filled in by later tasks; for now it only renames.
-func buildSubchart(sub *chart.Chart, sc Subchart, spec Spec, inlineDefines string) error {
+// buildSubchart renames the subchart and applies per-subchart rules and trait
+// tailoring. The templates/tests/ guards ship with the chart: defaults render
+// cleanly, and the guards fail fast on invalid user edits.
+func buildSubchart(sub *chart.Chart, sc Subchart, rt ResolvedTraits, spec Spec, inlineDefines string) error {
 	sub.Metadata.Name = sc.Name
 	sub.Metadata.Description = chartDescription(sc.Description, sc.Name)
-	// Strip test-only templates (templates/tests/) that require user-supplied
-	// values and would cause render failures during in-process chart assembly.
-	filtered := sub.Templates[:0]
-	for _, t := range sub.Templates {
-		if !strings.HasPrefix(t.Name, "templates/tests/") {
-			filtered = append(filtered, t)
-		}
-	}
-	sub.Templates = filtered
-	applyWorkload(sub, sc.Workload)
+	applyWorkload(sub, rt.Workload)
 	replacePlaceholders(sub, placeholderName, spec.UmbrellaChartName, "component", sc.Name)
 	applyCommonAnnotationsSubchart(sub, spec)
 	applyResourceNaming(sub, spec.Rules.ResourceNamesMatchChartName)
 	applySubchartFileToggles(sub, spec.Rules)
-	applySharedSecretsSubchart(sub, spec)
-	applySharedNewrelicSubchart(sub, spec)
-	applyIngress(sub, spec.Rules.Ingress)
+	if err := applyTraits(sub, rt, spec); err != nil {
+		return err
+	}
+	if block := generatedSubchartValues(sc, rt, spec); block != "" {
+		if err := appendValues(sub, block); err != nil {
+			return err
+		}
+	}
+	applyIngress(sub, effectiveIngressController(rt, spec.Rules))
 	if !spec.Rules.LinkedTemplates {
 		applyInlining(sub, inlineDefines)
 	}
@@ -144,12 +156,22 @@ func replacePlaceholders(ch *chart.Chart, oldnew ...string) {
 	for _, f := range ch.Files {
 		f.Data = []byte(r.Replace(string(f.Data)))
 	}
+	// values.yaml lives in ch.Raw (not Templates/Files); replace there too so
+	// comments mentioning the placeholders stay coherent, and re-sync ch.Values.
+	if txt := rawValues(ch); txt != "" {
+		if replaced := r.Replace(txt); replaced != txt {
+			// The placeholders only ever appear in comments/strings, so the
+			// replaced text stays valid YAML; setValues re-parses defensively.
+			_ = setValues(ch, replaced)
+		}
+	}
 }
 
-// applyUmbrellaRules is the umbrella-level rule hook; later tasks add behavior.
+// applyUmbrellaRules applies the umbrella-level rules. Rule-driven values keys
+// (global.commonAnnotations, global.sharedSecrets, global.newrelic) are seeded
+// by umbrellaValuesText in BuildChart.
 func applyUmbrellaRules(ch *chart.Chart, spec Spec) error {
 	applyUmbrellaFileToggles(ch, spec.Rules)
-	applyCommonAnnotationsUmbrella(ch, spec)
 	applySharedSecretsUmbrella(ch, spec)
 	applySharedNewrelicUmbrella(ch, spec)
 	return nil

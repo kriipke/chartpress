@@ -1,17 +1,8 @@
 {
+  "umbrellaChartName": "ci-cd-platform",
   "subcharts": [
-    {
-      "name": "runner",
-      "workload": "daemonset"
-    },
-    {
-      "name": "scheduler",
-      "workload": "deployment"
-    },
-    {
-      "name": "artifact-store",
-      "workload": "statefulset"
-    }
-  ],
-  "umbrellaChartName": "ci-cd-platform"
+    {"name": "runner", "pattern": "node-agent"},
+    {"name": "pipeline-scheduler", "pattern": "scheduler"},
+    {"name": "webhook-receiver", "pattern": "webhook-ingest"}
+  ]
 }

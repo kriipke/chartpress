@@ -1,21 +1,8 @@
 {
+  "umbrellaChartName": "iot-platform",
   "subcharts": [
-    {
-      "name": "device-manager",
-      "workload": "deployment"
-    },
-    {
-      "name": "data-collector",
-      "workload": "daemonset"
-    },
-    {
-      "name": "analytics-engine",
-      "workload": "deployment"
-    },
-    {
-      "name": "time-series-db",
-      "workload": "statefulset"
-    }
-  ],
-  "umbrellaChartName": "iot-platform"
+    {"name": "device-manager", "pattern": "api-microservice"},
+    {"name": "data-collector", "pattern": "node-agent"},
+    {"name": "analytics-engine", "pattern": "worker"}
+  ]
 }

@@ -36,9 +36,32 @@ func newOpenAIDrafter() *openAIDrafter {
 	}
 }
 
-const draftSystemPrompt = "You draft a chartpress Spec for a Kubernetes Helm umbrella chart from a short app description. " +
-	"Choose a kebab-case umbrellaChartName, 1+ subcharts each with a kebab-case name and a workload of deployment, statefulset, or daemonset, " +
-	"and a rules block. Only emit fields defined by the schema."
+const draftSystemPrompt = `You draft a chartpress Spec for a Kubernetes Helm umbrella chart from a short app description.
+
+Choose a kebab-case umbrellaChartName and a rules block. For each component the user describes that is THEIR OWN CODE, emit one subchart with a kebab-case name and a pattern.
+
+Classifying the pattern (closed set — you MUST pick the nearest of these; never invent traits):
+- api-microservice: REST/HTTP backend contacted directly.
+- grpc-service: internal gRPC server.
+- edge-gateway: the public entry / BFF / API gateway (usually the only externally-reachable component).
+- web-frontend: SPA, SSR app, or static site.
+- worker: pulls its work and serves nothing — "worker", "consumer", "executor", "processor", "job runner", email/image/async handlers.
+- stream-processor: Kafka consumer group, CDC consumer, partition-coupled stream stage.
+- scheduler: runs exactly one instance — "scheduler", "cron dispatcher", "migrator", "outbox relay", "leader-elected" controller.
+- realtime-gateway: WebSocket/SSE/push server with long-lived connections.
+- ml-inference: model server, embedding service, LLM wrapper (developer-written).
+- webhook-ingest: receives third-party webhooks (Stripe/GitHub/Twilio).
+- admin-dashboard: internal admin/ops UI.
+- node-agent: per-node daemon (log shipper, node exporter, security agent).
+Do NOT use "custom" — that value is reserved for humans. Always choose the closest real pattern.
+
+Trait overrides (exposure, port, ingress, scaling, shared_env, workload): emit one ONLY when the user's text states the fact explicitly (e.g. "listens on port 3000", "must not run more than one", "over gRPC"). Otherwise leave it null and let the pattern's default apply. Never infer an override.
+
+Guardrails:
+- Dependency rule: self-hosted infrastructure the user did NOT write — a database, cache, message broker, search engine (Postgres, MySQL, Redis, Valkey, Kafka, RabbitMQ, MongoDB, Elasticsearch) — is NOT a subchart. List it in the top-level "dependencies" array using its lowercase key. Never emit a subchart for it.
+- Sidecar rule: a sidecar (cloud-sql-proxy, envoy) is part of its owning component, never its own subchart. Ignore it at draft time.
+
+Only emit fields defined by the schema.`
 
 func (d *openAIDrafter) Draft(ctx context.Context, prompt string) (engine.Spec, error) {
 	reqBody := map[string]interface{}{
@@ -112,27 +135,54 @@ func (d *openAIDrafter) Draft(ctx context.Context, prompt string) (engine.Spec, 
 	return spec, nil
 }
 
+// nullableEnum builds a strict-mode nullable enum property: the model may emit
+// one of the values OR null (null = "no explicit override, use the pattern
+// default"). Strict structured output requires null to be a member of enum.
+func nullableEnum(values []string) map[string]interface{} {
+	enum := make([]interface{}, 0, len(values)+1)
+	for _, v := range values {
+		enum = append(enum, v)
+	}
+	enum = append(enum, nil)
+	return map[string]interface{}{"type": []string{"string", "null"}, "enum": enum}
+}
+
 // specJSONSchema is the strict structured-output schema for a chartpress Spec.
-// Strict mode requires additionalProperties:false and every property in required.
+// Strict mode requires additionalProperties:false and every property in
+// required; "optional" trait overrides are modeled as nullable (null = unset).
 func specJSONSchema() map[string]interface{} {
 	boolProp := map[string]interface{}{"type": "boolean"}
+	nullableBool := map[string]interface{}{"type": []string{"boolean", "null"}}
+	nullableInt := map[string]interface{}{"type": []string{"integer", "null"}}
 	return map[string]interface{}{
 		"type":                 "object",
 		"additionalProperties": false,
-		"required":             []string{"umbrellaChartName", "description", "subcharts", "rules"},
+		"required":             []string{"umbrellaChartName", "description", "subcharts", "dependencies", "rules"},
 		"properties": map[string]interface{}{
 			"umbrellaChartName": map[string]interface{}{"type": "string"},
 			"description":       map[string]interface{}{"type": "string"},
+			"dependencies": map[string]interface{}{
+				"type":        "array",
+				"description": "Self-hosted infrastructure the user did not write, by registry key. Never a subchart.",
+				"items":       map[string]interface{}{"type": "string", "enum": engine.DependencyKeys()},
+			},
 			"subcharts": map[string]interface{}{
 				"type": "array",
 				"items": map[string]interface{}{
 					"type":                 "object",
 					"additionalProperties": false,
-					"required":             []string{"name", "workload", "description"},
+					"required":             []string{"name", "description", "pattern", "workload", "exposure", "port", "ingress", "scaling", "shared_env"},
 					"properties": map[string]interface{}{
 						"name":        map[string]interface{}{"type": "string"},
-						"workload":    map[string]interface{}{"type": "string", "enum": engine.AllowedWorkloads},
 						"description": map[string]interface{}{"type": "string"},
+						"pattern":     map[string]interface{}{"type": "string", "enum": engine.PatternIDs(true)},
+						// Trait overrides — null unless the user's text states the fact.
+						"workload":   nullableEnum(engine.AllowedWorkloads),
+						"exposure":   nullableEnum(engine.AllowedExposures),
+						"port":       nullableInt,
+						"ingress":    nullableBool,
+						"scaling":    nullableEnum(engine.AllowedScalings),
+						"shared_env": nullableBool,
 					},
 				},
 			},

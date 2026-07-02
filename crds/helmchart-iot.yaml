@@ -5,16 +5,19 @@ metadata:
 spec:
   umbrellaChartName: iot-hub
   description: "IoT ingestion and device-management platform."
+  # The MQTT broker and time-series database are infrastructure: run them from
+  # their mature upstream charts via the umbrella's dependencies: block, not as
+  # generated subcharts.
   subcharts:
     - name: device-manager
-      workload: deployment
+      pattern: api-microservice
       description: "Device registry and lifecycle API."
-    - name: mqtt-broker
-      workload: statefulset
-      description: "MQTT message broker."
-    - name: timescaledb
-      workload: statefulset
-      description: "Time-series database for telemetry."
+    - name: data-collector
+      pattern: node-agent
+      description: "Per-node telemetry collector."
+    - name: telemetry-processor
+      pattern: stream-processor
+      description: "Consumes the telemetry topic; replicas coupled to partitions."
   rules:
     ingress: nginx
     common_annotations: true

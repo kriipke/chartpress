@@ -1,0 +1,13 @@
+{
+  "comment": "Curated infrastructure-dependency registry. When the dependency rule fires (a described component is self-hosted infrastructure — a database, cache, or broker — rather than the developer's own code), chartpress emits an umbrella Chart.yaml dependencies: entry from THIS table instead of a generated subchart. Version-pinned and frozen per release like the pattern registry; each pin carries a review-version TODO in the generated output so the freeze never ships stale software silently. Keys are the closed set text-to-config may emit; anything not here degrades to a stub entry with TODO markers.",
+  "dependencies": {
+    "postgresql": {"label": "PostgreSQL", "chart": "postgresql", "repository": "oci://registry-1.docker.io/bitnamicharts", "version": "16.8.0"},
+    "mysql": {"label": "MySQL", "chart": "mysql", "repository": "oci://registry-1.docker.io/bitnamicharts", "version": "13.0.7"},
+    "redis": {"label": "Redis", "chart": "redis", "repository": "oci://registry-1.docker.io/bitnamicharts", "version": "20.13.4"},
+    "valkey": {"label": "Valkey", "chart": "valkey", "repository": "oci://registry-1.docker.io/bitnamicharts", "version": "3.0.24"},
+    "kafka": {"label": "Apache Kafka", "chart": "kafka", "repository": "oci://registry-1.docker.io/bitnamicharts", "version": "32.4.3"},
+    "rabbitmq": {"label": "RabbitMQ", "chart": "rabbitmq", "repository": "oci://registry-1.docker.io/bitnamicharts", "version": "16.0.14"},
+    "mongodb": {"label": "MongoDB", "chart": "mongodb", "repository": "oci://registry-1.docker.io/bitnamicharts", "version": "16.5.9"},
+    "elasticsearch": {"label": "Elasticsearch", "chart": "elasticsearch", "repository": "oci://registry-1.docker.io/bitnamicharts", "version": "21.4.10"}
+  }
+}

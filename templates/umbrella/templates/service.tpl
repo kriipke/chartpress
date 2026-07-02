@@ -8,8 +8,43 @@ metadata:
   annotations:
     {{- include (print .Chart.Name ".annotations") . | nindent 4 }}
 spec:
+  type: {{ .Values.service.type | default "ClusterIP" }}
   ports:
-    - port: {{ .Values.service.port }}
+    - name: {{ .Values.service.portName | default "http" }}
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort | default .Values.service.port }}
+      protocol: TCP
+      {{- with .Values.service.appProtocol }}
+      appProtocol: {{ . }}
+      {{- end }}
   selector:
-    app: {{ include (print .Chart.Name ".fullname") . }}
+    {{- include (print .Chart.Name ".selectorLabels") . | nindent 4 }}
+{{- end }}
+
+{{/*
+Headless service backing a StatefulSet's serviceName. Emitted via
+templates/headless-service.yaml, which chartpress adds to statefulset
+subcharts.
+*/}}
+{{- define "umbrella-chart.headlessService" -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "umbrella-chart.headlessName" . }}
+  labels:
+    {{- include (print .Chart.Name ".labels") . | nindent 4 }}
+  annotations:
+    {{- include (print .Chart.Name ".annotations") . | nindent 4 }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  {{- if .Values.service }}
+  ports:
+    - name: {{ .Values.service.portName | default "http" }}
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort | default .Values.service.port }}
+      protocol: TCP
+  {{- end }}
+  selector:
+    {{- include (print .Chart.Name ".selectorLabels") . | nindent 4 }}
 {{- end }}

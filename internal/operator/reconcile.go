@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/kriipke/chartpress/internal/apis"
@@ -117,13 +118,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, obj *unstructured.Unstructur
 		return uerr
 	}
 
-	// Ready (stamp observedGeneration only here).
+	// Ready (stamp observedGeneration only here). Non-blocking spec warnings —
+	// e.g. an edge gateway sharing the platform with other public subcharts, or
+	// an admin dashboard exposed via ingress — surface in the status message so
+	// `kubectl get`/describe shows them without failing the reconcile.
 	_, err = r.writeStatus(ctx, ns, obj, map[string]interface{}{
 		"phase":              phaseReady,
 		"observedGeneration": obj.GetGeneration(),
 		"artifactKey":        key,
 		"lastGenerated":      r.now().Format(time.RFC3339),
-		"message":            "",
+		"message":            readyMessage(engine.Warnings(spec)),
 	})
 	if err != nil {
 		return fmt.Errorf("set Ready for %q: %w", name, err)
@@ -142,6 +146,15 @@ func (r *Reconciler) writeStatus(ctx context.Context, ns string, obj *unstructur
 
 func failedStatus(msg string) map[string]interface{} {
 	return map[string]interface{}{"phase": phaseFailed, "message": msg}
+}
+
+// readyMessage renders the non-blocking warnings into the Ready status message
+// (empty when the spec is clean).
+func readyMessage(warnings []string) string {
+	if len(warnings) == 0 {
+		return ""
+	}
+	return "warnings: " + strings.Join(warnings, "; ")
 }
 
 func hasFinalizer(obj *unstructured.Unstructured, f string) bool {

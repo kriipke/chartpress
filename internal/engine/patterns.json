@@ -1,0 +1,171 @@
+{
+  "comment": "Canonical pattern registry. NORMATIVE AND FROZEN: a shipped pattern's defaults never change — changing them requires a new pattern id or a major version, because specs store intent and are re-resolved on every generate. A verbatim copy lives at web/src/app/patterns.json; patterns_contract_test.go fails CI if they differ.",
+  "patterns": [
+    {
+      "id": "api-microservice",
+      "label": "API microservice",
+      "example": "REST backend — orders-api, users-api",
+      "badges": ["http", "ingress", "autoscale"],
+      "defaults": {"workload": "deployment", "exposure": "http", "ingress": true, "scaling": "auto", "shared_env": true},
+      "checklist": [
+        "Find the port the app actually listens on (code or Dockerfile EXPOSE) and set service.port.",
+        "Find or add the real liveness and readiness endpoints; decide whether readiness should check dependencies.",
+        "Map required env vars: which come from shared config, which need this chart's own Secret.",
+        "Measure or estimate request drain time on shutdown and set terminationGracePeriodSeconds from it.",
+        "Size resources requests and the memory limit from observed or expected load."
+      ]
+    },
+    {
+      "id": "grpc-service",
+      "label": "Internal gRPC service",
+      "example": "pricing-engine, internal RPC tiers",
+      "badges": ["grpc probes", "internal", "autoscale"],
+      "defaults": {"workload": "deployment", "exposure": "grpc", "ingress": false, "scaling": "auto", "shared_env": true},
+      "checklist": [
+        "Check whether the server registers the standard gRPC health service; if not, add it (preferred) or switch the probes to grpc_health_probe.",
+        "Decide whether server reflection should be enabled outside development.",
+        "Find configured max message sizes and document them in values comments.",
+        "Set the real listening port on service.port (scaffold default 50051)."
+      ]
+    },
+    {
+      "id": "edge-gateway",
+      "label": "Edge gateway / BFF",
+      "example": "backend-for-frontend, GraphQL federation router",
+      "badges": ["http", "ingress", "autoscale"],
+      "defaults": {"workload": "deployment", "exposure": "http", "ingress": true, "scaling": "auto", "shared_env": true},
+      "checklist": [
+        "Wire upstream service names to sibling subcharts' Service DNS via env or config.",
+        "Extract the route table from the code and document it in the chart README.",
+        "Find per-upstream timeouts and make sure the ingress timeout exceeds the slowest of them.",
+        "This should usually be the platform's only public entry — confirm sibling subcharts don't also set ingress."
+      ]
+    },
+    {
+      "id": "web-frontend",
+      "label": "Web frontend",
+      "example": "SPA behind nginx, Next.js app, static site",
+      "badges": ["http", "ingress", "no shared env"],
+      "defaults": {"workload": "deployment", "exposure": "http", "ingress": true, "scaling": "auto", "shared_env": false},
+      "checklist": [
+        "Confirm the asset base path baked into the image matches ingress.path — changing the path means a rebuild, not a values edit.",
+        "Determine SSR vs static: SSR needs env vars and a real readiness endpoint like an API service.",
+        "Define the cache-header strategy (hashed assets long-lived, HTML no-cache)."
+      ]
+    },
+    {
+      "id": "worker",
+      "label": "Job executor / queue worker",
+      "example": "email sender, image resizer, Celery/Sidekiq-style consumer",
+      "badges": ["no service", "no ingress", "autoscale"],
+      "defaults": {"workload": "deployment", "exposure": "none", "ingress": false, "scaling": "auto", "shared_env": true},
+      "checklist": [
+        "Wire the queue/broker connection env vars (endpoint via config, credentials via a Secret).",
+        "Define a liveness signal for a process nobody contacts — exec heartbeat or staleness file — and set the commented livenessProbe stub.",
+        "Measure in-flight job drain time and set terminationGracePeriodSeconds from it (the most under-set value in worker charts).",
+        "Find the concurrency per pod and size the resources block from it."
+      ]
+    },
+    {
+      "id": "stream-processor",
+      "label": "Stream processor",
+      "example": "Kafka consumer group, CDC consumer, enrichment stage",
+      "badges": ["no service", "fixed replicas", "no HPA"],
+      "defaults": {"workload": "deployment", "exposure": "none", "ingress": false, "scaling": "fixed", "shared_env": true},
+      "checklist": [
+        "Find the consumer group id and topic(s) and wire them via config.",
+        "Set podCount.static from the partition count (replicas must stay <= partitions).",
+        "Check offset-commit semantics: is a rolling restart safe, or must maxUnavailable be tightened?",
+        "Do NOT add an HPA — autoscaling churns consumer-group rebalances."
+      ]
+    },
+    {
+      "id": "scheduler",
+      "label": "Scheduler / singleton controller",
+      "example": "cron dispatcher, outbox relay, leader-elected reconciler",
+      "badges": ["singleton", "no service", "Recreate"],
+      "defaults": {"workload": "deployment", "exposure": "none", "ingress": false, "scaling": "singleton", "shared_env": true},
+      "checklist": [
+        "Determine what happens if two instances ever overlap (idempotent? locked? data race?) — decide whether Recreate suffices or the app needs leader election.",
+        "Check whether this workload is really a CronJob in disguise (runs then idles); if so, flag it — chartpress doesn't generate CronJobs yet.",
+        "Do NOT raise the replica count and do NOT add an HPA or PDB."
+      ]
+    },
+    {
+      "id": "realtime-gateway",
+      "label": "Realtime gateway",
+      "example": "WebSocket hub, SSE fan-out, push edge",
+      "badges": ["http", "ingress", "fixed replicas"],
+      "defaults": {"workload": "deployment", "exposure": "http", "ingress": true, "scaling": "fixed", "shared_env": true},
+      "checklist": [
+        "Implement connection drain on shutdown (close frames, client retry) and set a preStop hook plus a matching grace period.",
+        "Decide whether sticky sessions are genuinely required; if so, add the controller's session-affinity annotation to ingress.annotations.",
+        "Find the max connections per pod and size resources (and the fixed replica count) from it.",
+        "Do NOT switch to CPU autoscaling — scale-downs sever long-lived connections."
+      ]
+    },
+    {
+      "id": "ml-inference",
+      "label": "ML inference service",
+      "example": "custom model server, embedding service, LLM wrapper",
+      "badges": ["http", "internal", "startupProbe"],
+      "defaults": {"workload": "deployment", "exposure": "http", "ingress": false, "scaling": "fixed", "shared_env": true},
+      "checklist": [
+        "Measure model load time and budget the startupProbe (periodSeconds x failureThreshold must exceed the slowest cold start).",
+        "Add GPU resource requests plus the node selector/toleration for GPU nodes if the model needs them.",
+        "Determine where the model comes from — baked into the image, init container, or volume — and wire it."
+      ]
+    },
+    {
+      "id": "webhook-ingest",
+      "label": "Webhook ingest endpoint",
+      "example": "Stripe/GitHub/Twilio webhook receiver",
+      "badges": ["http", "public ingress", "autoscale"],
+      "defaults": {"workload": "deployment", "exposure": "http", "ingress": true, "scaling": "auto", "shared_env": true},
+      "checklist": [
+        "Wire the signature-verification secret as this chart's own Secret (not shared config).",
+        "Check the provider's payload sizes against the ingress body-size limit and raise it if needed.",
+        "Verify the handler dedupes — webhooks redeliver; idempotency is not optional."
+      ]
+    },
+    {
+      "id": "admin-dashboard",
+      "label": "Admin / back-office dashboard",
+      "example": "internal admin UI, ops console",
+      "badges": ["http", "ingress", "protect this route"],
+      "defaults": {"workload": "deployment", "exposure": "http", "ingress": true, "scaling": "fixed", "shared_env": true},
+      "checklist": [
+        "PROTECT THIS ROUTE: choose the auth mechanism (SSO proxy annotations, basic-auth secret, or app-level) and add the concrete ingress annotations.",
+        "Point ingress at the internal/private ingress class if the platform has one.",
+        "Confirm the dashboard is not reachable from the public internet before calling this chart done."
+      ]
+    },
+    {
+      "id": "node-agent",
+      "label": "Node agent",
+      "example": "log shipper, custom node exporter, security agent",
+      "badges": ["daemonset", "no ingress"],
+      "defaults": {"workload": "daemonset", "exposure": "none", "ingress": false, "scaling": "fixed", "shared_env": false},
+      "checklist": [
+        "List the hostPath mounts the agent needs and why; add them to volumes.",
+        "Decide which taints it must tolerate (control-plane? dedicated pools?) and set tolerations.",
+        "Enumerate the Kubernetes API access the agent needs and hand-write a least-privilege Role/RoleBinding."
+      ]
+    },
+    {
+      "id": "custom",
+      "label": "Custom",
+      "example": "anything the twelve patterns don't fit",
+      "badges": ["explicit traits"],
+      "defaults": {"workload": "deployment", "exposure": "http", "ingress": true, "scaling": "auto", "shared_env": true},
+      "checklist": [
+        "Set the real image registry, name, and a pinned tag.",
+        "Resolve every probe, port, and resource placeholder against the application code.",
+        "Set the security context (runAsNonRoot, readOnlyRootFilesystem, dropped capabilities).",
+        "Measure shutdown drain time and set terminationGracePeriodSeconds.",
+        "Review scaling: pin replicas or size the HPA to match how this workload actually scales.",
+        "Enable networkPolicy with the actual callers once they're known."
+      ]
+    }
+  ]
+}

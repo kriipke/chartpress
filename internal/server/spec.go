@@ -21,12 +21,14 @@ type requestRules struct {
 	GenerateUmbrellaReadme      *bool   `json:"generate_umbrella_readme"`
 	GenerateSubchartReadme      *bool   `json:"generate_subchart_readme"`
 	IncludeDocs                 *bool   `json:"include_docs"`
+	GenerateHandoff             *bool   `json:"generate_handoff"`
 }
 
 type requestSpec struct {
 	UmbrellaChartName string            `json:"umbrellaChartName"`
 	Description       string            `json:"description"`
 	Subcharts         []engine.Subchart `json:"subcharts"`
+	Dependencies      []string          `json:"dependencies"`
 	Rules             *requestRules     `json:"rules"`
 }
 
@@ -68,12 +70,16 @@ func decodeSpec(r io.Reader) (engine.Spec, error) {
 		if rr.IncludeDocs != nil {
 			rules.IncludeDocs = *rr.IncludeDocs
 		}
+		// engine.Rules.GenerateHandoff is already a pointer (nil = enabled),
+		// so the explicit value passes through unchanged.
+		rules.GenerateHandoff = rr.GenerateHandoff
 	}
 
 	spec := engine.Spec{
 		UmbrellaChartName: req.UmbrellaChartName,
 		Description:       req.Description,
 		Subcharts:         req.Subcharts,
+		Dependencies:      req.Dependencies,
 		Rules:             rules,
 	}
 	return engine.Normalize(spec), nil

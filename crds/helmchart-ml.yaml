@@ -5,19 +5,22 @@ metadata:
 spec:
   umbrellaChartName: ml-platform
   description: "Model training and serving platform."
+  # The model/metadata store is infrastructure — a dependencies: entry, not a
+  # generated subchart. The trainer is worker-shaped until chartpress supports
+  # Job/CronJob workloads.
   subcharts:
-    - name: trainer
-      workload: deployment
-      description: "Batch training jobs runner."
     - name: predictor
-      workload: deployment
-      description: "Online inference service."
-    - name: model-db
-      workload: statefulset
-      description: "Model + metadata store."
-    - name: worker
-      workload: deployment
+      pattern: ml-inference
+      description: "Online inference service (slow model load — startupProbe front-loaded)."
+    - name: trainer
+      pattern: worker
+      description: "Training job runner; pulls work, serves nothing."
+    - name: task-worker
+      pattern: worker
       description: "Async task worker."
+    - name: experiments-ui
+      pattern: admin-dashboard
+      description: "Internal experiments dashboard — protect the route."
   rules:
     ingress: istio
     common_annotations: false

@@ -1,17 +1,9 @@
 {
+  "umbrellaChartName": "event-driven-platform",
   "subcharts": [
-    {
-      "name": "event-producer",
-      "workload": "deployment"
-    },
-    {
-      "name": "event-broker",
-      "workload": "statefulset"
-    },
-    {
-      "name": "event-consumer",
-      "workload": "deployment"
-    }
-  ],
-  "umbrellaChartName": "event-driven-platform"
+    {"name": "gateway", "pattern": "edge-gateway"},
+    {"name": "orders-api", "pattern": "api-microservice", "ingress": false},
+    {"name": "event-consumer", "pattern": "stream-processor"},
+    {"name": "dispatcher", "pattern": "scheduler"}
+  ]
 }

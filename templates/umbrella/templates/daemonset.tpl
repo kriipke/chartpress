@@ -1,4 +1,4 @@
-{{- define "umbrella-chart.daemonset" }}
+{{- define "umbrella-chart.daemonset" -}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -8,74 +8,13 @@ metadata:
   annotations:
     {{- include (print .Chart.Name ".annotations") . | nindent 4 }}
 spec:
+  {{- with .Values.updateStrategy }}
+  updateStrategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
-      app: {{ include (print .Chart.Name ".fullname") . }}
+      {{- include (print .Chart.Name ".selectorLabels") . | nindent 6 }}
   template:
-    metadata:
-      labels:
-        {{- include (print .Chart.Name ".labels") . | nindent 8 }}
-      annotations:
-        {{- include (print .Chart.Name ".annotations") . | nindent 8 }}
-    spec:
-      containers:
-        - name: {{ .Chart.Name }}
-          image: {{ include (print .Chart.Name ".image") . }}
-          ports:
-            - containerPort: {{ .Values.service.port }}
-          {{- include "probes" . | nindent 10 }}
-          {{- with .Values.envFrom }}
-          envFrom:
-            {{- range . }}
-            - {{- if .configMapRef }}
-              configMapRef:
-                name: {{ .configMapRef.name }}
-              {{- else if .secretRef }}
-              secretRef:
-                name: {{ .secretRef.name }}
-              {{- end }}
-            {{- end }}
-          {{- end }}
-          {{- with .Values.env }}
-          env:
-            {{- range . }}
-            {{- $name := .name }}
-            {{- if or (hasKey . "value") .valueFrom }}
-            - {{ toYaml . | nindent 14 | trim }}
-            {{- else if .secretKeyRef }}
-              {{- if eq .keys "*" }}
-              # All keys in the secret will be mounted as env vars (requires envFrom)
-              {{- else }}
-                {{- range .keys }}
-            - name: {{ . }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $.secretKeyRef.name }}
-                  key: {{ . }}
-                {{- end }}
-              {{- end }}
-            {{- else if .configMapKeyRef }}
-              {{- if eq .keys "*" }}
-              # All keys in the configMap will be mounted as env vars (requires envFrom)
-              {{- else }}
-                {{- range .keys }}
-            - name: {{ . }}
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ $.configMapKeyRef.name }}
-                  key: {{ . }}
-                {{- end }}
-              {{- end }}
-            {{- end }}
-            {{- end }}
-          {{- end }}
-          {{- with .Values.volumeMounts }}
-          volumeMounts:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-      {{- with .Values.volumes }}
-      volumes:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+    {{- include "umbrella-chart.podTemplate" . | nindent 4 }}
 {{- end }}
-

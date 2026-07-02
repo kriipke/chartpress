@@ -1,31 +1,20 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+# Render the chart and validate every manifest against the Kubernetes schemas.
+# Requires: helm, kubeconform (https://github.com/yannh/kubeconform)
+set -euo pipefail
 
-mkdir -p ./tests/generated
-mkdir -p ./tests/generated.last
+cd "$(dirname "$0")/.."
 
-printf "\n%s\n" "Running `helm template` command to generate manifests..."
-helm template -g . | kubectl slice  -o tests/generated
+command -v helm >/dev/null 2>&1 || { echo "helm is required but not installed" >&2; exit 1; }
+command -v kubeconform >/dev/null 2>&1 || { echo "kubeconform is required but not installed" >&2; exit 1; }
 
-printf "\n%s\n" "Running `kubeval` to validate manifests..."
-# Check if kubeconform is installed
-if ! command -v kubeconform &> /dev/null
-then
-    echo "kubeconform could not be found. Please install it to run this script."
-    exit 1
-fi
+mkdir -p tests/generated
 
-printf "\n%s\n" "Running `helm template` command to generate manifests..."
+echo "Rendering chart with 'helm template'..."
+helm template chartpress-test . > tests/generated/manifests.yaml
 
-# Validate YAML files
-for file in ./tests/generated/*.yaml; do
-    if [ -f "$file" ]; then
-        echo "Validating $file..."
-        kubeconform "$file"
-    else
-        echo "No YAML files found to validate."
-    fi
-done
+echo "Validating rendered manifests with kubeconform..."
+kubeconform -strict -summary -ignore-missing-schemas tests/generated/manifests.yaml
 
-printf "\n%s\n" "Tests Complete!"
-rm -rf ./tests/generated.last/* || true
-mv ./tests/generated/* ./tests/generated.last/
+echo "Done."

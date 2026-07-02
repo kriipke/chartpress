@@ -1,5 +1,5 @@
-{{- define "umbrella-chart.networkPolicy" }}
-{{- if .Values.networkPolicy.enabled }}
+{{- define "umbrella-chart.networkPolicy" -}}
+{{- if and .Values.networkPolicy .Values.networkPolicy.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -11,11 +11,11 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: {{ include (print .Chart.Name ".fullname") . }}
+      {{- include (print .Chart.Name ".selectorLabels") . | nindent 6 }}
   policyTypes:
     - Ingress
   ingress:
     - from:
-      {{- toYaml .Values.networkPolicy.ingressFrom | nindent 6 }}
+        {{- toYaml .Values.networkPolicy.ingressFrom | nindent 8 }}
 {{- end }}
 {{- end }}
