@@ -11,7 +11,8 @@ metadata:
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
-    kind: Deployment
+    # workloadKind is set by chartpress to match the subchart's workload.
+    kind: {{ .Values.workloadKind | default "Deployment" }}
     name: {{ include (print .Chart.Name ".fullname") . }}
   minReplicas: {{ .Values.podCount.dynamic.minReplicas }}
   maxReplicas: {{ .Values.podCount.dynamic.maxReplicas }}

@@ -1,5 +1,5 @@
-{{- define "umbrella-chart.pdb" }}
-{{- if .Values.pdb.enabled }}
+{{- define "umbrella-chart.pdb" -}}
+{{- if and .Values.pdb .Values.pdb.enabled }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
@@ -9,9 +9,14 @@ metadata:
   annotations:
     {{- include (print .Chart.Name ".annotations") . | nindent 4 }}
 spec:
-  minAvailable: {{ .Values.pdb.minAvailable }}
+  {{- with .Values.pdb.minAvailable }}
+  minAvailable: {{ . }}
+  {{- end }}
+  {{- with .Values.pdb.maxUnavailable }}
+  maxUnavailable: {{ . }}
+  {{- end }}
   selector:
     matchLabels:
-      app: {{ include (print .Chart.Name ".fullname") . }}
+      {{- include (print .Chart.Name ".selectorLabels") . | nindent 6 }}
 {{- end }}
 {{- end }}

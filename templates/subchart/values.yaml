@@ -1,57 +1,55 @@
+# Default values for this subchart. When installed under the umbrella chart,
+# any value can be overridden from the umbrella's values.yaml under this
+# chart's name.
+#
+# Finish-the-chart checklist: search for TODO(chartpress).
+
+global:
+  # Registry/organization prefix for images, e.g. "ghcr.io/acme". The umbrella
+  # chart's global.repository overrides this when installed as a dependency.
+  repository: registry.example.com/CHANGEME # TODO(chartpress): set your registry
 
 image:
-  registry: ""           # Optional override, defaults to .Values.global.registry (of parent chart)
-  name: custom-service   # Optional override, defaults to .Chart.Name
-  tag: "v1.2.3"          # Optional override, defaults to .Chart.AppVersion
+  registry: "" # optional per-chart override of global.repository
+  name: ""     # defaults to the chart name
+  tag: ""      # defaults to the chart's appVersion; TODO(chartpress): pin your image tag
+  pullPolicy: IfNotPresent
 
-troubleshootingContainer: false
-
-environment:
-  - name: proxy-variables
-    configMap: proxy-variables
-  - name: app-secrets
-    secret: app-secret
+# imagePullSecrets:
+#   - name: regcred
 
 service:
-  port: 8080
-
-ingress:
-  type: aws
-  host: some.host.com
-  path: /api
-  aws:
-    scheme: internet-facing
-    subnets:
-      - subnet-xxxxxxxx
-      - subnet-yyyyyyyy
-    securityGroups:
-      - sg-xxxxxxxx
-    sslCertificateArn: arn:aws:acm:region:account-id:certificate/certificate-id
-
-resources:
-  # If you specify a limit but no request, Kubernetes copies the limit
-  # you specified and uses it as the requested value for the resource.
-  limits:
-    cpu: "1"
-    memory: "1G"
-  requests:
-    cpu: "0.5"
-    memory: "500Mi"
+  port: 8080 # TODO(chartpress): the port your app listens on
+  # targetPort: 8080  # defaults to port
+  # portName: http
+  # type: ClusterIP
 
 podCount:
-  # one of either "static" or "dynamic" will be ignored, depending on the value of "type"
-  type: ""
-  static: 5
+  # "static" pins a replica count; "dynamic" manages replicas with an HPA.
+  type: static
+  static: 1
   dynamic:
     minReplicas: 1
     maxReplicas: 5
     targetCPUUtilizationPercentage: 75
-    targetMemoryUtilizationPercentage: 75
-    behavior: {}
+    # targetMemoryUtilizationPercentage: 75
+    # metrics: []    # full autoscaling/v2 metrics override
+    # behavior: {}
 
+resources:
+  # TODO(chartpress): size these for your application. A memory limit without a
+  # CPU limit is intentional (avoids CPU throttling).
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
+
+# Probe httpGet/tcpSocket ports default to service.port. Remove a probe block
+# to disable that probe entirely.
 livenessProbe:
   httpGet:
-    path: /healthz
+    path: /healthz # TODO(chartpress): your liveness endpoint
   initialDelaySeconds: 10
   periodSeconds: 10
   timeoutSeconds: 1
@@ -59,37 +57,80 @@ livenessProbe:
 
 readinessProbe:
   httpGet:
-    path: /ready
+    path: /ready # TODO(chartpress): your readiness endpoint
   initialDelaySeconds: 5
   periodSeconds: 10
   timeoutSeconds: 1
   successThreshold: 1
   failureThreshold: 3
 
-startupProbe:
-  httpGet:
-    path: /startup
-  initialDelaySeconds: 15
-  periodSeconds: 10
-  timeoutSeconds: 2
-  failureThreshold: 5
+# startupProbe:
+#   httpGet:
+#     path: /startup
+#   periodSeconds: 10
+#   failureThreshold: 30
+
+ingress:
+  # Set host to expose this chart; empty means no Ingress is rendered.
+  host: "" # TODO(chartpress): e.g. api.example.com
+  path: /
+  # annotations: {}
+  # tls:
+  #   - secretName: api-tls
+  #     hosts: [api.example.com]
 
 pdb:
-  enabled: true
-  minimumAvailabe: 1
-  
+  # Enable once you run 2+ replicas; with a single replica a PDB blocks node drains.
+  enabled: false
+  minAvailable: 1
+  # maxUnavailable: 1
+
 networkPolicy:
-  enabled: true
-  ingressFrom:
-    - podSelector:
-        matchLabels:
-          app: ingress-gateway
+  # When enabled, only traffic matching ingressFrom may reach these pods.
+  # Remember sibling subcharts and your ingress controller.
+  enabled: false
+  ingressFrom: []
+  #   - podSelector:
+  #       matchLabels:
+  #         app.kubernetes.io/name: ingress-nginx
 
-volumes:
-  - name: app-config
-    mountPath: /etc/app/config
-    configMap: app-configmap
-  - name: app-secrets
-    mountPath: /etc/app/creds
-    secret: app-secret
+# One schema for all workload kinds; see templates/_helpers.tpl for details.
+volumes: []
+#   - name: app-config
+#     mountPath: /etc/app/config
+#     configMap: app-configmap
+#     readOnly: true
+#   - name: data                    # statefulset only: becomes a volumeClaimTemplate
+#     mountPath: /data
+#     pvc:
+#       accessModes: ["ReadWriteOnce"]
+#       # storageClassName: fast-ssd
+#       resources: { requests: { storage: 1Gi } }
 
+# Key/value pairs rendered into a ConfigMap / Secret named after this chart
+# and injected into the container via envFrom.
+# config:
+#   LOG_LEVEL: info
+# secrets:
+#   API_KEY: changeme
+
+# Adds a busybox sidecar with SYS_PTRACE and enables shareProcessNamespace.
+troubleshootingContainer: false
+
+# Additional standard knobs (uncomment as needed):
+# serviceAccountName: ""
+# podAnnotations: {}
+# additionalLabels: {}
+# additionalAnnotations: {}
+# podSecurityContext: {}
+# securityContext: {}
+# nodeSelector: {}
+# tolerations: []
+# affinity: {}
+# initContainers: []
+# lifecycle: {}
+# command: []
+# args: []
+# strategy: {}        # deployment only
+# updateStrategy: {}  # statefulset/daemonset only
+# podManagementPolicy: OrderedReady  # statefulset only

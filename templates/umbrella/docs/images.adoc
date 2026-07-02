@@ -5,65 +5,63 @@ toc::[]
 
 == `values.yaml`
 
-The example below is for the `wallet` service to illustrate:
+The image every subchart runs is assembled from three values, each with a
+sensible default:
 
 [source,yaml]
 ----
 global:
-  registry: "svc-devqa-harbor.lotteryplus.com/upam/shared-services/"
-  ...
+  # registry/organization prefix shared by all subcharts
+  repository: "registry.example.com/acme"
 
 wallet:
   image:
-    registry: ""
-    tag: 26.6.0-patch-02-gh-nr
-    name: wallet
+    registry: ""       # optional per-subchart override of global.repository
+    name: wallet       # defaults to the chart name
+    tag: "26.6.0"      # defaults to the chart's appVersion
 ----
-
-Make sure your golang templating https://helm.sh/docs/howto/charts_tips_and_tricks/#:~:text=This%20is%20typically%20set%20with%20template.Options(%22missingkey%3Doption%22[engine has `missingKey="error"` set].
 
 == `_helpers.tpl`
 
+Each subchart resolves its image with the `<chart>.image` helper:
+
 [source]
 ----
-{{- define "chart-name.registry" -}}
-{{ required ".Values.global.registry must be set, however .Values.image.registry will take precedence!" (.Values.image.registry | default .Values.global.registry) }}/:
-{{- end }}
-
-{{- define "chart-name.imageName" -}}
-{{ .Values.image.name | default ".Chart.Name" }}
-{{- end }}
-
-{{- define "chart-name.version" -}}
-{{ .Values.image.tag | default ".Chart.appVersion" }}
-{{- end }}
-
 {{- define "chart-name.image" -}}
-{{ template "chart-name.registry" . }}/{{ template "chart-name.imageName" . }}:{{ template "chart-name.version" . }}
+{{- $registry := .Values.image.registry | default .Values.global.repository -}}
+{{- $name := .Values.image.name | default .Chart.Name -}}
+{{- $tag := .Values.image.tag | default .Chart.AppVersion -}}
+{{- if $registry }}
+{{- printf "%s/%s:%s" $registry $name $tag }}
+{{- else }}
+{{- printf "%s:%s" $name $tag }}
+{{- end }}
 {{- end }}
 ----
 
-example output:
+Example output:
 
 [source,yaml]
 ----
-image: "svc-devqa-harbor.lotteryplus.com/upam/shared-services/wallet:26.6.0-patch-02-gh-nr"
+image: "registry.example.com/acme/wallet:26.6.0"
 ----
 
-image registry:: this should be defined in the umbrella chart at `.Values.global.registry`, however a subchart over-ride can be made at `.Values.image.registry` in subcharts `values.yaml`
-image name:: will be expected at `.Values.image.name`, however in it's absence `.Chart.Name` will be used to attempt to pull down the image with the same name as the chart.
-image tag:: will be expected at `.Values.image.tag`, however in it's absence `.Chart.appVerion` will be used to attempt to pull down the image with the same tag identified in the `Chart.yaml` file.
+image registry:: defined once in the umbrella chart at
+`.Values.global.repository`; a per-subchart override can be made at
+`.Values.image.registry` in the subchart's `values.yaml`.
+image name:: expected at `.Values.image.name`; in its absence `.Chart.Name`
+is used.
+image tag:: expected at `.Values.image.tag`; in its absence
+`.Chart.AppVersion` from `Chart.yaml` is used — keep it accurate.
 
-== `deployment.yaml`
+== Workload manifests
+
+The shared containers helper renders the image for every workload kind:
 
 [source,yaml]
 ----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  ...
-spec:
-      ...
-      containers:
-        - image: {{- include "chart-name.image . | quote -}}
+containers:
+  - name: {{ .Chart.Name }}
+    image: {{ include (print .Chart.Name ".image") . }}
+    imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
 ----

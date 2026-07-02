@@ -1,21 +1,23 @@
 {{- define "component.fullname" -}}
-{{- template "umbrella-chart.fullname" . }}-{{ .Chart.Name }}
+{{- printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "component.selectorLabels" -}}
+{{ include "umbrella-chart.selectorLabels" . }}
 {{- end }}
 
 {{- define "component.labels" -}}
-{{- template "umbrella-chart.labels" . }}
-helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-chart-name: {{ .Chart.Name }}
-{{- if .Values.additionalLabels }}
-{{ toYaml .Values.additionalLabels | trim | nindent 0 }}
+{{ include "umbrella-chart.labels" . }}
+{{- with .Values.additionalLabels }}
+{{ toYaml . | trim }}
 {{- end }}
 {{- end }}
 
 {{- define "component.annotations" -}}
 checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
 checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
-{{- if .Values.additionalAnnotations }}
-{{ toYaml .Values.additionalAnnotations | trim | nindent 0 }}
+{{- with .Values.additionalAnnotations }}
+{{ toYaml . | trim }}
 {{- end }}
 {{- end }}
 
@@ -23,76 +25,136 @@ checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha
 {{- $registry := .Values.image.registry | default .Values.global.repository -}}
 {{- $name := .Values.image.name | default .Chart.Name -}}
 {{- $tag := .Values.image.tag | default .Chart.AppVersion -}}
-{{- printf "%s/%s:%s" $registry $name $tag -}}
+{{- if $registry }}
+{{- printf "%s/%s:%s" $registry $name $tag }}
+{{- else }}
+{{- printf "%s:%s" $name $tag }}
+{{- end }}
 {{- end }}
 
-{{- define "troubleshootingContainer" -}}
+{{- define "component.troubleshootingContainer" -}}
 - name: shell
   image: busybox:1.28
   command: ["sleep", "3600"]
   securityContext:
     capabilities:
       add:
-      - SYS_PTRACE
+        - SYS_PTRACE
   stdin: true
   tty: true
 {{- end }}
 
-{{- define "probes" -}}
+{{/*
+Probes render only when their values block is present, so any probe can be
+disabled by removing (or nulling) it. httpGet/tcpSocket ports default to
+service.port.
+*/}}
+{{- define "component.probes" -}}
+{{- with .Values.livenessProbe }}
 livenessProbe:
-{{- if .Values.livenessProbe.httpGet }}
-  httpGet:
-    path: {{ .Values.livenessProbe.httpGet.path }}
-    port: {{ .Values.livenessProbe.httpGet.port | default .Values.service.port }}
+  {{- include "component.probeSpec" (dict "probe" . "root" $) | trim | nindent 2 }}
 {{- end }}
-{{- if .Values.livenessProbe.tcpSocket }}
-  tcpSocket:
-    port: {{ .Values.livenessProbe.tcpSocket.port | default .Values.service.port }}
-{{- end }}
-{{- if .Values.livenessProbe.exec }}
-  exec:
-    command: {{ toJson .Values.livenessProbe.exec.command }}
-{{- end }}
-  initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
-  periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
-  timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
-  failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+{{- with .Values.readinessProbe }}
 readinessProbe:
-{{- if .Values.readinessProbe.httpGet }}
-  httpGet:
-    path: {{ .Values.readinessProbe.httpGet.path }}
-    port: {{ .Values.readinessProbe.httpGet.port | default .Values.service.port }}
+  {{- include "component.probeSpec" (dict "probe" . "root" $) | trim | nindent 2 }}
 {{- end }}
-{{- if .Values.readinessProbe.tcpSocket }}
-  tcpSocket:
-    port: {{ .Values.readinessProbe.tcpSocket.port | default .Values.service.port }}
-{{- end }}
-{{- if .Values.readinessProbe.exec }}
-  exec:
-    command: {{ toJson .Values.readinessProbe.exec.command }}
-{{- end }}
-  initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
-  periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
-  timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
-  successThreshold: {{ .Values.readinessProbe.successThreshold }}
-  failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+{{- with .Values.startupProbe }}
 startupProbe:
-{{- if .Values.startupProbe.httpGet }}
-  httpGet:
-    path: {{ .Values.startupProbe.httpGet.path }}
-    port: {{ .Values.startupProbe.httpGet.port | default .Values.service.port }}
+  {{- include "component.probeSpec" (dict "probe" . "root" $) | trim | nindent 2 }}
 {{- end }}
-{{- if .Values.startupProbe.tcpSocket }}
-  tcpSocket:
-    port: {{ .Values.startupProbe.tcpSocket.port | default .Values.service.port }}
-{{- end }}
-{{- if .Values.startupProbe.exec }}
-  exec:
-    command: {{ toJson .Values.startupProbe.exec.command }}
-{{- end }}
-  initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
-  periodSeconds: {{ .Values.startupProbe.periodSeconds }}
-  timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
-  failureThreshold: {{ .Values.startupProbe.failureThreshold }}
 {{- end }}
 
+{{- define "component.probeSpec" -}}
+{{- $probe := .probe }}
+{{- $defaultPort := "" }}
+{{- with .root.Values.service }}
+{{- $defaultPort = .port }}
+{{- end }}
+{{- with $probe.httpGet }}
+httpGet:
+  path: {{ .path }}
+  port: {{ .port | default $defaultPort }}
+{{- end }}
+{{- with $probe.tcpSocket }}
+tcpSocket:
+  port: {{ .port | default $defaultPort }}
+{{- end }}
+{{- with $probe.exec }}
+exec:
+  command: {{ toJson .command }}
+{{- end }}
+{{- range $field := list "initialDelaySeconds" "periodSeconds" "timeoutSeconds" "successThreshold" "failureThreshold" "terminationGracePeriodSeconds" }}
+{{- if hasKey $probe $field }}
+{{ $field }}: {{ index $probe $field }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Volume helpers share one values schema across all workload kinds:
+
+  volumes:
+    - name: app-config
+      mountPath: /etc/app/config
+      configMap: app-configmap        # or: secret, existingClaim, hostPath, emptyDir
+    - name: data                      # statefulset only: becomes a volumeClaimTemplate
+      mountPath: /data
+      pvc:
+        accessModes: ["ReadWriteOnce"]
+        resources: { requests: { storage: 1Gi } }
+*/}}
+{{- define "component.volumeMounts" -}}
+{{- range .Values.volumes }}
+- name: {{ .name }}
+  mountPath: {{ .mountPath }}
+  {{- with .subPath }}
+  subPath: {{ . }}
+  {{- end }}
+  readOnly: {{ .readOnly | default false }}
+{{- end }}
+{{- end }}
+
+{{- define "component.volumes" -}}
+{{- range .Values.volumes }}
+{{- if .configMap }}
+- name: {{ .name }}
+  configMap:
+    name: {{ .configMap }}
+{{- else if .secret }}
+- name: {{ .name }}
+  secret:
+    secretName: {{ .secret }}
+{{- else if .existingClaim }}
+- name: {{ .name }}
+  persistentVolumeClaim:
+    claimName: {{ .existingClaim }}
+{{- else if .hostPath }}
+- name: {{ .name }}
+  hostPath:
+    path: {{ .hostPath }}
+{{- else if .emptyDir }}
+- name: {{ .name }}
+  emptyDir: {}
+{{- else if not .pvc }}
+{{- fail (printf "volume %q must set one of: configMap, secret, existingClaim, hostPath, emptyDir, pvc" .name) }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- define "component.volumeClaimTemplates" -}}
+{{- range .Values.volumes }}
+{{- if .pvc }}
+- metadata:
+    name: {{ .name }}
+  spec:
+    accessModes:
+      {{- toYaml .pvc.accessModes | nindent 6 }}
+    {{- with .pvc.storageClassName }}
+    storageClassName: {{ . }}
+    {{- end }}
+    resources:
+      requests:
+        storage: {{ .pvc.resources.requests.storage }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -16,7 +16,7 @@ var ingressClassAnnotations = map[string]string{
 
 func ingressTemplate(controller string) string {
 	ann := ingressClassAnnotations[controller]
-	return fmt.Sprintf(`{{- if .Values.ingress.host }}
+	return fmt.Sprintf(`{{- if and .Values.ingress .Values.ingress.host }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -25,8 +25,15 @@ metadata:
     {{- include (print .Chart.Name ".labels") . | nindent 4 }}
   annotations:
 %s    {{- include (print .Chart.Name ".annotations") . | nindent 4 }}
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   ingressClassName: %s
+  {{- with .Values.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   rules:
     - host: {{ .Values.ingress.host }}
       http:
@@ -43,7 +50,7 @@ spec:
 }
 
 func istioTemplate() string {
-	return `{{- if .Values.ingress.host }}
+	return `{{- if and .Values.ingress .Values.ingress.host }}
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:

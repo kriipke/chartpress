@@ -1,1 +1,37 @@
-{{ include "umbrella-chart.ingress" . }}
+{{- /*
+Generic Ingress used when this chart is rendered straight from the template
+repo. chartpress replaces this file with a controller-specific template
+(alb/nginx/traefik/gce/istio) chosen by rules.ingress.
+*/ -}}
+{{- if and .Values.ingress .Values.ingress.host }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include (print .Chart.Name ".fullname") . }}
+  labels:
+    {{- include (print .Chart.Name ".labels") . | nindent 4 }}
+  annotations:
+    {{- include (print .Chart.Name ".annotations") . | nindent 4 }}
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- with .Values.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: {{ .Values.ingress.path | default "/" | quote }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include (print .Chart.Name ".fullname") . }}
+                port:
+                  number: {{ .Values.service.port }}
+{{- end }}

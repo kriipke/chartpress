@@ -4,196 +4,109 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
+
+	"github.com/kriipke/chartpress/internal/engine"
 )
-
-type Config struct {
-	UmbrellaChartName string
-	Subcharts         []Subchart
-}
-
-type Subchart struct {
-	Name     string
-	Workload string // deployment, statefulset, or daemonset
-}
 
 var (
-	configPath       string
-	umbrellaTemplate string
-	subchartTemplate string
+	configPath   string
+	templatesDir string
 )
 
-func loadConfig(path string) (*Config, error) {
-	// Read the file using os.ReadFile
+// cliConfig is the chartpress.yaml shape: an engine.Spec with an optional
+// rules block (omitted rules fall back to engine.DefaultRules).
+type cliConfig struct {
+	UmbrellaChartName string            `yaml:"umbrellaChartName"`
+	Description       string            `yaml:"description"`
+	Subcharts         []engine.Subchart `yaml:"subcharts"`
+	Rules             *engine.Rules     `yaml:"rules"`
+}
+
+func loadSpec(path string) (engine.Spec, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
+		return engine.Spec{}, fmt.Errorf("failed to read config file: %w", err)
 	}
-
-	var cfg Config
-	// Unmarshal YAML content
+	var cfg cliConfig
 	if err := yaml.Unmarshal(content, &cfg); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+		return engine.Spec{}, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
-
-	return &cfg, nil
+	rules := engine.DefaultRules()
+	if cfg.Rules != nil {
+		rules = *cfg.Rules
+	}
+	return engine.Normalize(engine.Spec{
+		UmbrellaChartName: cfg.UmbrellaChartName,
+		Description:       cfg.Description,
+		Subcharts:         cfg.Subcharts,
+		Rules:             rules,
+	}), nil
 }
 
 var createCmd = &cobra.Command{
 	Use:   "create [name]",
 	Short: "Generates a new umbrella chart and attaches subcharts",
-	Args:  cobra.ExactArgs(1), // Ensure exactly one argument is provided
-	Run: func(cmd *cobra.Command, args []string) {
-		chartName := args[0] // Get the chart name from the argument
-		runCreate(chartName)
-	},
-}
-
-func runCreate(chartName string) {
-	// Use default config path if none is provided
-	if configPath == "" {
-		configPath = "./chartpress.yaml"
-	}
-
-	// Load config
-	configData, err := os.ReadFile(configPath)
-	if err != nil {
-		log.Fatalf("Failed to read config file: %v", err)
-	}
-
-	var cfg Config
-	if err := yaml.Unmarshal(configData, &cfg); err != nil {
-		log.Fatalf("Failed to unmarshal config: %v", err)
-	}
-
-	timestamp := time.Now().Unix()
-	outputDir := fmt.Sprintf("output/%s-%d", cfg.UmbrellaChartName, timestamp)
-
-	// Copy umbrella chart
-	if err := copyChartTemplate(umbrellaTemplate, filepath.Join(outputDir, cfg.UmbrellaChartName), map[string]string{
-		"umbrella-chart": cfg.UmbrellaChartName,
-	}); err != nil {
-		log.Fatalf("Failed to copy umbrella chart: %v", err)
-	}
-
-	chartsDir := filepath.Join(outputDir, cfg.UmbrellaChartName, "charts")
-
-	for _, sub := range cfg.Subcharts {
-		subPath := filepath.Join(chartsDir, sub.Name)
-
-		replacements := map[string]string{
-			"component":      sub.Name,
-			"umbrella-chart": cfg.UmbrellaChartName,
-		}
-
-		if err := copyChartTemplate(subchartTemplate, subPath, replacements); err != nil {
-			log.Fatalf("Failed to copy subchart %s: %v", sub.Name, err)
-		}
-
-		if err := pruneTemplates(subPath, sub.Workload); err != nil {
-			log.Fatalf("Failed to prune templates for %s: %v", sub.Name, err)
-		}
-	}
-
-	fmt.Printf("✅ Generated chart at: %s\n", outputDir)
-}
-
-// Recursively copies chart template with placeholder replacements
-func copyChartTemplate(src, dst string, replacements map[string]string) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		relPath, _ := filepath.Rel(src, path)
-		targetPath := filepath.Join(dst, relPath)
-
-		if info.IsDir() {
-			return os.MkdirAll(targetPath, 0755)
-		}
-
-		content, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		replaced := string(content)
-		for old, new := range replacements {
-			replaced = strings.ReplaceAll(replaced, old, new)
-		}
-
-		return os.WriteFile(targetPath, []byte(replaced), 0644)
-	})
-}
-
-// Removes unnecessary workload templates
-func pruneTemplates(chartPath, workload string) error {
-	templatesPath := filepath.Join(chartPath, "templates")
-	workloadFiles := map[string]bool{
-		"deployment.yaml":  workload != "deployment",
-		"statefulset.yaml": workload != "statefulset",
-		"daemonset.yaml":   workload != "daemonset",
-	}
-
-	for filename, shouldDelete := range workloadFiles {
-		if shouldDelete {
-			toRemove := filepath.Join(templatesPath, filename)
-			if err := os.Remove(toRemove); err != nil && !os.IsNotExist(err) {
-				return fmt.Errorf("error removing %s: %w", filename, err)
-			}
-		}
-	}
-
-	return nil
-}
-
-
-var rootCmd = &cobra.Command{
-	Use:   "chartpress [name]",
-	Short: "CLI tool to define an umbrella Helm chart",
-	Args:  cobra.ExactArgs(1), // Ensure exactly one argument is provided
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		chartName := args[0] // Get the chart name from the argument
-
-		// Use default config path if none is provided
 		if configPath == "" {
 			configPath = "./chartpress.yaml"
 		}
-
-		configData, err := os.ReadFile(configPath)
+		spec, err := loadSpec(configPath)
 		if err != nil {
-			return fmt.Errorf("failed to read config file: %w", err)
+			return err
 		}
-
-		var cfg Config
-		if err := yaml.Unmarshal(configData, &cfg); err != nil {
-			return fmt.Errorf("failed to unmarshal config: %w", err)
+		// A name argument overrides the config's umbrellaChartName.
+		if len(args) == 1 {
+			spec = engine.Normalize(engine.Spec{
+				UmbrellaChartName: args[0],
+				Description:       spec.Description,
+				Subcharts:         spec.Subcharts,
+				Rules:             spec.Rules,
+			})
 		}
+		return runCreate(spec)
+	},
+}
 
-		// Add logic here if needed
-		fmt.Printf("Chart name: %s\n", chartName)
-		return nil
+// runCreate generates the chart through the same engine the server and
+// operator use, then expands packaged subcharts into editable directories.
+func runCreate(spec engine.Spec) error {
+	outputRoot := fmt.Sprintf("output/%s-%d", spec.UmbrellaChartName, time.Now().Unix())
+	chartDir, err := engine.GenerateChart(spec, templatesDir, outputRoot)
+	if err != nil {
+		return err
+	}
+	if err := engine.ExpandSubcharts(chartDir); err != nil {
+		return err
+	}
+	fmt.Printf("✅ Generated chart at: %s\n", chartDir)
+	return nil
+}
+
+var rootCmd = &cobra.Command{
+	Use:   "chartpress",
+	Short: "CLI tool to define an umbrella Helm chart",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return cmd.Help()
 	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.SetFlags(0)
+		log.Fatal(err)
 	}
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&configPath, "config", "c", "", "Path to the configuration YAML file (default: ./chartpress.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "Path to the configuration YAML file (default: ./chartpress.yaml)")
 
 	rootCmd.AddCommand(createCmd)
 
-	createCmd.Flags().StringVar(&umbrellaTemplate, "umbrella-template", "./templates/umbrella", "Path to umbrella chart template")
-	createCmd.Flags().StringVar(&subchartTemplate, "subchart-template", "./templates/subchart", "Path to subchart template")
+	createCmd.Flags().StringVar(&templatesDir, "templates", "./templates", "Path to the chart templates directory (containing umbrella/ and subchart/)")
 }

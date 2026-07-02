@@ -91,10 +91,20 @@ func Validate(s Spec) error {
 	if len(s.Subcharts) == 0 {
 		return fmt.Errorf("at least one subchart is required")
 	}
+	seen := map[string]bool{}
 	for _, sc := range s.Subcharts {
 		if !nameRE.MatchString(sc.Name) {
 			return fmt.Errorf("subchart name %q must match %s", sc.Name, nameRE.String())
 		}
+		// "global" is helm's reserved values key; a subchart by that name would
+		// collide with the umbrella values' global block.
+		if sc.Name == "global" {
+			return fmt.Errorf("subchart name %q is reserved", sc.Name)
+		}
+		if seen[sc.Name] {
+			return fmt.Errorf("duplicate subchart name %q", sc.Name)
+		}
+		seen[sc.Name] = true
 		if !contains(AllowedWorkloads, sc.Workload) {
 			return fmt.Errorf("subchart %q has invalid workload %q (allowed: %v)", sc.Name, sc.Workload, AllowedWorkloads)
 		}
