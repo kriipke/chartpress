@@ -10,14 +10,23 @@ import (
 )
 
 // renderChart loads and renders chart/ with its default values, returning all
-// rendered manifests concatenated.
+// rendered manifests concatenated. backend.openai.apiKeySecret.name is required
+// by the backend deployment (it has no safe default — an unset key must fail a
+// real deploy loudly), so the tests supply a placeholder to exercise rendering.
 func renderChart(t *testing.T) string {
 	t.Helper()
 	ch, err := loader.Load("../../chart")
 	if err != nil {
 		t.Fatalf("load chart: %v", err)
 	}
-	vals, err := chartutil.ToRenderValues(ch, chartutil.Values{}, chartutil.ReleaseOptions{
+	overrides := chartutil.Values{
+		"backend": map[string]any{
+			"openai": map[string]any{
+				"apiKeySecret": map[string]any{"name": "chartpress-openai"},
+			},
+		},
+	}
+	vals, err := chartutil.ToRenderValues(ch, overrides, chartutil.ReleaseOptions{
 		Name:      "chartpress",
 		Namespace: "chartpress-system",
 	}, nil)
@@ -72,7 +81,7 @@ func TestBackendDeploymentHasDownwardNamespaceAndSA(t *testing.T) {
 func TestFrontendNginxProxiesBackendRoutes(t *testing.T) {
 	man := renderChart(t)
 	for _, want := range []string{
-		"location ~ ^/(generate|charts|text-to-config)(/|$)",
+		"location ~ ^/(generate|charts|text-to-config|auth)(/|$)",
 		"proxy_pass http://chartpress-backend:8080;",
 	} {
 		if !strings.Contains(man, want) {

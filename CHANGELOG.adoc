@@ -9,11 +9,20 @@ and this project adheres to link:https://semver.org/[Semantic Versioning].
 == [Unreleased]
 
 === Added
-* `GET /download/<file>` endpoint on `chartpress-server` so generated chart
-  archives referenced by the JSON `downloadUrl` response can actually be fetched.
+* Asynchronous generation pipeline: `POST /generate` validates a config, applies
+  it as a `ChartpressConfig` resource, and returns `phase: "Pending"`; a
+  Kubernetes operator renders the chart and uploads the archive to object storage.
+* `GET /charts` and `GET /charts/<name>` return generation status, with a
+  short-lived presigned `downloadUrl` once a chart is `Ready`; `GET
+  /charts/<name>/files` serves the read-only rendered file tree.
+* `POST /text-to-config` drafts a config from a natural-language prompt (OpenAI).
+* Optional, identity-only GitHub sign-in (`/auth/*`).
 * `LICENSE`, `CONTRIBUTING.adoc`, and this changelog.
 
 === Changed
+* Generation is now asynchronous. The pre-2.0 synchronous `/generate` response
+  (zip stream / `downloadUrl` served from `GET /download/<file>`) was removed;
+  downloads are served from object storage via presigned URLs on `/charts`.
 * Documentation (`README.adoc`, `crds/README.md`) now reflects the real CLI
   (`create`) and the `ChartpressConfig` CRD instead of commands and a `HelmChart`
   kind that never existed.

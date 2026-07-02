@@ -22,7 +22,22 @@ permissions:
   id-token: write
 
 jobs:
+  test:
+    name: Go vet + test + helm lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: go vet ./...
+      - run: go test ./...
+      - uses: azure/setup-helm@v4
+      - run: helm lint ./chart --set backend.openai.apiKeySecret.name=ci-openai
+
   build-api:
+    needs: test
     uses: ./.github/workflows/docker-build-publish.yaml
     with:
       context: .
