@@ -180,6 +180,23 @@ services:
 	}
 }
 
+func TestDeploySingleReplicaIsFixed(t *testing.T) {
+	// An explicit replicas: 1 is still a pin — it must not fall through to the
+	// pattern's autoscaling default.
+	spec, _ := mustSpec(t, `
+services:
+  api:
+    build: .
+    ports: ["80:80"]
+    deploy:
+      replicas: 1
+`)
+	sc, _ := findSub(spec, "api")
+	if sc.Scaling != "fixed" {
+		t.Errorf("scaling = %q, want fixed (explicit replicas: 1 is a pin)", sc.Scaling)
+	}
+}
+
 func TestNameNormalizationNoted(t *testing.T) {
 	spec, notes := mustSpec(t, `
 services:

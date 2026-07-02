@@ -157,7 +157,11 @@ func ToSpec(data []byte) (engine.Spec, []string, error) {
 			if strings.EqualFold(svc.Deploy.Mode, "global") {
 				sc.Workload = "daemonset"
 			}
-			if svc.Deploy.Replicas != nil && *svc.Deploy.Replicas > 1 {
+			if svc.Deploy.Replicas != nil {
+				// An explicit replica count — even 1 — means the compose author
+				// pinned it. Honor that with fixed scaling; letting the pattern
+				// default to autoscaling would contradict the pinned count and
+				// generate an HPA the compose file never asked for.
 				sc.Scaling = "fixed"
 			}
 		}
