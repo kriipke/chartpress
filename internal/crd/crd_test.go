@@ -2,6 +2,7 @@ package crd
 
 import (
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/kriipke/chartpress/internal/engine"
@@ -9,6 +10,11 @@ import (
 )
 
 const crdPath = "../../crds/crd-helmchart.yaml"
+
+// chartCRDPath is the CRD Helm actually installs (chart/crds/). It must not
+// drift from the canonical CRD above, or the operator/backend path silently
+// prunes spec fields (pattern, dependencies, exposure, …) that the engine reads.
+const chartCRDPath = "../../chart/crds/chartpressconfigs.yaml"
 
 func readYAML(t *testing.T, path string) map[string]interface{} {
 	t.Helper()
@@ -104,6 +110,20 @@ func TestExampleCRsAreValidSpecs(t *testing.T) {
 		if err := engine.Validate(engine.Normalize(cr.Spec)); err != nil {
 			t.Fatalf("%s is not a valid spec: %v", path, err)
 		}
+	}
+}
+
+// TestChartCRDMatchesCanonical guards against the two CRD copies drifting. The
+// canonical schema lives in crds/crd-helmchart.yaml; the chart ships its own
+// copy under chart/crds/ because Helm installs CRDs only from that directory.
+// Kubernetes prunes unknown fields on structural schemas, so a stale chart CRD
+// would drop the rich spec fields the engine depends on without any error.
+func TestChartCRDMatchesCanonical(t *testing.T) {
+	canonical := readYAML(t, crdPath)
+	shipped := readYAML(t, chartCRDPath)
+	if !reflect.DeepEqual(canonical["spec"], shipped["spec"]) {
+		t.Fatalf("chart/crds CRD schema has drifted from crds/crd-helmchart.yaml; "+
+			"regenerate %s from %s so the installed CRD carries every spec field", chartCRDPath, crdPath)
 	}
 }
 

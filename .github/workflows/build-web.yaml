@@ -20,7 +20,23 @@ permissions:
   id-token: write
 
 jobs:
+  test:
+    name: Web build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # No lockfile yet — use `npm install`. Switch to `npm ci` once a
+      # package-lock.json is committed.
+      - run: npm install --no-audit --no-fund
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+
   build-web:
+    needs: test
     uses: ./.github/workflows/docker-build-publish.yaml
     with:
       context: ./web

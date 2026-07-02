@@ -28,6 +28,11 @@ spec:
                 description:
                   type: string
                   description: "Human-readable description for the umbrella chart."
+                dependencies:
+                  type: array
+                  description: "Self-hosted infrastructure (databases, caches, brokers) emitted as umbrella Chart.yaml dependencies from the curated registry — never as generated subcharts. Each item is a registry key (e.g. postgresql, redis, kafka); unknown keys become TODO stubs."
+                  items:
+                    type: string
                 subcharts:
                   type: array
                   description: "List of subcharts and their workload types."
@@ -40,10 +45,33 @@ spec:
                       workload:
                         type: string
                         enum: ["deployment", "statefulset", "daemonset"]
-                        description: "The workload type for the subchart."
+                        description: "The workload kind. Omit to take the pattern's default."
                       description:
                         type: string
                         description: "Human-readable description for this subchart."
+                      pattern:
+                        type: string
+                        enum: ["api-microservice", "grpc-service", "edge-gateway", "web-frontend", "worker", "stream-processor", "scheduler", "realtime-gateway", "ml-inference", "webhook-ingest", "admin-dashboard", "node-agent", "custom"]
+                        description: "The named workload shape this subchart is generated as. Expands to trait defaults; omitted means api-microservice (back-compat). Explicit trait keys below override."
+                      exposure:
+                        type: string
+                        enum: ["http", "grpc", "tcp", "none"]
+                        description: "How the workload is contacted; none means a job executor (no Service, no ingress, no HTTP probes)."
+                      port:
+                        type: integer
+                        minimum: 1
+                        maximum: 65535
+                        description: "Listening port. Defaults: 8080 (http/tcp), 50051 (grpc); ignored when exposure is none."
+                      ingress:
+                        type: boolean
+                        description: "Route external traffic to this subchart via the platform ingress. Requires exposure http or grpc."
+                      scaling:
+                        type: string
+                        enum: ["auto", "fixed", "singleton"]
+                        description: "auto keeps the HPA available, fixed pins a replica count (no HPA), singleton pins exactly one instance (Recreate, no HPA, no PDB). Ignored for daemonsets."
+                      shared_env:
+                        type: boolean
+                        description: "Mount the umbrella's shared ConfigMap/Secrets into this subchart via envFrom (when the shared rules are enabled)."
                 rules:
                   type: object
                   properties:
@@ -74,7 +102,10 @@ spec:
                       description: "Generate READMEs for subcharts."
                     include_docs:
                       type: boolean
-                      description: "Include the docs/ directory in the output."
+                      description: "Include the topic docs; the best-practices doc always ships."
+                    generate_handoff:
+                      type: boolean
+                      description: "Generate the sectioned HANDOFF.md at the umbrella root (default true)."
               required: ["umbrellaChartName", "subcharts", "rules"]
             status:
               type: object

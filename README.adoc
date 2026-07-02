@@ -131,18 +131,32 @@ Start the server (listens on `$PORT`, default `8080`):
 ./chartpress-server
 ----
 
-POST a config as JSON to `/generate`. With `Accept: application/zip` the chart
-archive is streamed back directly; otherwise a JSON body with a `downloadUrl`
-(served from `/download/<file>`) is returned:
+Generation is asynchronous. `POST /generate` validates the config, applies it
+to the cluster as a `ChartpressConfig` resource, and returns immediately with
+`phase: "Pending"`; the operator renders the chart and uploads the archive to
+object storage in the background:
 
 [source,sh]
 ----
 curl -X POST http://localhost:8080/generate \
   -H "Content-Type: application/json" \
-  -H "Accept: application/zip" \
-  --data '{"umbrellaChartName":"saas-platform","subcharts":[{"name":"api","workload":"deployment"}]}' \
-  -o chart.zip
+  --data '{"umbrellaChartName":"saas-platform","subcharts":[{"name":"api","workload":"deployment"}]}'
+# => {"name":"saas-platform","namespace":"chartpress","phase":"Pending","manifestYaml":"..."}
 ----
+
+Poll `GET /charts` for status. Each row carries the current `phase`
+(`Pending` → `Generating` → `Ready`/`Failed`); once `Ready`, `downloadUrl` holds
+a short-lived presigned link to the generated chart archive:
+
+[source,sh]
+----
+curl http://localhost:8080/charts
+# => [{"name":"saas-platform","phase":"Ready","subchartCount":1,"downloadUrl":"https://..."}]
+----
+
+Other endpoints: `GET /charts/<name>` (single status), `GET /charts/<name>/files`
+(read-only rendered file tree), `POST /text-to-config` (draft a config from a
+natural-language prompt via OpenAI), and `/auth/*` (optional GitHub sign-in).
 
 == Example CI/CD Integration
 
