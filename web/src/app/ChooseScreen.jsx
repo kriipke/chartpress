@@ -18,13 +18,13 @@ export function ChooseScreen({ onManual, onPrompt }) {
         <ChoiceCard
           icon={<Form size={22} />}
           title="Generate manually"
-          description="Fill in the spec yourself — umbrella, subcharts, and rules."
+          description="You specify the structure yourself — name each subchart (the microservices that make up your app), pick a workload type for each, and set the generation rules."
           onClick={onManual}
         />
         <ChoiceCard
           icon={<Sparkle size={22} />}
           title="Generate from a prompt"
-          description="Describe your app in plain language; we draft the spec for you to review."
+          description="Describe your app in plain English. We'll populate our best guess at the subcharts / microservices you'll need to build it — then you review and edit before generating."
           onClick={onPrompt}
         />
       </div>

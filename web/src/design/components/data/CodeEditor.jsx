@@ -78,7 +78,7 @@ export function CodeEditor({
           {Array.from({ length: lineCount }, (_, i) => <div key={i}>{i + 1}</div>)}
         </div>
         <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
-          <pre ref={preRef} aria-hidden="true" style={{ ...codeFont, ...codeBox, margin: 0, color: "var(--text-1)", pointerEvents: "none", overflow: "hidden" }}
+          <pre ref={preRef} aria-hidden="true" style={{ ...codeFont, ...codeBox, position: "absolute", inset: 0, width: "100%", height: "100%", margin: 0, color: "var(--text-1)", pointerEvents: "none", overflow: "hidden" }}
             dangerouslySetInnerHTML={{ __html: highlight(value) + "\n" }} />
           <textarea
             ref={taRef}
