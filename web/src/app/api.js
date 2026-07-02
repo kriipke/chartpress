@@ -56,6 +56,16 @@ export function draftFromPrompt(prompt) {
   return jsonPost("/text-to-config", { prompt });
 }
 
+// Draft a spec from a docker-compose file. The server maps it deterministically
+// (no LLM — compose is authoritative for structure). Returns a {spec, notes}
+// envelope: the normalized engine.Spec to pre-fill the form, plus human-readable
+// notes about anything that couldn't be mapped cleanly (renamed services,
+// unrecognized images kept as subcharts, dropped extra ports). notes is always
+// an array.
+export function draftFromCompose(compose) {
+  return jsonPost("/compose-to-config", { compose });
+}
+
 // --- v0.2.0: optional GitHub sign-in (identity only) + read-only file explorer ---
 
 // Current auth status: {configured, authenticated, user?}. `configured` is false

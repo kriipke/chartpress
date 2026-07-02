@@ -13,10 +13,11 @@ data:
         }
 
         # Backend API: async generate, chart listing/detail, the read-only file
-        # explorer (/charts/{name}/files), prompt drafting, and GitHub sign-in
+        # explorer (/charts/{name}/files), prompt drafting (/text-to-config),
+        # docker-compose import (/compose-to-config), and GitHub sign-in
         # (/auth/*). /download was removed with the sync backend (Phase 2);
         # Phase 3 serves downloads via presigned bucket URLs, not through nginx.
-        location ~ ^/(generate|charts|text-to-config|auth)(/|$) {
+        location ~ ^/(generate|charts|text-to-config|compose-to-config|auth)(/|$) {
             proxy_pass http://chartpress-backend:8080;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
