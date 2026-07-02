@@ -8,7 +8,7 @@ metadata:
   annotations:
     {{- include (print .Chart.Name ".annotations") . | nindent 4 }}
 spec:
-  serviceName: {{ include (print .Chart.Name ".fullname") . }}-headless
+  serviceName: {{ include "umbrella-chart.headlessName" . }}
   {{- if eq .Values.podCount.type "static" }}
   replicas: {{ .Values.podCount.static }}
   {{- end }}

@@ -24,7 +24,63 @@ type cliConfig struct {
 	Description       string            `yaml:"description"`
 	Subcharts         []engine.Subchart `yaml:"subcharts"`
 	Dependencies      []string          `yaml:"dependencies"`
-	Rules             *engine.Rules     `yaml:"rules"`
+	Rules             *cliRules         `yaml:"rules"`
+}
+
+// cliRules mirrors engine.Rules with pointers so an omitted field in a partial
+// chartpress.yaml keeps its engine.DefaultRules() value instead of being reset
+// to the zero value (which would silently flip default-true options like
+// linked_templates and the generate_* toggles off). Matches the server's
+// pointer-based decode.
+type cliRules struct {
+	Ingress                     *string `yaml:"ingress"`
+	CommonAnnotations           *bool   `yaml:"common_annotations"`
+	LinkedTemplates             *bool   `yaml:"linked_templates"`
+	ResourceNamesMatchChartName *bool   `yaml:"resource_names_match_chart_name"`
+	SharedSecretsConfig         *bool   `yaml:"shared_secrets_config"`
+	SharedNewrelicConfig        *bool   `yaml:"shared_newrelic_config"`
+	GenerateUmbrellaReadme      *bool   `yaml:"generate_umbrella_readme"`
+	GenerateSubchartReadme      *bool   `yaml:"generate_subchart_readme"`
+	IncludeDocs                 *bool   `yaml:"include_docs"`
+	GenerateHandoff             *bool   `yaml:"generate_handoff"`
+}
+
+// mergeRules overlays the config's explicitly-set rule fields onto the locked
+// defaults, leaving omitted fields at their default value.
+func mergeRules(cr *cliRules) engine.Rules {
+	rules := engine.DefaultRules()
+	if cr == nil {
+		return rules
+	}
+	if cr.Ingress != nil {
+		rules.Ingress = *cr.Ingress
+	}
+	if cr.CommonAnnotations != nil {
+		rules.CommonAnnotations = *cr.CommonAnnotations
+	}
+	if cr.LinkedTemplates != nil {
+		rules.LinkedTemplates = *cr.LinkedTemplates
+	}
+	if cr.ResourceNamesMatchChartName != nil {
+		rules.ResourceNamesMatchChartName = *cr.ResourceNamesMatchChartName
+	}
+	if cr.SharedSecretsConfig != nil {
+		rules.SharedSecretsConfig = *cr.SharedSecretsConfig
+	}
+	if cr.SharedNewrelicConfig != nil {
+		rules.SharedNewrelicConfig = *cr.SharedNewrelicConfig
+	}
+	if cr.GenerateUmbrellaReadme != nil {
+		rules.GenerateUmbrellaReadme = *cr.GenerateUmbrellaReadme
+	}
+	if cr.GenerateSubchartReadme != nil {
+		rules.GenerateSubchartReadme = *cr.GenerateSubchartReadme
+	}
+	if cr.IncludeDocs != nil {
+		rules.IncludeDocs = *cr.IncludeDocs
+	}
+	rules.GenerateHandoff = cr.GenerateHandoff // pointer: nil = enabled
+	return rules
 }
 
 func loadSpec(path string) (engine.Spec, error) {
@@ -36,16 +92,12 @@ func loadSpec(path string) (engine.Spec, error) {
 	if err := yaml.Unmarshal(content, &cfg); err != nil {
 		return engine.Spec{}, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
-	rules := engine.DefaultRules()
-	if cfg.Rules != nil {
-		rules = *cfg.Rules
-	}
 	return engine.Normalize(engine.Spec{
 		UmbrellaChartName: cfg.UmbrellaChartName,
 		Description:       cfg.Description,
 		Subcharts:         cfg.Subcharts,
 		Dependencies:      cfg.Dependencies,
-		Rules:             rules,
+		Rules:             mergeRules(cfg.Rules),
 	}), nil
 }
 

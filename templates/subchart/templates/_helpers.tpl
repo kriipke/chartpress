@@ -136,7 +136,7 @@ Volume helpers share one values schema across all workload kinds:
 - name: {{ .name }}
   hostPath:
     path: {{ .hostPath }}
-{{- else if .emptyDir }}
+{{- else if hasKey . "emptyDir" }}
 - name: {{ .name }}
   emptyDir: {}
 {{- else if not .pvc }}

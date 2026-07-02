@@ -7,6 +7,16 @@
 {{- end }}
 
 {{/*
+Headless Service name for a StatefulSet. Truncates to 63 chars AFTER appending
+the -headless suffix (the fullname helper truncates before it), so a near-limit
+fullname can't produce an invalid DNS label. Used by both the headless Service
+and the StatefulSet's serviceName so the two always agree.
+*/}}
+{{- define "umbrella-chart.headlessName" -}}
+{{- printf "%s-headless" (include (print .Chart.Name ".fullname") .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
 Selector labels: the immutable identity of a workload. Keep this pair stable —
 it is used by Deployment/StatefulSet/DaemonSet selectors, Services,
 NetworkPolicies, and PodDisruptionBudgets.

@@ -30,7 +30,7 @@ subcharts.
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include (print .Chart.Name ".fullname") . }}-headless
+  name: {{ include "umbrella-chart.headlessName" . }}
   labels:
     {{- include (print .Chart.Name ".labels") . | nindent 4 }}
   annotations:
