@@ -81,7 +81,7 @@ func TestBackendDeploymentHasDownwardNamespaceAndSA(t *testing.T) {
 func TestFrontendNginxProxiesBackendRoutes(t *testing.T) {
 	man := renderChart(t)
 	for _, want := range []string{
-		"location ~ ^/(generate|charts|text-to-config|auth)(/|$)",
+		"location ~ ^/(generate|charts|text-to-config|compose-to-config|auth)(/|$)",
 		"proxy_pass http://chartpress-backend:8080;",
 	} {
 		if !strings.Contains(man, want) {
