@@ -9,6 +9,7 @@
 // whether it's configured and who (if anyone) is signed in — the app is fully
 // usable signed-out.
 import React from "react";
+import { DashboardScreen } from "./DashboardScreen.jsx";
 import { ChooseScreen } from "./ChooseScreen.jsx";
 import { PromptScreen } from "./PromptScreen.jsx";
 import { ComposeScreen } from "./ComposeScreen.jsx";
@@ -32,7 +33,7 @@ function sortCharts(list) {
 }
 
 export function AppShell() {
-  const [nav, setNav] = React.useState("charts"); // generate | charts | profile | explorer
+  const [nav, setNav] = React.useState("dashboard"); // dashboard | generate | charts | profile | explorer
   const [step, setStep] = React.useState("choose"); // choose | prompt | compose | form
   const [draftSpec, setDraftSpec] = React.useState(null);
   const [draftFrom, setDraftFrom] = React.useState("choose"); // which step the form's Back returns to
@@ -107,6 +108,7 @@ export function AppShell() {
     }
   };
 
+  const goDashboard = () => { setNav("dashboard"); setOpenChart(null); };
   const goGenerate = () => { setNav("generate"); setStep("choose"); setDraftSpec(null); setDraftFrom("choose"); setOpenChart(null); };
   const goCharts = () => { setNav("charts"); setOpenChart(null); refreshCharts(); };
   const openChartView = (chart) => { setOpenChart(chart); setNav("explorer"); };
@@ -140,6 +142,7 @@ export function AppShell() {
             </span>
           </div>
           <div style={{ display: "flex", gap: 4 }}>
+            <NavLink active={nav === "dashboard"} onClick={goDashboard}>Dashboard</NavLink>
             <NavLink active={nav === "generate"} onClick={goGenerate}>Generate</NavLink>
             <NavLink active={nav === "charts" || nav === "explorer"} onClick={goCharts}>Charts</NavLink>
           </div>
@@ -159,6 +162,15 @@ export function AppShell() {
         </main>
       ) : (
         <main style={{ padding: "40px 28px 72px" }}>
+          {nav === "dashboard" && (
+            <DashboardScreen
+              user={displayUser}
+              charts={charts}
+              onGenerate={goGenerate}
+              onBrowse={goCharts}
+              onOpenChart={openChartView}
+            />
+          )}
           {nav === "profile" && displayUser && (
             <ProfileScreen user={displayUser} charts={charts} onBack={() => setNav("charts")} />
           )}
