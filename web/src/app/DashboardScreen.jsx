@@ -97,7 +97,7 @@ export function DashboardScreen({ user, charts = [], onGenerate, onOpenChart, on
             <button onClick={onBrowse} style={linkBtn}>All charts →</button>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {recents.map((c, i) => <RecentRow key={c.name + i} chart={c} onOpen={onOpenChart} />)}
+            {recents.map((c, i) => <RecentRow key={c.name + i} chart={c} onOpen={onOpenChart} onBrowse={onBrowse} />)}
           </div>
         </div>
       )}
@@ -156,11 +156,17 @@ function CopyButton({ text }) {
   );
 }
 
-function RecentRow({ chart, onOpen }) {
+function RecentRow({ chart, onOpen, onBrowse }) {
   const [hover, setHover] = React.useState(false);
+  // The explorer's file fetch 409s until a chart is Ready, and this row is a stale
+  // snapshot that won't re-poll — so only open Ready/Failed charts directly. Send a
+  // still-building chart to the Charts list, where polling shows it advance.
+  const phase = String(chart.phase || "").toLowerCase();
+  const openable = phase === "ready" || phase === "failed";
+  const handleClick = () => (openable ? onOpen?.(chart) : onBrowse?.());
   return (
     <button
-      onClick={() => onOpen?.(chart)}
+      onClick={handleClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
