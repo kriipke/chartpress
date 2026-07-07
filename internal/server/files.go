@@ -43,7 +43,10 @@ type chartFiles struct {
 // on a hostile or corrupt object. Rendered Helm bundles are kilobytes.
 const maxArchiveBytes = 32 << 20 // 32 MiB
 
-func (s *Server) handleChartFiles(w http.ResponseWriter, r *http.Request, name string) {
+// handleChartFiles serves a Ready chart's rendered files. stored is the already
+// owner-scoped metadata.name resolved by handleChartByName, so the lookup can
+// only reach the caller's own chart.
+func (s *Server) handleChartFiles(w http.ResponseWriter, r *http.Request, stored string) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "only GET is allowed", http.StatusMethodNotAllowed)
 		return
@@ -52,13 +55,19 @@ func (s *Server) handleChartFiles(w http.ResponseWriter, r *http.Request, name s
 		http.Error(w, "file browsing unavailable: object storage is not configured", http.StatusServiceUnavailable)
 		return
 	}
-	obj, err := s.Lister.Get(r.Context(), s.Namespace, name)
+	obj, err := s.Lister.Get(r.Context(), s.Namespace, stored)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			http.Error(w, "chart not found", http.StatusNotFound)
 			return
 		}
 		http.Error(w, "failed to get chart: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// Defense in depth: stored already embeds the owner hash, but confirm the
+	// label matches before serving (mirrors handleChartByName).
+	if !s.requestOwner(r).ownsChart(*obj) {
+		http.Error(w, "chart not found", http.StatusNotFound)
 		return
 	}
 	phase, _, _ := unstructured.NestedString(obj.Object, "status", "phase")
@@ -78,7 +87,7 @@ func (s *Server) handleChartFiles(w http.ResponseWriter, r *http.Request, name s
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(chartFiles{Name: name, Phase: phase, Nodes: nodes, Files: files})
+	_ = json.NewEncoder(w).Encode(chartFiles{Name: chartDisplayName(*obj), Phase: phase, Nodes: nodes, Files: files})
 }
 
 // unzipArchive downloads the archive at key and returns its file tree + contents.

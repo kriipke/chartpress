@@ -19,8 +19,9 @@ import { ProfileScreen } from "./ProfileScreen.jsx";
 import { ChartExplorer, UserMenu, SignInButton } from "../design/components";
 import { Github } from "./Icons.jsx";
 import {
-  generateChart, listCharts, getMe, logout, getChartFiles, githubLoginUrl,
+  generateChart, listCharts, getChart, getMe, logout, getChartFiles, githubLoginUrl,
 } from "./api.js";
+import { loadLocalCharts, saveLocalChart } from "./localStore.js";
 import logoUrl from "../assets/logo-blue.png";
 
 const POLL_MS = 2500;
@@ -30,6 +31,42 @@ const isActive = (c) => ["pending", "generating"].includes(String(c.phase).toLow
 function sortCharts(list) {
   const ts = (c) => (c.lastGenerated ? Date.parse(c.lastGenerated) || 0 : Infinity);
   return [...list].sort((a, b) => ts(b) - ts(a));
+}
+
+// Merge a freshly fetched list with any optimistic rows the server/local store
+// hasn't caught up to yet (dedup by name).
+function mergeCharts(prev, list) {
+  const names = new Set(list.map((c) => c.name));
+  const pendingLocal = prev.filter((c) => c._optimistic && !names.has(c.name));
+  return sortCharts([...pendingLocal, ...list]);
+}
+
+// hydrateLocalCharts is the anonymous list-of-record: the charts remembered in
+// localStorage, each refreshed with live status from the server. A 404 means the
+// server reaped the chart past its TTL — we keep the row (marked Expired) so the
+// user can regenerate it from the remembered spec.
+async function hydrateLocalCharts() {
+  const local = loadLocalCharts();
+  return Promise.all(
+    local.map(async (entry) => {
+      const createdIso = entry.createdAt ? new Date(entry.createdAt).toISOString() : "";
+      try {
+        const summary = await getChart(entry.name);
+        return {
+          ...summary,
+          subchartCount: summary.subchartCount ?? entry.subchartCount,
+          _local: true,
+          spec: entry.spec,
+        };
+      } catch (err) {
+        if (err && err.status === 404) {
+          return { name: entry.name, phase: "Expired", subchartCount: entry.subchartCount, lastGenerated: createdIso, _local: true, _expired: true, spec: entry.spec };
+        }
+        // Transient failure: fall back to the remembered record.
+        return { name: entry.name, phase: entry.phase || "Pending", subchartCount: entry.subchartCount, lastGenerated: createdIso, _local: true, spec: entry.spec };
+      }
+    })
+  );
 }
 
 export function AppShell() {
@@ -42,25 +79,29 @@ export function AppShell() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [openChart, setOpenChart] = React.useState(null); // chart being explored
   const [auth, setAuth] = React.useState({ configured: false, user: null });
+  const authed = !!auth.user;
 
-  // Refresh from the server, preserving any just-submitted row not yet visible.
+  // Refresh the charts list, preserving any just-submitted row not yet visible.
+  // Signed in: the server's owner-scoped /charts. Anonymous: the browser's
+  // localStorage list-of-record, hydrated with live server status per chart.
   const refreshCharts = React.useCallback(async () => {
     setRefreshing(true);
     try {
-      const server = await listCharts();
-      const list = Array.isArray(server) ? server : [];
+      let list;
+      if (authed) {
+        const server = await listCharts();
+        list = Array.isArray(server) ? server : [];
+      } else {
+        list = await hydrateLocalCharts();
+      }
       setListError("");
-      setCharts((prev) => {
-        const names = new Set(list.map((c) => c.name));
-        const pendingLocal = prev.filter((c) => c._optimistic && !names.has(c.name));
-        return sortCharts([...pendingLocal, ...list]);
-      });
+      setCharts((prev) => mergeCharts(prev, list));
     } catch (err) {
       setListError((err && err.message) || String(err));
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [authed]);
 
   // Keep the latest refreshCharts in a ref so the poll interval never goes stale.
   const refreshRef = React.useRef(refreshCharts);
@@ -87,13 +128,20 @@ export function AppShell() {
   const handleSubmit = async (spec) => {
     // Throws on a server error; RichFormScreen catches and surfaces it inline.
     const res = await generateChart(spec);
+    const name = (res && res.name) || spec.umbrellaChartName;
+    // Anonymous charts are remembered in the browser (spec + name), so they
+    // survive reloads and outlive the server's TTL. Signed-in charts persist
+    // server-side under the user's owner-scoped /charts.
+    if (!authed) saveLocalChart({ name, spec, subchartCount: spec.subcharts.length });
     const row = {
-      name: (res && res.name) || spec.umbrellaChartName,
+      name,
       phase: (res && res.phase) || "Pending",
       subchartCount: spec.subcharts.length,
       lastGenerated: "",
       _optimistic: true,
       isNew: true,
+      _local: !authed,
+      spec,
     };
     setCharts((cs) => sortCharts([row, ...cs.filter((c) => c.name !== row.name)]));
     setNav("charts");
@@ -111,7 +159,15 @@ export function AppShell() {
   const goDashboard = () => { setNav("dashboard"); setOpenChart(null); };
   const goGenerate = () => { setNav("generate"); setStep("choose"); setDraftSpec(null); setDraftFrom("choose"); setOpenChart(null); };
   const goCharts = () => { setNav("charts"); setOpenChart(null); refreshCharts(); };
-  const openChartView = (chart) => { setOpenChart(chart); setNav("explorer"); };
+  const openChartView = (chart) => {
+    // An expired anonymous chart has no server artifact to browse, but its spec
+    // is remembered — send the user to the form to regenerate it.
+    if (chart && chart._expired && chart.spec) {
+      setDraftSpec(chart.spec); setDraftFrom("choose"); setNav("generate"); setStep("form"); setOpenChart(null);
+      return;
+    }
+    setOpenChart(chart); setNav("explorer");
+  };
 
   const signIn = () => { window.location.href = githubLoginUrl; };
   const signOut = () => {

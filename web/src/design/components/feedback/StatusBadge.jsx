@@ -15,6 +15,9 @@ export function StatusBadge({ phase = "Pending", size = "2", style = {}, ...prop
     generating: { label: "Generating", fg: "var(--status-generating-fg)", bg: "var(--status-generating-bg)", border: "var(--status-generating-border)", dot: "var(--accent-9)", pulse: true, icon: null },
     ready: { label: "Ready", fg: "var(--status-ready-fg)", bg: "var(--status-ready-bg)", border: "var(--status-ready-border)", dot: "var(--green-9)", pulse: false, icon: "check" },
     failed: { label: "Failed", fg: "var(--status-failed-fg)", bg: "var(--status-failed-bg)", border: "var(--status-failed-border)", dot: "var(--red-9)", pulse: false, icon: "cross" },
+    // Expired: an anonymous chart whose server-side artifact was reaped past its
+    // TTL. The spec is still remembered locally, so it can be regenerated.
+    expired: { label: "Expired", fg: "var(--status-pending-fg)", bg: "var(--status-pending-bg)", border: "var(--status-pending-border)", dot: "var(--slate-8)", pulse: false, icon: null },
   };
   const c = config[key] || config.pending;
   const sizes = { "1": { fontSize: 11, padding: "2px 8px 2px 7px", gap: 5, dot: 6 }, "2": { fontSize: 12, padding: "4px 10px 4px 8px", gap: 6, dot: 7 } };

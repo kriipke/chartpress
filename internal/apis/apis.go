@@ -15,6 +15,25 @@ const (
 	FinalizerArtifactCleanup = "chartpress.dev/artifact-cleanup"
 	FieldManagerBackend      = "chartpress-backend"
 	FieldManagerOperator     = "chartpress-operator"
+
+	// Ownership metadata. Every chart is scoped to an owner — a signed-in user
+	// (GitHub login) or an anonymous browser (a client-generated id). The owner is
+	// hashed into the CR name so distinct owners can reuse a chart name without
+	// colliding, and mirrored onto a label so the backend can filter /charts to
+	// the caller.
+	LabelOwner     = "chartpress.dev/owner"      // owner hash; label-selectable
+	LabelOwnerKind = "chartpress.dev/owner-kind" // OwnerKindUser | OwnerKindAnon
+
+	// AnnotationChartName preserves the user-facing umbrella chart name for
+	// display, since metadata.name carries the owner-hash prefix.
+	AnnotationChartName = "chartpress.dev/chart-name"
+	// AnnotationExpiresAt (RFC3339) is set only on anonymous charts; the operator
+	// deletes a chart once it is past this instant, and the artifact-cleanup
+	// finalizer then removes the stored archive.
+	AnnotationExpiresAt = "chartpress.dev/expires-at"
+
+	OwnerKindUser = "user"
+	OwnerKindAnon = "anon"
 )
 
 // GVR is the GroupVersionResource for ChartpressConfig CRs.

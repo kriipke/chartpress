@@ -20,10 +20,11 @@ const (
 )
 
 // CRClient writes ChartpressConfig CRs: Update for the main resource (finalizers),
-// UpdateStatus for the status subresource.
+// UpdateStatus for the status subresource, Delete for reaping expired charts.
 type CRClient interface {
 	Update(ctx context.Context, ns string, obj *unstructured.Unstructured) (*unstructured.Unstructured, error)
 	UpdateStatus(ctx context.Context, ns string, obj *unstructured.Unstructured) (*unstructured.Unstructured, error)
+	Delete(ctx context.Context, ns, name string) error
 }
 
 // Reconciler is the level-based state machine for one ChartpressConfig.
@@ -78,6 +79,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, obj *unstructured.Unstructur
 			return fmt.Errorf("add finalizer for %q: %w", name, err)
 		}
 		obj = updated
+	}
+
+	// Reap expired anonymous charts. Deleting sets a deletionTimestamp (the
+	// finalizer is present), which re-enqueues the object; the deletion branch
+	// above then removes the artifact and drops the finalizer.
+	if isExpired(obj, r.now()) {
+		if err := r.Client.Delete(ctx, ns, name); err != nil {
+			return fmt.Errorf("delete expired chart %q: %w", name, err)
+		}
+		return nil
 	}
 
 	// Short-circuit: this generation already succeeded (observedGeneration is
@@ -155,6 +166,21 @@ func readyMessage(warnings []string) string {
 		return ""
 	}
 	return "warnings: " + strings.Join(warnings, "; ")
+}
+
+// isExpired reports whether obj carries an expires-at annotation (only anonymous
+// charts do) that is now in the past. A malformed timestamp is treated as
+// not-expired so a bad annotation never triggers deletion.
+func isExpired(obj *unstructured.Unstructured, now time.Time) bool {
+	exp := obj.GetAnnotations()[apis.AnnotationExpiresAt]
+	if exp == "" {
+		return false
+	}
+	t, err := time.Parse(time.RFC3339, exp)
+	if err != nil {
+		return false
+	}
+	return now.After(t)
 }
 
 func hasFinalizer(obj *unstructured.Unstructured, f string) bool {

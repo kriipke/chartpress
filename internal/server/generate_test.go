@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kriipke/chartpress/internal/apis"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -45,14 +46,29 @@ func TestGenerateAppliesCRAndReturnsPending(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("decode resp: %v", err)
 	}
+	// The response keeps the user-facing name; the persisted CR is owner-scoped.
 	if resp.Name != "demo" || resp.Namespace != "chartpress-system" || resp.Phase != "Pending" {
 		t.Fatalf("resp = %+v", resp)
 	}
 	if !strings.Contains(resp.ManifestYAML, "kind: ChartpressConfig") {
 		t.Fatalf("manifestYaml missing kind:\n%s", resp.ManifestYAML)
 	}
-	if app.obj == nil || app.obj.GetName() != "demo" || app.ns != "chartpress-system" {
+	if app.obj == nil || app.ns != "chartpress-system" {
 		t.Fatalf("applier got ns=%q obj=%v", app.ns, app.obj)
+	}
+	// Anonymous (no cookie/header): metadata.name is owner-prefixed, the display
+	// name is preserved in the annotation, and an expiry TTL is stamped.
+	if got := app.obj.GetName(); got == "demo" || !strings.HasSuffix(got, "-demo") {
+		t.Fatalf("applied CR name = %q, want an owner-prefixed <hash>-demo", got)
+	}
+	if got := app.obj.GetAnnotations()[apis.AnnotationChartName]; got != "demo" {
+		t.Fatalf("chart-name annotation = %q, want demo", got)
+	}
+	if app.obj.GetLabels()[apis.LabelOwner] == "" {
+		t.Fatalf("applied CR missing owner label: %v", app.obj.GetLabels())
+	}
+	if app.obj.GetAnnotations()[apis.AnnotationExpiresAt] == "" {
+		t.Fatalf("anonymous chart should carry an expires-at TTL: %v", app.obj.GetAnnotations())
 	}
 }
 
