@@ -35,7 +35,12 @@ func (s *Server) handleGenerate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Scope the chart to its owner: a signed-in user or the anonymous browser.
+	// This owner-prefixes metadata.name (so distinct owners can reuse a chart
+	// name), stamps the owner labels, and gives anonymous charts a reaping TTL.
+	// The response and the persisted spec keep the user-facing name.
 	obj := wrapManifest(spec)
+	applyOwnership(obj, s.requestOwner(r), spec.UmbrellaChartName, s.now())
 	if err := s.Applier.Apply(r.Context(), s.Namespace, obj); err != nil {
 		log.Printf("[ERROR] apply ChartpressConfig %q: %v", spec.UmbrellaChartName, err)
 		http.Error(w, "failed to apply ChartpressConfig: "+err.Error(), http.StatusInternalServerError)

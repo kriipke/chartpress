@@ -38,7 +38,7 @@ func summarize(ctx context.Context, p Presigner, obj unstructured.Unstructured) 
 	msg, _, _ := unstructured.NestedString(obj.Object, "status", "message")
 	lastGen, _, _ := unstructured.NestedString(obj.Object, "status", "lastGenerated")
 	cs := chartSummary{
-		Name:          obj.GetName(),
+		Name:          chartDisplayName(obj),
 		Phase:         phase,
 		SubchartCount: len(subs),
 		LastGenerated: lastGen,
@@ -74,8 +74,15 @@ func (s *Server) handleCharts(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to list charts: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// Scope the list to the caller: a signed-in user sees their own charts; an
+	// anonymous browser sees only charts tagged with its client id (its durable
+	// list lives in localStorage — this endpoint just serves live status).
+	owner := s.requestOwner(r)
 	out := make([]chartSummary, 0, len(items))
 	for _, it := range items {
+		if !owner.ownsChart(it) {
+			continue
+		}
 		out = append(out, summarize(r.Context(), s.Presigner, it))
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -92,23 +99,33 @@ func (s *Server) handleChartByName(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "missing chart name", http.StatusBadRequest)
 		return
 	}
-	// /charts/{name}/files → the read-only file explorer (see files.go).
+	// The path addresses a chart by its user-facing name; resolve it to the
+	// owner-scoped metadata.name so a caller can only reach their own charts.
+	owner := s.requestOwner(r)
 	name, sub, hasSub := strings.Cut(rest, "/")
+	stored := owner.storedName(name)
+	// /charts/{name}/files → the read-only file explorer (see files.go).
 	if hasSub {
 		if sub == "files" {
-			s.handleChartFiles(w, r, name)
+			s.handleChartFiles(w, r, stored)
 			return
 		}
 		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
-	obj, err := s.Lister.Get(r.Context(), s.Namespace, name)
+	obj, err := s.Lister.Get(r.Context(), s.Namespace, stored)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			http.Error(w, "chart not found", http.StatusNotFound)
 			return
 		}
 		http.Error(w, "failed to get chart: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// Defense in depth: the name already embeds the owner hash, but confirm the
+	// label matches before serving.
+	if !owner.ownsChart(*obj) {
+		http.Error(w, "chart not found", http.StatusNotFound)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

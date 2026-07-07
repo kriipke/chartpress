@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/kriipke/chartpress/internal/objectstore"
 )
@@ -19,6 +20,17 @@ type Server struct {
 	Downloader objectstore.Downloader
 	Auth       *GitHubAuth
 	Namespace  string
+	// Now supplies the current time (for anonymous-chart TTL stamping); nil uses
+	// time.Now, tests inject a fixed clock.
+	Now func() time.Time
+}
+
+// now returns the server's clock, defaulting to time.Now.
+func (s *Server) now() time.Time {
+	if s.Now != nil {
+		return s.Now()
+	}
+	return time.Now()
 }
 
 // Handler builds the HTTP mux. Routes are registered by their owning task:
@@ -47,7 +59,7 @@ func (s *Server) cors(next http.HandlerFunc) http.HandlerFunc {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		if r.Method == http.MethodOptions {
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, "+clientIDHeader)
 			w.WriteHeader(http.StatusOK)
 			return
 		}

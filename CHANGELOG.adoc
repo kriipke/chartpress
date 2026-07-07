@@ -17,6 +17,14 @@ and this project adheres to link:https://semver.org/[Semantic Versioning].
   /charts/<name>/files` serves the read-only rendered file tree.
 * `POST /text-to-config` drafts a config from a natural-language prompt (OpenAI).
 * Optional, identity-only GitHub sign-in (`/auth/*`).
+* Per-owner chart persistence. Every generated chart is scoped to an owner — a
+  signed-in user (GitHub login) or an anonymous browser (a client id sent in the
+  `X-Chartpress-Client` header). `GET /charts` and `GET /charts/<name>[/files]`
+  are filtered to the caller, and the owner is hashed into the `ChartpressConfig`
+  name so distinct owners can reuse a chart name without colliding. Signed-in
+  users get a durable, private library; anonymous users' charts are remembered in
+  the browser (`localStorage`) and their server-side artifacts are reaped after a
+  24h TTL by the operator (via the existing artifact-cleanup finalizer).
 * `LICENSE`, `CONTRIBUTING.adoc`, and this changelog.
 
 === Changed

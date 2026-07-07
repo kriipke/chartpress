@@ -25,7 +25,8 @@ func TestOperatorRBACGrantsStatusAndFinalizers(t *testing.T) {
 		"name: chartpress-operator",
 		"chartpressconfigs/status",
 		"chartpressconfigs/finalizers",
-		`verbs: ["get", "list", "watch", "update", "patch"]`,
+		// delete is required for TTL-reaping expired anonymous charts.
+		`verbs: ["get", "list", "watch", "update", "patch", "delete"]`,
 	} {
 		if !strings.Contains(man, want) {
 			t.Fatalf("operator RBAC missing %q", want)

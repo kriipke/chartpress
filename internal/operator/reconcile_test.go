@@ -41,8 +41,10 @@ func crObj(name string, generation int64) *unstructured.Unstructured {
 type fakeCRClient struct {
 	obj       *unstructured.Unstructured
 	statusLog []string
+	deleted   []string
 	updateErr error
 	statusErr error
+	deleteErr error
 }
 
 func (f *fakeCRClient) Update(_ context.Context, _ string, obj *unstructured.Unstructured) (*unstructured.Unstructured, error) {
@@ -51,6 +53,14 @@ func (f *fakeCRClient) Update(_ context.Context, _ string, obj *unstructured.Uns
 	}
 	f.obj = obj.DeepCopy()
 	return f.obj.DeepCopy(), nil
+}
+
+func (f *fakeCRClient) Delete(_ context.Context, _ string, name string) error {
+	if f.deleteErr != nil {
+		return f.deleteErr
+	}
+	f.deleted = append(f.deleted, name)
+	return nil
 }
 
 func (f *fakeCRClient) UpdateStatus(_ context.Context, _ string, obj *unstructured.Unstructured) (*unstructured.Unstructured, error) {
@@ -176,6 +186,52 @@ func TestReconcileDeleteRemovesArtifactAndFinalizer(t *testing.T) {
 	}
 	if hasFinalizer(fc.obj, apis.FinalizerArtifactCleanup) {
 		t.Fatal("finalizer should have been dropped after cleanup")
+	}
+}
+
+func TestReconcileReapsExpiredAnonChart(t *testing.T) {
+	fc := &fakeCRClient{}
+	up := &fakeUploader{}
+	r := &Reconciler{Client: fc, Renderer: fakeRenderer{zip: []byte("x")}, Uploader: up, Namespace: "chartpress-system", Now: fixedClock()}
+
+	// Anonymous chart that expired an hour before the fixed clock.
+	obj := crObj("abc123-demo", 1)
+	obj.SetFinalizers([]string{apis.FinalizerArtifactCleanup})
+	obj.SetAnnotations(map[string]string{
+		apis.AnnotationExpiresAt: fixedClock()().Add(-time.Hour).Format(time.RFC3339),
+	})
+	// Already Ready — reaping must win over the Ready short-circuit.
+	_ = unstructured.SetNestedField(obj.Object, phaseReady, "status", "phase")
+	_ = unstructured.SetNestedField(obj.Object, int64(1), "status", "observedGeneration")
+
+	if err := r.Reconcile(context.Background(), obj); err != nil {
+		t.Fatalf("Reconcile: %v", err)
+	}
+	if len(fc.deleted) != 1 || fc.deleted[0] != "abc123-demo" {
+		t.Fatalf("deleted = %v, want [abc123-demo]", fc.deleted)
+	}
+	if len(up.uploaded) != 0 {
+		t.Fatalf("expired chart must not be rendered; uploads=%v", up.uploaded)
+	}
+}
+
+func TestReconcileKeepsUnexpiredAnonChart(t *testing.T) {
+	fc := &fakeCRClient{}
+	up := &fakeUploader{}
+	r := &Reconciler{Client: fc, Renderer: fakeRenderer{zip: []byte("PK")}, Uploader: up, Namespace: "chartpress-system", Now: fixedClock()}
+
+	obj := crObj("abc123-demo", 1)
+	obj.SetAnnotations(map[string]string{
+		apis.AnnotationExpiresAt: fixedClock()().Add(time.Hour).Format(time.RFC3339),
+	})
+	if err := r.Reconcile(context.Background(), obj); err != nil {
+		t.Fatalf("Reconcile: %v", err)
+	}
+	if len(fc.deleted) != 0 {
+		t.Fatalf("unexpired chart must not be deleted; deleted=%v", fc.deleted)
+	}
+	if _, ok := up.uploaded["charts/abc123-demo.zip"]; !ok {
+		t.Fatalf("unexpired chart should render; uploads=%v", up.uploaded)
 	}
 }
 

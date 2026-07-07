@@ -11,15 +11,25 @@
 // In dev, vite.config.js proxies them to the local server. Override the origin
 // with VITE_API_BASE if the API lives elsewhere.
 
+import { clientId } from "./localStore.js";
+
 const BASE = import.meta.env?.VITE_API_BASE ?? "";
 
 // The server writes errors as plain text via http.Error; surface them verbatim
-// (the design's InlineError preserves whitespace) instead of paraphrasing.
-async function request(path, options) {
-  const res = await fetch(BASE + path, options);
+// (the design's InlineError preserves whitespace) instead of paraphrasing. The
+// thrown Error carries `.status` so callers can distinguish, e.g., a 404 (an
+// anonymous chart reaped past its server TTL) from a transient failure.
+async function request(path, options = {}) {
+  // Scope every request to this browser (anonymous) or, when a session cookie is
+  // present, to the signed-in user. Sending the client id always is harmless:
+  // the server ignores it once it trusts the session cookie.
+  const headers = { ...(options.headers || {}), "X-Chartpress-Client": clientId() };
+  const res = await fetch(BASE + path, { ...options, headers });
   if (!res.ok) {
     const text = (await res.text().catch(() => "")).trim();
-    throw new Error(text || `Request failed (${res.status})`);
+    const err = new Error(text || `Request failed (${res.status})`);
+    err.status = res.status;
+    throw err;
   }
   const ct = res.headers.get("content-type") || "";
   return ct.includes("application/json") ? res.json() : res.text();
