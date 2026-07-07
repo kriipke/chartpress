@@ -15,6 +15,14 @@
 const CLIENT_ID_KEY = "cp.clientId.v1";
 const CHARTS_KEY = "cp.anonCharts.v1";
 
+// In-memory fallbacks so a single session stays coherent even when localStorage
+// is unavailable (private mode, disabled storage, quota). Without this, a failed
+// write would let clientId() mint a fresh owner id on every call — orphaning the
+// just-generated chart, since /generate, polling, and file requests would each
+// use a different owner hash. Durability across reloads still needs storage.
+let memClientId = null;
+let memCharts = null;
+
 // Guard every access: localStorage can throw (private mode, disabled storage,
 // quota). A failure degrades to in-memory-only behavior rather than crashing.
 function safeGet(key) {
@@ -46,26 +54,38 @@ function randomId() {
 // clientId returns this browser's stable anonymous id, generating and persisting
 // one on first use. Sent on every API request so anonymous charts are scoped.
 export function clientId() {
+  if (memClientId) return memClientId;
   let id = safeGet(CLIENT_ID_KEY);
   if (!id) {
     id = randomId();
     safeSet(CLIENT_ID_KEY, id);
   }
+  // Cache in memory so the id is stable for this session regardless of whether
+  // the write above actually persisted.
+  memClientId = id;
   return id;
 }
 
 function readCharts() {
   const raw = safeGet(CHARTS_KEY);
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        memCharts = parsed;
+        return parsed;
+      }
+    } catch {
+      /* fall through to the in-memory mirror */
+    }
   }
+  // Storage empty or unavailable: use the in-memory mirror so writes made this
+  // session are still visible even when they didn't persist.
+  return memCharts || [];
 }
 
 function writeCharts(list) {
+  memCharts = list;
   safeSet(CHARTS_KEY, JSON.stringify(list));
 }
 
