@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import React from "react";
 import { StatusBadge } from "../feedback/StatusBadge.jsx";
 import { Button } from "../forms/Button.jsx";

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // internal/objectstore/objectstore.go
 // Package objectstore wraps an S3-compatible bucket (AWS S3 / R2 / MinIO) behind
 // an Uploader (operator) and a Presigner (backend), so callers test against fakes

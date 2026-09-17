@@ -1,0 +1,67 @@
+# syntax=docker/dockerfile:1.7
+# SPDX-License-Identifier: Apache-2.0
+FROM node:20.18.3-bookworm-slim@sha256:ffc11dbf16dd0abcbb7b837410601b4d5592db2d03741e13a4a5336ab74d7ccb AS node
+
+FROM golang:1.23.6-bookworm@sha256:462f68e1109cc0415f58ba591f11e650b38e193fddc4a683a3b77d29be8bfb2c
+
+ARG TARGETARCH
+ARG HELM_VERSION=3.17.3
+ARG KUBECONFORM_VERSION=0.7.0
+ARG SCHEMA_REVISION=1360e239a56dcf2e5c7f99e61ccbaca1ea07036a
+
+COPY --from=node /usr/local/ /usr/local/
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates curl git make unzip \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN case "$TARGETARCH" in \
+      amd64) helm_sha=ee88b3c851ae6466a3de507f7be73fe94d54cbf2987cbaa3d1a3832ea331f2cd; kube_sha=c31518ddd122663b3f3aa874cfe8178cb0988de944f29c74a0b9260920d115d3 ;; \
+      arm64) helm_sha=7944e3defd386c76fd92d9e6fec5c2d65a323f6fadc19bfb5e704e3eee10348e; kube_sha=cc907ccf9e3c34523f0f32b69745265e0a6908ca85b92f41931d4537860eb83c ;; \
+      *) echo "unsupported architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac \
+ && curl -fsSLo /tmp/helm.tgz "https://get.helm.sh/helm-v${HELM_VERSION}-linux-${TARGETARCH}.tar.gz" \
+ && echo "$helm_sha  /tmp/helm.tgz" | sha256sum -c - \
+ && tar -xzf /tmp/helm.tgz -C /tmp \
+ && install "/tmp/linux-${TARGETARCH}/helm" /usr/local/bin/helm \
+ && curl -fsSLo /tmp/kubeconform.tgz "https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-${TARGETARCH}.tar.gz" \
+ && echo "$kube_sha  /tmp/kubeconform.tgz" | sha256sum -c - \
+ && tar -xzf /tmp/kubeconform.tgz -C /usr/local/bin kubeconform \
+ && rm -rf /tmp/helm.tgz /tmp/kubeconform.tgz "/tmp/linux-${TARGETARCH}"
+
+RUN mkdir -p /opt/kubernetes-json-schema/v1.32.0-standalone-strict \
+ && curl -fsSLo /opt/kubernetes-json-schema/v1.32.0-standalone-strict/deployment-apps-v1.json \
+      "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/${SCHEMA_REVISION}/v1.32.0-standalone-strict/deployment-apps-v1.json" \
+ && echo "ff11051296e9b618c3a1b120ba34c41f1d39bee1fd925ab3dfe14dfcea7be4ed  /opt/kubernetes-json-schema/v1.32.0-standalone-strict/deployment-apps-v1.json" | sha256sum -c - \
+ && curl -fsSLo /opt/kubernetes-json-schema/v1.32.0-standalone-strict/service-v1.json \
+      "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/${SCHEMA_REVISION}/v1.32.0-standalone-strict/service-v1.json" \
+ && echo "d0665dc279eef7a584ef5cfee1b07e0f00858677d8a78f81ac6c71dcaf6ef3d0  /opt/kubernetes-json-schema/v1.32.0-standalone-strict/service-v1.json" | sha256sum -c -
+
+ENV GOTOOLCHAIN=local \
+    GOPATH=/opt/go \
+    GOMODCACHE=/opt/go/pkg/mod \
+    GOCACHE=/tmp/chartpress-go-cache \
+    npm_config_cache=/tmp/chartpress-npm-cache \
+    npm_config_audit=false \
+    npm_config_fund=false \
+    npm_config_update_notifier=false \
+    KUBERNETES_SCHEMA_VERSION=1.32.0 \
+    KUBECONFORM_SCHEMA_LOCATION=/opt/kubernetes-json-schema/{{.NormalizedKubernetesVersion}}-standalone{{.StrictSuffix}}/{{.ResourceKind}}{{.KindSuffix}}.json
+
+WORKDIR /workspace
+COPY go.mod go.sum ./
+# `go mod download all` (not the bare form) is required: tools/licensecheck
+# walks the full module graph via `go list -m all`, which includes modules
+# a bare `go mod download` never fetches because no package of ours imports
+# them directly.
+RUN go mod download all && go mod verify
+
+COPY web/package.json web/package-lock.json ./web/
+RUN cd web && npm ci --ignore-scripts --no-audit --no-fund
+
+COPY . .
+RUN useradd --create-home --uid 10001 verifier \
+ && chown -R verifier:verifier /workspace
+USER verifier
+
+CMD ["make", "verify-offline"]

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // internal/server/auth.go — optional GitHub OAuth sign-in (identity only).
 //
 // Sign-in is NON-GATING: the existing endpoints stay open. Signing in just

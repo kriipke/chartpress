@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Prompt screen — collect app name + description, then draft a spec via the
 // real /text-to-config endpoint (server-side LLM). The drafted spec pre-fills
 // the Rich form for review. States: idle · drafting (spinner, disabled) · error

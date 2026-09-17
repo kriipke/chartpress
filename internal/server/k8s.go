@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // internal/server/k8s.go
 package server
 

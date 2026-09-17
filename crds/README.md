@@ -108,4 +108,4 @@ Operator-owned status written by the chartpress operator (arrives in a later pha
 
 ## License
 
-This project is proprietary — **All Rights Reserved**. See the [LICENSE](../LICENSE) for details.
+Licensed under the Apache License, Version 2.0. See the [LICENSE](../LICENSE) file, and [NOTICE](../NOTICE) for attribution.

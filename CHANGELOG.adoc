@@ -28,6 +28,15 @@ and this project adheres to link:https://semver.org/[Semantic Versioning].
 * `LICENSE`, `CONTRIBUTING.adoc`, and this changelog.
 
 === Changed
+* Relicensed the project under the Apache License, Version 2.0, replacing the
+  prior proprietary/source-available terms; added `NOTICE`,
+  `THIRD_PARTY_NOTICES.md`, and `SECURITY.md`, and removed language in
+  `README.adoc`, `CONTRIBUTING.adoc`, and `crds/README.md` that contradicted
+  the new grant.
+* Consolidated local and CI verification behind a single `make verify` /
+  `make verify-offline` / `make check-clean` gate, with pinned Go, Node.js,
+  and Helm toolchains and a hermetic `Dockerfile.verify` image that runs with
+  `--network=none`. See `DEVELOPMENT.md`.
 * Generation is now asynchronous. The pre-2.0 synchronous `/generate` response
   (zip stream / `downloadUrl` served from `GET /download/<file>`) was removed;
   downloads are served from object storage via presigned URLs on `/charts`.

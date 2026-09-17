@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // chartpress spec helpers: kebab-case validation, the workload/ingress/trait
 // enums, the locked rule defaults, the grouped rules reference, and the
 // client-side mirror of engine.ResolveTraits (dependent defaulting) so the

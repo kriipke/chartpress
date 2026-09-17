@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // internal/server/texttoconfig.go
 package server
 

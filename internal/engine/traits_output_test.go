@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // internal/engine/traits_output_test.go
 //
 // Trait tailoring end-to-end: build charts from the real templates and check

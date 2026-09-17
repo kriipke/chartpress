@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Dashboard — the home tab (alongside Generate and Charts). It doesn't collect
 // input; it orients you: what chartpress does (scaffold a chart + emit a per-
 // subchart HANDOFF prompt you pair with your real code), a peek at that prompt,

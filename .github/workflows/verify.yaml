@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Verify
+
+# Reusable quality gate: `make verify` (Go vet/tests, frontend tests/build,
+# Helm lint, generated-template validation, archive validation, dependency
+# licenses) plus `make check-clean`. Called by ci.yaml on every pull request
+# and by build-api.yaml/build-web.yaml as the gate image publication depends
+# on, so the check sequence is defined in exactly one place.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  KUBECONFORM_VERSION: "0.7.0"
+
+jobs:
+  verify:
+    name: make verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: web/package.json
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: azure/setup-helm@bf6a7d304bc2fdb57e0331155b7ebf2c504acf0a # v4
+
+      - name: Install kubeconform
+        run: |
+          set -euo pipefail
+          curl -fsSLo /tmp/kubeconform.tgz \
+            "https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          echo "c31518ddd122663b3f3aa874cfe8178cb0988de944f29c74a0b9260920d115d3  /tmp/kubeconform.tgz" | sha256sum -c -
+          sudo tar -xzf /tmp/kubeconform.tgz -C /usr/local/bin kubeconform
+
+      - name: Install Go module dependencies
+        run: go mod download all
+
+      - name: Install npm dependencies
+        run: npm ci --no-audit --no-fund --ignore-scripts
+        working-directory: web
+
+      - run: make verify
+
+      - name: Assert a clean checkout
+        run: make check-clean

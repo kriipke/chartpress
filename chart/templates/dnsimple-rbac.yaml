@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 {{- if .Values.issuer.acme.dnsimple.webhook.createSecretReaderRBAC }}
 # Allows the DNSimple cert-manager webhook ServiceAccount to read the DNS API
 # token secret in this release namespace. Required because a namespaced Issuer

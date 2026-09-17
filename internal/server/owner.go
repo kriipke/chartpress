@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // internal/server/owner.go — chart ownership.
 //
 // Every generated chart is scoped to an owner so that (a) a signed-in user has a

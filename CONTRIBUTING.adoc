@@ -1,13 +1,16 @@
 = Contributing
 
-Chartpress is a proprietary, source-available project. See the
-link:LICENSE[LICENSE] for the full terms.
+Chartpress is licensed under the Apache License, Version 2.0. See
+link:LICENSE[LICENSE] for the full terms and link:NOTICE[NOTICE] for
+attribution — the license grants use, modification, forking, and
+redistribution.
 
-== Contributions are not accepted
+== Pull requests are not accepted
 
-This repository is published for viewing only. Forks, pull requests, and
-redistribution are not permitted, and outside contributions will not be
-accepted or merged.
+This is not a statement about the license: outside pull requests will not be
+reviewed or merged, and the project does not maintain a public contribution
+process. You are welcome to fork the project and modify or redistribute your
+own copy under the terms of the license.
 
-For inquiries — including licensing or usage requests — please contact the
+For inquiries — including licensing or usage questions — please contact the
 copyright holder.

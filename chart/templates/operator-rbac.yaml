@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 {{- if .Values.operator.rbac.create }}
 # The operator watches ChartpressConfig CRs, writes their status + finalizers,
 # and deletes expired anonymous charts (TTL reaping).

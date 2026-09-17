@@ -198,25 +198,31 @@ Engine -> Output : Write generated chart (and archive)
 
 === Running Tests
 
-The `tests` target posts a sample config to a running `chartpress-server`
-(default port 8080) and saves the resulting archive:
+`make verify` is the canonical quality gate — Go tests and vet, frontend unit
+tests and production build, Helm lint, generated-template validation, archive
+validation, and dependency-license policy:
 
 [source,sh]
 ----
-make tests
+make verify
 ----
+
+`make tests` is a retained alias for the Go unit/regression suite only
+(`test-go`). It is unrelated to `make smoke`, which posts a sample config to a
+running `chartpress-server` (default port 8080) and saves the resulting
+archive — a live-server check, not part of the required gate. See
+link:DEVELOPMENT.md[DEVELOPMENT.md] for the full toolchain and hermetic
+verification image.
 
 == Contributing
 
-This is a proprietary, source-available project and is **not open to outside
-contributions**. Forks and pull requests are not accepted. See
-link:CONTRIBUTING.adoc[CONTRIBUTING.adoc] for details.
+See link:CONTRIBUTING.adoc[CONTRIBUTING.adoc] for the project's contribution
+policy.
 
 == License
 
-This project is proprietary and **All Rights Reserved**. It is source-available
-for viewing only; no rights to use, copy, modify, or distribute are granted. See
-the link:LICENSE[LICENSE] file for details.
+Licensed under the Apache License, Version 2.0. See the link:LICENSE[LICENSE]
+file, and link:NOTICE[NOTICE] for attribution.
 
 == Authors & Acknowledgements
 

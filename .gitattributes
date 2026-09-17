@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+*.png binary
+*.ico binary
+*.zip binary
+*.tgz binary
+*.gz binary
+*.woff binary
+*.woff2 binary
+
+*.go text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.sh text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.adoc text eol=lf

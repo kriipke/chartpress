@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // AppShell — top nav (Generate / Charts + GitHub sign-in), the generate wizard
 // (Choose → Prompt → Rich form), the live charts lifecycle, the per-chart file
 // explorer, and the profile screen.

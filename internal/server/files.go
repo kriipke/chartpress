@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // internal/server/files.go — the read-only chart file explorer.
 //
 // GET /charts/{name}/files returns a rendered chart's file tree + contents,
@@ -17,6 +18,7 @@ import (
 	"io"
 	"net/http"
 	"sort"
+	"path"
 	"strings"
 
 	"github.com/kriipke/chartpress/internal/objectstore"
@@ -118,6 +120,13 @@ func unzipArchive(ctx context.Context, d objectstore.Downloader, key string) ([]
 			continue
 		}
 		p := strings.TrimPrefix(f.Name, "./")
+		// Reject absolute paths, backslash variants, and parent traversal even
+		// though the explorer never writes entries to disk. This keeps unsafe
+		// archive names from crossing the API boundary or confusing the tree.
+		clean := path.Clean(strings.ReplaceAll(p, `\`, "/"))
+		if p == "" || strings.HasPrefix(p, "/") || clean == ".." || strings.HasPrefix(clean, "../") || clean != p {
+			return nil, nil, errUnsafeArchivePath
+		}
 		fr, err := f.Open()
 		if err != nil {
 			return nil, nil, err
@@ -136,6 +145,7 @@ func unzipArchive(ctx context.Context, d objectstore.Downloader, key string) ([]
 
 // errArchiveTooLarge is returned when an archive exceeds maxArchiveBytes.
 var errArchiveTooLarge = &archiveError{"chart archive exceeds the size limit"}
+var errUnsafeArchivePath = &archiveError{"chart archive contains an unsafe path"}
 
 type archiveError struct{ msg string }
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Package compose deterministically maps a docker-compose file into an
 // engine.Spec so the web wizard's "Import a docker-compose file" option can
 // pre-fill the same review form the prompt and manual options land in.

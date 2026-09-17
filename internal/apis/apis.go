@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // internal/apis/apis.go
 // Package apis is the single source of truth for the ChartpressConfig API
 // identity, shared by the backend (apply/list) and the operator (watch/reconcile).

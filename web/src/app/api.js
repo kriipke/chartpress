@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // chartpress API client — the real backend (internal/server).
 //
 //   POST /generate         {umbrellaChartName, description, subcharts, rules}
