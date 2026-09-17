@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Rich form — the core spec editor, shared by the manual (empty) and prompt
 // (pre-filled) paths. Umbrella · subcharts (pattern picker + trait overrides)
 // · rules · a live structure preview. The pattern picker IS the configurator:

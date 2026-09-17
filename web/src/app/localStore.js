@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // localStore — browser-side persistence for anonymous users.
 //
 // Signed-in users get a server-persisted, owner-scoped library (GET /charts).

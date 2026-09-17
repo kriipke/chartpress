@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // internal/engine/traits.go
 //
 // Trait tailoring: turn a subchart's ResolvedTraits into the right manifests

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // chartpress design system — component barrel.
 // Re-exports every visual primitive so screens import from one place:
 //   import { Button, Card, StatusBadge } from "../design/components";

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Shared Lucide-style outline icons for the chartpress UI (~1.7px stroke).
 // Substituting Lucide-style glyphs for Radix Icons (see design readme ICONOGRAPHY).
 import React from "react";

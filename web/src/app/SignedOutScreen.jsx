@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // SignedOutScreen — the branded landing shown to signed-out users when GitHub
 // sign-in is configured. Centered sign-in prompt on the signature dotted
 // pattern. `onSignIn` kicks off the OAuth redirect. `onBrowse` (optional) lets

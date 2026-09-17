@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Charts browser — the permanent destination. Empty state · steady list · live
 // polling (a freshly submitted chart transitions Pending → Generating → Ready).
 import React from "react";

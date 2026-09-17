@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 apiVersion: chartpress.dev/v1alpha1
 kind: ChartpressConfig
 metadata:

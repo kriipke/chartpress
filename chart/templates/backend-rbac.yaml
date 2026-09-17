@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 {{- if .Values.backend.rbac.create }}
 # The backend creates/reads ChartpressConfig CRs in its own namespace so the
 # web app can submit specs and browse generated charts.

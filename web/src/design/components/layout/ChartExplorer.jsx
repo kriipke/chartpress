@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import React from "react";
 import { FileTree } from "../data/FileTree.jsx";
 import { CodeEditor } from "../data/CodeEditor.jsx";

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // internal/engine/dependencies.go
 //
 // The infrastructure-dependency registry and its emission. Self-hosted

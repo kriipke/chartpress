@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // internal/engine/rules.go
 package engine
 

@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
 package server
 
 import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"reflect"
 	"testing"
@@ -89,5 +91,26 @@ func TestUnzipArchive(t *testing.T) {
 	// Single top-level folder "c".
 	if len(nodes) != 1 || nodes[0].Name != "c" || len(nodes[0].Children) == 0 {
 		t.Fatalf("unexpected tree root: %#v", nodes)
+	}
+}
+
+func TestUnzipArchiveRejectsUnsafePaths(t *testing.T) {
+	for _, name := range []string{"../secret", "/absolute", `..\secret`, "chart/../secret"} {
+		t.Run(name, func(t *testing.T) {
+			var buf bytes.Buffer
+			zw := zip.NewWriter(&buf)
+			w, err := zw.Create(name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, _ = io.WriteString(w, "nope")
+			if err := zw.Close(); err != nil {
+				t.Fatal(err)
+			}
+			_, _, err = unzipArchive(context.Background(), &fakeDownloader{data: buf.Bytes()}, "bad.zip")
+			if !errors.Is(err, errUnsafeArchivePath) {
+				t.Fatalf("unzipArchive(%q) error = %v, want %v", name, err, errUnsafeArchivePath)
+			}
+		})
 	}
 }

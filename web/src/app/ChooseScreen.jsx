@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Choose screen — the Generate wizard entry fork: manual, from a prompt, or
 // from a docker-compose file.
 import React from "react";

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // internal/engine/naming_test.go
 package engine
 

@@ -1,9 +1,16 @@
-# Variables
+# SPDX-License-Identifier: Apache-2.0
+# Canonical developer and CI entry points.
 OUTPUT_DIR := ./output
 FRONTEND_DIR := ./web
 DOCKER_IMAGE := chartpress-server:0.1
+GO ?= go
+NPM ?= npm
+HELM ?= helm
+GO_TEST_COUNT ?= 1
 
-.PHONY: all clean build-api build-web chart wire-do
+.PHONY: all clean build-api build-web chart wire-do tests test-go vet test-web \
+	build-web-app lint-chart test-templates smoke verify verify-offline \
+	check-clean verify-fixtures update-chart-fixture license-check
 
 # Default target
 all: clean build-api
@@ -37,6 +44,60 @@ build-web:
 	@docker build -t chartpress-server:0.1 ./web/
 	@echo "Docker image built: chartpress-server:0.1"
 
+test-go:
+	@echo "==> Go tests"
+	@GOTOOLCHAIN=local $(GO) test -count=$(GO_TEST_COUNT) ./...
+
+vet:
+	@echo "==> Go vet"
+	@GOTOOLCHAIN=local $(GO) vet ./...
+
+test-web:
+	@echo "==> Web tests"
+	@cd $(FRONTEND_DIR) && CI=1 $(NPM) test
+
+build-web-app:
+	@echo "==> Web production build"
+	@cd $(FRONTEND_DIR) && $(NPM) run build
+
+lint-chart:
+	@echo "==> Helm lint"
+	@$(HELM) lint ./chart --set backend.openai.apiKeySecret.name=verify-placeholder
+
+test-templates:
+	@echo "==> Generated template validation"
+	@./templates/umbrella/tests/validate-templates.sh
+
+license-check:
+	@echo "==> Dependency licenses"
+	@GOTOOLCHAIN=local $(GO) run ./tools/licensecheck
+
+verify-fixtures:
+	@unzip -t tests/chart.zip >/dev/null
+	@test "$$(find . -type f -name '*.zip' -not -path './.git/*' -print | wc -l | tr -d ' ')" = "1" || { echo "unexpected checked-in ZIP archive" >&2; exit 1; }
+
+update-chart-fixture:
+	@CHARTPRESS_UPDATE_GOLDEN=1 GOTOOLCHAIN=local $(GO) test ./internal/operator -run TestGoldenChartFixture -count=1
+
+smoke:
+	@$(MAKE) -C $(TESTS_DIR) test-curl
+
+verify: vet test-go test-web build-web-app lint-chart test-templates verify-fixtures license-check
+	@GOTOOLCHAIN=local $(GO) mod verify
+	@echo "All required verification checks passed."
+
+verify-offline:
+	@GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off npm_config_offline=true \
+		npm_config_audit=false npm_config_fund=false npm_config_update_notifier=false \
+		$(MAKE) verify
+
+check-clean:
+	@git diff --exit-code -- .
+	@git diff --cached --exit-code -- .
+	@test -z "$$(git ls-files --others --exclude-standard)" || { \
+		echo "verification left untracked files:" >&2; \
+		git ls-files --others --exclude-standard >&2; exit 1; }
+
 # Chart target: runs the Makefile in the ./chart directory
 chart:
 	@echo "Running Makefile in $(CHART_DIR)..."
@@ -48,7 +109,10 @@ chart-reinstall:
 	@helm install -n chartpress-test chartpress  -f chart/values.yaml chart &&  sleep 3
 	@kubectl port-forward -n chartpress-test svc/chartpress-frontend 8080:80
 
-tests:
+tests: test-go
+	@echo "'make tests' is retained as an alias for unit/regression tests; use 'make smoke' for the live server check."
+
+smoke-legacy:
 	@echo "Running Makefile in $(TESTS_DIR)..."
 	@$(MAKE) -C $(TESTS_DIR)
 	@echo "Makefile in $(TESTS_DIR) executed successfully."

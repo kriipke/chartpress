@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 # DigitalOcean Spaces overrides for the chartpress chart.
 #
 # Layer this on top of the chart defaults (which target generic AWS S3). The

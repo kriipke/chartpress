@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // internal/engine/patterns_contract_test.go
 //
 // The web client renders the pattern picker from its own copy of the registry

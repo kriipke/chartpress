@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // ProfileScreen — the signed-in user's GitHub profile: identity header on the
 // dotted pattern, chart stats, and account details. `user` carries the fields
 // from /auth/me (name, handle, email, registry, avatarUrl); `charts` is the live

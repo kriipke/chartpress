@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // internal/engine/patterns.go
 //
 // The pattern registry: the named workload shapes a subchart can be declared

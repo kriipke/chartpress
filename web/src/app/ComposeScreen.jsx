@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Compose screen — the third Generate entry: import a docker-compose file used
 // in development. The server maps it deterministically (no LLM) to a Spec via
 // /compose-to-config, returning {spec, notes}. On success we show a short
